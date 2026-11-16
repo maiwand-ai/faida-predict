@@ -1,7 +1,9 @@
 // Market data: GET = cached list from DB; POST = sync live from Polymarket Gamma.
+// Every successful sync appends MarketPriceTicks (A-05 recorder, GAMMA_SYNC source).
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { polymarket } from "@/lib/venue/polymarket";
+import { recordTick } from "@/lib/engine/cycle";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +57,16 @@ export async function POST() {
           dataSource: "GAMMA_LIVE",
         },
       });
+    }
+    // A-05 recorder: persist this sync's observations as ticks (top 12 by volume
+    // keeps the table bounded while giving backtests real live history).
+    const tickTargets = live
+      .filter((m) => m.yesPriceCents != null && m.noPriceCents != null)
+      .sort((a, b) => (b.volumeCents ?? 0) - (a.volumeCents ?? 0))
+      .slice(0, 12);
+    for (const m of tickTargets) {
+      const row = await db.market.findUnique({ where: { venueSymbol: m.venueSymbol }, select: { id: true } });
+      if (row) await recordTick(row.id, m.yesPriceCents as number, m.noPriceCents as number, "GAMMA_SYNC");
     }
     // D-04 honesty: markets without a complete, tradeable two-sided book
     // (missing or degenerate 0¢/100¢ prices) are flagged and refuse orders.

@@ -2,11 +2,14 @@
 // Heuristic estimator by default (deterministic, no key required); upgrades to
 // the AI gateway automatically when any provider key is enabled (A-06).
 // Every decision — trade or no-trade — writes a DecisionTrace (A-08).
+// Phase 2: entry/exit knobs come from the robot's active strategy version
+// (C5) and every cycle appends a MarketPriceTick to the A-05 recorder.
 import { db } from "@/lib/db";
 import { parityGapCents } from "@/lib/money";
 import { placePaperOrder } from "./paper";
 import { preTradeRiskChecks } from "@/lib/risk";
 import { estimateWithAi } from "@/lib/ai/gateway";
+import { parseConfig, DEFAULT_CONFIG, type StrategyConfig } from "@/lib/strategy";
 
 export interface CycleSummary {
   robotId: string;
@@ -16,15 +19,17 @@ export interface CycleSummary {
   traceId: string;
 }
 
-const MIN_EDGE_PTS = 8; // entry rule: minimum edge net of fees (from spec C17/C5)
-
-function heuristicEstimate(market: { yesPriceCents: number | null; noPriceCents: number | null }): { estimatePct: number; basis: string } {
-  // Paper skeleton heuristic: mildly fade the book toward 50 with a small
-  // contrarian tilt, so demo robots produce both trades and no-trades.
+function heuristicEstimate(market: { yesPriceCents: number | null; noPriceCents: number | null }, cfg: StrategyConfig): { estimatePct: number; basis: string } {
+  // Deterministic paper heuristic: fade the book toward 50 with the strategy's
+  // configured tilt, so demo robots produce both trades and no-trades.
   const p = market.yesPriceCents ?? 50;
-  const tilt = Math.round((50 - p) * 0.25);
+  const tilt = Math.round((50 - p) * (cfg.estimatorTiltPct / 100));
   const est = Math.max(2, Math.min(98, p + tilt));
-  return { estimatePct: est, basis: "heuristic: contrarian tilt of book price toward 50%" };
+  return { estimatePct: est, basis: `heuristic: contrarian tilt ${cfg.estimatorTiltPct}% of book price toward 50%` };
+}
+
+export async function recordTick(marketId: string, yesCents: number, noCents: number, source: string) {
+  return db.marketPriceTick.create({ data: { marketId, yesCents, noCents, source } });
 }
 
 export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
@@ -44,10 +49,16 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
   }
 
   const sv = await db.strategyVersion.findFirst({ where: { robotId: robot.id, version: robot.activeVersion } });
+  const cfg = sv ? parseConfig(sv.config) : { ...DEFAULT_CONFIG };
 
-  // 1) estimate — AI when configured, heuristic otherwise
+  // A-05 recorder: every cycle observation lands in the tick history
+  if (market.yesPriceCents != null && market.noPriceCents != null) {
+    await recordTick(market.id, market.yesPriceCents, market.noPriceCents, "CYCLE");
+  }
+
+  // 1) estimate — AI when configured, strategy-config heuristic otherwise
   const ai = await estimateWithAi(market.question, market.yesPriceCents ?? 50);
-  const est = ai ?? heuristicEstimate(market);
+  const est = ai ?? heuristicEstimate(market, cfg);
   const marketPct = market.yesPriceCents ?? 50;
   const edgePts = est.estimatePct - marketPct;
   const parity = market.yesPriceCents != null && market.noPriceCents != null ? parityGapCents(market.yesPriceCents, market.noPriceCents) : null;
@@ -74,8 +85,8 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
 
   if (failed) {
     reason = `no-trade: risk check failed — ${failed.check}: ${failed.detail}`;
-  } else if (edgeMagnitude < MIN_EDGE_PTS) {
-    reason = `no-trade: edge ${edgePts} pts below minimum ${MIN_EDGE_PTS} pts net of fees`;
+  } else if (edgeMagnitude < cfg.minEdgePts) {
+    reason = `no-trade: edge ${edgePts} pts below minimum ${cfg.minEdgePts} pts net of fees (strategy v${robot.activeVersion})`;
   } else if (est.basis.startsWith("ai:") && est.estimatePct < 3) {
     reason = `no-trade: AI estimate unreliable (${est.estimatePct}%)`;
   } else {

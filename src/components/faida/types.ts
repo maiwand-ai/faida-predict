@@ -125,6 +125,82 @@ export interface RiskViewDTO {
   platformMax: Record<string, number>;
 }
 
+// Phase 2 — C5 strategy versioning
+export interface StrategyConfigDTO {
+  entryRule: string;
+  minEdgePts: number;
+  estimatorTiltPct: number;
+  exitEdgePts: number;
+  holdTicksMax: number;
+  exitPolicy: string;
+  schedule: string;
+  estimator: string;
+}
+
+export interface VersionDTO {
+  id: string;
+  version: number;
+  config: StrategyConfigDTO;
+  orderCount: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+// Phase 2 — A-05 backtests
+export interface BacktestStatsDTO {
+  trades: number;
+  wins: number;
+  winRatePct: number;
+  pnlCents: number;
+  feesCents: number;
+  roiPct: number;
+  maxDrawdownPct: number;
+  avgEdgeAtEntry: number;
+  avgHoldTicks: number;
+  skippedForLiquidity: number;
+  openAtEnd: boolean;
+}
+
+export interface CurvePoint {
+  i: number;
+  t: string;
+  equityCents: number;
+}
+
+export interface BacktestTradeDTO {
+  side: string;
+  entryIdx: number;
+  exitIdx: number;
+  entryCents: number;
+  exitCents: number;
+  edgeAtEntry: number;
+  holdTicks: number;
+  feeCents: number;
+  pnlCents: number;
+}
+
+export interface BacktestResultDTO {
+  ok: boolean;
+  runId?: string;
+  params?: { slippageCents: number; feeBps: number; perTradeCents: number; minEdgePts: number; holdTicksMax: number; simCapitalCents: number };
+  stats?: BacktestStatsDTO;
+  curve?: CurvePoint[];
+  trades?: BacktestTradeDTO[];
+  dataSource?: string;
+  ticks?: number;
+  marketQuestion?: string;
+  robotName?: string;
+  version?: number;
+  error?: string;
+}
+
+export interface NotifyStatusDTO {
+  resendConfigured: boolean;
+  from: string | null;
+  last24h: { sent: number; failed: number; noKey: number };
+  note: string;
+}
+
 export const FAMILIES = [
   { id: "PROBABILITY_EDGE", label: "Probability Edge", desc: "Enter when model-vs-market edge exceeds a threshold, net of fees." },
   { id: "MARKET_MAKING", label: "Market-Making", desc: "Quote both sides around a fair value; earn the spread and maker rebates." },

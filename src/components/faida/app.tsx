@@ -210,7 +210,7 @@ export default function FaidaApp() {
               <MarketsView markets={markets} onSync={syncMarkets} busy={busy} onTrade={(m) => setTradeMarket(m)} />
             )}
             {view === "studio" && (
-              <StudioView dash={dash} onCreate={(payload) => post("/api/robots", payload, "Robot created as PAPER_ONLY draft")} />
+              <StudioView dash={dash} onCreate={(payload) => post("/api/robots", payload, "Robot created as PAPER_ONLY draft")} onAfterChange={refreshDashboard} />
             )}
             {view === "trading" && (
               <TradingView

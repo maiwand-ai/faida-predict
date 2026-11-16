@@ -2,6 +2,7 @@
 // Events are written inside the SAME prisma transaction as the state change,
 // then drained asynchronously by the dispatcher. No dual-write window.
 import { db } from "@/lib/db";
+import { EMAIL_EVENT_TYPES, emailSubjectFor, notifyEnvStatus, sendEmail } from "@/lib/notify";
 
 export type OutboxAggregate = "ORDER" | "ROBOT" | "LEDGER" | "RECONCILIATION";
 export type OutboxEventType =
@@ -36,8 +37,12 @@ export function enqueueOutbox(tx: Tx, drafts: OutboxDraft[]): void {
 }
 
 // The dispatcher drains pending events. In the skeleton this delivers to the
-// in-process consumer (notifications/activity feed). In production this is the
-// point where emails (Resend), websockets and analytics fan out.
+// in-process consumer (notifications/activity feed) and pages the user by
+// email (Resend) for severity-relevant event types. Email is best-effort and
+// recorded per-event (emailStatus) — the notification feed stays the source
+// of truth. In production the same drain fans out to websockets and analytics.
+const EMAIL_CAP_PER_DRAIN = 10; // throttle: never send more than this per drain
+
 export async function drainOutbox(limit = 50): Promise<number> {
   const pending = await db.outboxEvent.findMany({
     where: { status: "PENDING" },
@@ -45,22 +50,54 @@ export async function drainOutbox(limit = 50): Promise<number> {
     take: limit,
   });
   let dispatched = 0;
+  let emails = 0;
   for (const ev of pending) {
     try {
       await consume(ev.aggregateType, ev.aggregateId, ev.eventType, ev.payload);
+      let emailStatus = "SKIP";
+      if (EMAIL_EVENT_TYPES.has(ev.eventType)) {
+        if (emails >= EMAIL_CAP_PER_DRAIN) {
+          emailStatus = "SKIP"; // throttled — retried only if the event retries
+        } else {
+          emailStatus = await emailForEvent(ev.aggregateId, ev.eventType, ev.payload);
+          if (emailStatus === "SENT") emails++;
+        }
+      }
       await db.outboxEvent.update({
         where: { id: ev.id },
-        data: { status: "DISPATCHED", dispatchedAt: new Date(), attempts: { increment: 1 } },
+        data: { status: "DISPATCHED", dispatchedAt: new Date(), attempts: { increment: 1 }, emailStatus },
       });
       dispatched++;
     } catch {
+      const attempts = ev.attempts + 1;
       await db.outboxEvent.update({
         where: { id: ev.id },
-        data: { status: "FAILED", attempts: { increment: 1 } },
+        data: { status: attempts >= 8 ? "FAILED" : "PENDING", attempts },
       });
     }
   }
   return dispatched;
+}
+
+// Resolve the recipient from the event payload's userId and send. Dev/seed
+// accounts (*.local) never receive email.
+async function emailForEvent(aggregateId: string, eventType: string, payload: string): Promise<string> {
+  if (!notifyEnvStatus().resendConfigured) return "NO_KEY";
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(payload) as Record<string, unknown>;
+  } catch {
+    return "SKIP";
+  }
+  const userId = String(data.userId ?? "");
+  if (!userId) return "SKIP";
+  const user = await db.user.findUnique({ where: { id: userId }, select: { email: true } });
+  if (!user || user.email.endsWith(".local")) return "SKIP";
+  const subject = emailSubjectFor(eventType);
+  const lines = [subject, "", String(data.title ?? data.reason ?? ""), String(data.body ?? data.note ?? "")];
+  if (eventType !== "RISK_PAUSE") lines.push("", `Ref: ${aggregateId}`);
+  const res = await sendEmail(user.email, subject, lines.filter(Boolean).join("\n"));
+  return res.ok ? "SENT" : "FAILED";
 }
 
 async function consume(

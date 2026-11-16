@@ -16,6 +16,14 @@ truth for choices that must not drift; code reads them via config, not folklore.
 | B9 | Venue #2 | Manifold (play-money) as pre-edge-gate test harness; then Limitless or Kalshi | ROADMAP | Adapter interface ready; no code yet |
 | B10 | Live money gates | Edge gate + backtest (A-05 fill-model) + paper session + recorded consent (C25) before any live order | RATIFIED | `placeOrder()` on the live adapter throws by contract |
 
+## Phase-2 checkpoint status (strategy lab, R-03 continued)
+
+- Strategy versioning C5 — **working: immutable versions, activate = pointer move, orders record exact version**
+- Backtest engine A-05 — **working: deterministic replay, adverse slippage + fees + liquidity guard, SYNTHETIC/LIVE honesty badge**
+- Price recorder — **working: ticks appended on every market sync and robot cycle; seed writes labeled SYNTHETIC history**
+- Outbox email fan-out F8 — **working: Resend best-effort per event, throttled, per-event emailStatus, honest NO_KEY state**
+- Live trading — **still disabled by contract** (Phase 7 gates + explicit authorization)
+
 ## Phase-1 checkpoint status (walking skeleton, R-03)
 
 - Order state machine S-01 with UNKNOWN → reconciliation-only resolution — **working, journal-per-transition**

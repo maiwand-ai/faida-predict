@@ -1,4 +1,4 @@
-// FAIDA Predict — walking skeleton schema (Phase 1, R-03)
+// FAIDA Predict — schema (Phase 2: strategy versioning, backtests, email dispatch)
 // Money is ALWAYS integer cents (S-09: no floats anywhere).
 // States are app-level unions stored as strings (SQLite).
 
@@ -58,6 +58,7 @@ model Robot {
   updatedAt        DateTime  @updatedAt
   user             User      @relation(fields: [userId], references: [id])
   versions         StrategyVersion[]
+  backtests        BacktestRun[]
   orders           Order[]
   positions        Position[]
   traces           DecisionTrace[]
@@ -97,6 +98,43 @@ model Market {
   orders            Order[]
   positions         Position[]
   traces            DecisionTrace[]
+  ticks             MarketPriceTick[]
+  backtests         BacktestRun[]
+}
+
+// A-05: recorder — every price observation lands here and feeds backtests
+// and the live-gate evidence pack. Live syncs and cycles append; the seed
+// writes SYNTHETIC-labeled history so backtests work before data accrues.
+model MarketPriceTick {
+  id         String   @id @default(cuid())
+  marketId   String
+  yesCents   Int
+  noCents    Int
+  source     String   @default("CYCLE") // GAMMA_SYNC | CYCLE | SYNTHETIC
+  capturedAt DateTime @default(now())
+  market     Market   @relation(fields: [marketId], references: [id])
+
+  @@index([marketId, capturedAt])
+}
+
+// A-05: replay of a strategy version over recorded ticks with the fill model
+// (adverse slippage, fee schedule, liquidity awareness). Evidence for the
+// B10 live gate — never proof of future performance (D-03 honesty).
+model BacktestRun {
+  id                String   @id @default(cuid())
+  robotId           String
+  strategyVersionId String
+  marketId          String
+  status            String   @default("DONE") // DONE | FAILED
+  params            String   // JSON: slippageCents, feeBps, perTradeCents, minEdgePts, holdTicks
+  stats             String   // JSON: trades, wins, winRatePct, pnlCents, roiPct, maxDrawdownPct, feesCents, avgEdgeAtEntry
+  equityCurve       String   // JSON [{i, t, equityCents}]
+  trades            String   // JSON trade records
+  tickCount         Int      @default(0)
+  dataSource        String   @default("SYNTHETIC") // SYNTHETIC | LIVE
+  createdAt         DateTime @default(now())
+  robot             Robot    @relation(fields: [robotId], references: [id])
+  market            Market   @relation(fields: [marketId], references: [id])
 }
 
 // S-01: order state machine. States:
@@ -190,6 +228,7 @@ model OutboxEvent {
   payload       String    // JSON
   status        String    @default("PENDING") // PENDING | DISPATCHED | FAILED
   attempts      Int       @default(0)
+  emailStatus   String    @default("SKIP")   // SKIP | SENT | FAILED | NO_KEY
   createdAt     DateTime  @default(now())
   dispatchedAt  DateTime?
 }

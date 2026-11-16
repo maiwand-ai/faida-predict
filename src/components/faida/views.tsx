@@ -1,26 +1,39 @@
 "use client";
 
-// FAIDA Predict — Studio (wizard), Trading (ticket/orders/ledger), Settings.
-import { useEffect, useMemo, useState } from "react";
+// FAIDA Predict — Studio (wizard + strategy lab), Trading, Settings.
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
+  type BacktestResultDTO,
+  type CurvePoint,
   type DashboardDTO,
   type EligibilityRuleDTO,
   type LedgerRowDTO,
   type MarketDTO,
+  type NotifyStatusDTO,
   type OrderRowDTO,
   type ProviderDTO,
   type RiskViewDTO,
+  type VersionDTO,
   FAMILIES,
 } from "./types";
 import { StateChip, card, c, fmtCents, mono } from "./ui";
 
+// Tolerant JSON parse — never let a transient empty response crash the UI.
+async function safeJson<T = unknown>(res: Response): Promise<T | null> {
+  try {
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 // ── Robot Studio ─────────────────────────────────────────────────────────────
-export function StudioView({ dash, onCreate }: { dash: DashboardDTO | null; onCreate: (p: unknown) => Promise<unknown> }) {
+export function StudioView({ dash, onCreate, onAfterChange }: { dash: DashboardDTO | null; onCreate: (p: unknown) => Promise<unknown>; onAfterChange?: () => void }) {
   const [step, setStep] = useState(1);
   const [family, setFamily] = useState<string>("PROBABILITY_EDGE");
   const [name, setName] = useState("");
@@ -191,6 +204,9 @@ export function StudioView({ dash, onCreate }: { dash: DashboardDTO | null; onCr
           </div>
         </div>
       </div>
+
+      {/* Phase 2 — strategy versions + backtests (C5 / A-05) */}
+      <StrategyLab dash={dash} onAfterChange={() => onAfterChange?.()} />
     </div>
   );
 }
@@ -444,6 +460,9 @@ export function SettingsView(props: {
         </div>
       </div>
 
+      {/* notification dispatcher (Phase 2) */}
+      <NotifyCard />
+
       {/* eligibility */}
       <div className={`${card} p-4`}>
         <div className={`mb-1 text-[13px] font-semibold`}>Jurisdiction eligibility matrix (C4.5)</div>
@@ -460,6 +479,304 @@ export function SettingsView(props: {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Strategy Lab — C5 versions + A-05 backtests (Phase 2) ────────────────────
+export function StrategyLab({ dash, onAfterChange }: { dash: DashboardDTO | null; onAfterChange: () => void }) {
+  const robots = dash?.robots ?? [];
+  const [robotId, setRobotId] = useState("");
+  const active = robots.find((r) => r.id === robotId) ?? robots[0] ?? null;
+
+  const [versions, setVersions] = useState<VersionDTO[]>([]);
+  const [minEdge, setMinEdge] = useState(8);
+  const [tilt, setTilt] = useState(25);
+  const [exitEdge, setExitEdge] = useState(2);
+  const [hold, setHold] = useState(12);
+  const [slippage, setSlippage] = useState(1);
+  const [feeBps, setFeeBps] = useState(100);
+  const [labBusy, setLabBusy] = useState<string | null>(null);
+  const [bt, setBt] = useState<BacktestResultDTO | null>(null);
+  const [btError, setBtError] = useState<string | null>(null);
+
+  const loadVersions = useCallback(async (rid: string) => {
+    const res = await fetch(`/api/strategies?robotId=${rid}`);
+    const json = await safeJson<{ versions: VersionDTO[] }>(res);
+    setVersions(json?.versions ?? []);
+  }, []);
+
+  useEffect(() => {
+    if (!active) return;
+    void loadVersions(active.id);
+    setBt(null);
+    setBtError(null);
+  }, [active?.id, loadVersions]);
+
+  const syncFromActive = () => {
+    const v = versions.find((x) => x.isActive) ?? versions[0];
+    if (v) {
+      setMinEdge(v.config.minEdgePts);
+      setTilt(v.config.estimatorTiltPct);
+      setExitEdge(v.config.exitEdgePts);
+      setHold(v.config.holdTicksMax);
+    }
+  };
+  useEffect(syncFromActive, [versions]);
+
+  const createVersion = async () => {
+    if (!active) return;
+    setLabBusy("create");
+    try {
+      const res = await fetch("/api/strategies", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ robotId: active.id, config: { minEdgePts: minEdge, estimatorTiltPct: tilt, exitEdgePts: exitEdge, holdTicksMax: hold, entryRule: `edge>=${minEdge}pts net of fees` } }),
+      });
+      const json = await safeJson<{ ok?: boolean; version?: number; error?: string }>(res);
+      if (json?.ok) {
+        await loadVersions(active.id);
+        onAfterChange();
+      }
+    } finally {
+      setLabBusy(null);
+    }
+  };
+
+  const activate = async (versionId: string) => {
+    if (!active) return;
+    setLabBusy("activate");
+    try {
+      await fetch("/api/strategies", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ robotId: active.id, versionId }) });
+      await loadVersions(active.id);
+      onAfterChange();
+    } finally {
+      setLabBusy(null);
+    }
+  };
+
+  const runBacktest = async () => {
+    if (!active) return;
+    setLabBusy("backtest");
+    setBtError(null);
+    try {
+      const res = await fetch("/api/backtests", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ robotId: active.id, slippageCents: slippage, feeBps, minEdgePts: minEdge, holdTicksMax: hold }),
+      });
+      const json = await safeJson<BacktestResultDTO>(res);
+      if (json?.ok) setBt(json);
+      else setBtError(json?.error ?? "empty response — try again");
+    } catch {
+      setBtError("backtest request failed — try again");
+    } finally {
+      setLabBusy(null);
+    }
+  };
+
+  if (!active) {
+    return (
+      <div className={`${card} p-4 text-[12px] ${c.text3}`}>
+        Strategy versions &amp; backtests unlock once a robot exists — create one in the wizard above.
+      </div>
+    );
+  }
+
+  const s = bt?.stats;
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-[15px] font-semibold">Strategy lab — versions &amp; backtests</h2>
+        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.bright} bg-[#00B0F0]/10`}>C5 · A-05</span>
+        <span className={`text-[11.5px] ${c.text3}`}>versions are immutable; orders record the exact version. Backtest evidence for the live gate — never a promise (D-03).</span>
+      </div>
+      {/* robot selector */}
+      <div className="flex flex-wrap gap-2">
+        {robots.map((r) => (
+          <button key={r.id} onClick={() => setRobotId(r.id)}
+            className={`rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors ${active.id === r.id ? "border-[#00B0F0] bg-[#00B0F0]/10 " + c.text : `border-[#2E3C5F] bg-[#151D30] ${c.text2} hover:bg-[#1B2540]`}`}>
+            {r.name} <span className={mono + " " + c.text3}>v{r.activeVersion}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr]">
+        {/* versions */}
+        <div className={`${card} p-4`}>
+          <div className={`mb-2 text-[13px] font-semibold`}>Strategy versions — {active.name}</div>
+          <div className="fd-scroll max-h-[220px] overflow-y-auto">
+            <table className="w-full text-[12px]">
+              <thead>
+                <tr className={`text-left text-[10px] uppercase tracking-wide ${c.text3}`}>
+                  <th className="py-1.5 pr-2">Ver</th>
+                  <th className="py-1.5 pr-2">Edge ≥</th>
+                  <th className="py-1.5 pr-2">Tilt</th>
+                  <th className="py-1.5 pr-2">Exit</th>
+                  <th className="py-1.5 pr-2">Orders</th>
+                  <th className="py-1.5 pr-2">Status</th>
+                  <th className="py-1.5"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {versions.map((v) => (
+                  <tr key={v.id} className={`border-t ${c.border}`}>
+                    <td className={`py-1.5 pr-2 font-semibold ${mono}`}>v{v.version}</td>
+                    <td className={`py-1.5 pr-2 ${mono}`}>{v.config.minEdgePts} pts</td>
+                    <td className={`py-1.5 pr-2 ${mono}`}>{v.config.estimatorTiltPct}%</td>
+                    <td className={`py-1.5 pr-2 ${mono}`}>{v.config.exitEdgePts}/{v.config.holdTicksMax}t</td>
+                    <td className={`py-1.5 pr-2 ${mono}`}>{v.orderCount}</td>
+                    <td className="py-1.5 pr-2">
+                      {v.isActive ? <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.gain} bg-[#2FC08E]/10`}>ACTIVE</span> : <span className={`text-[10px] ${c.text3}`}>—</span>}
+                    </td>
+                    <td className="py-1.5">
+                      {!v.isActive && (
+                        <Button size="sm" variant="outline" className={`h-6 border-[#2E3C5F] bg-[#151D30] px-2 text-[10px] ${c.text} hover:bg-[#1B2540]`} disabled={labBusy !== null} onClick={() => activate(v.id)}>
+                          Activate
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className={`mt-3 border-t pt-3 ${c.border}`}>
+            <div className={`mb-1 text-[11px] ${c.text2}`}>Save the sliders below as a new immutable version (C5):</div>
+            <Button size="sm" className="bg-[#00B0F0] font-semibold text-[#001040] hover:bg-[#2FC1F5]" disabled={labBusy !== null} onClick={createVersion}>
+              {labBusy === "create" ? "Saving…" : `Save as v${versions.reduce((m, v) => Math.max(m, v.version), 0) + 1}`}
+            </Button>
+          </div>
+        </div>
+
+        {/* backtest */}
+        <div className={`${card} p-4`}>
+          <div className="mb-2 flex items-center justify-between">
+            <div className={`text-[13px] font-semibold`}>Backtest — replay over recorded ticks</div>
+            {bt?.dataSource && (
+              <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${bt.dataSource === "SYNTHETIC" ? c.paper + " bg-[#D9B25C]/10" : c.gain + " bg-[#2FC08E]/10"}`}>
+                {bt.dataSource === "SYNTHETIC" ? "SYNTHETIC DATA" : "LIVE DATA"}
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <LabSlider label="Entry edge ≥" unit="pts" value={minEdge} setValue={setMinEdge} min={2} max={20} step={1} />
+            <LabSlider label="Estimator tilt" unit="%" value={tilt} setValue={setTilt} min={0} max={40} step={5} />
+            <LabSlider label="Exit edge <" unit="pts" value={exitEdge} setValue={setExitEdge} min={0} max={8} step={1} />
+            <LabSlider label="Max hold" unit="ticks" value={hold} setValue={setHold} min={3} max={60} step={1} />
+            <LabSlider label="Slippage" unit="¢" value={slippage} setValue={setSlippage} min={0} max={3} step={1} />
+            <LabSlider label="Fee" unit="bps" value={feeBps} setValue={setFeeBps} min={0} max={300} step={50} />
+          </div>
+          <Button size="sm" className="mt-3 bg-[#00B0F0] font-semibold text-[#001040] hover:bg-[#2FC1F5]" disabled={labBusy !== null} onClick={runBacktest}>
+            {labBusy === "backtest" ? "Replaying…" : "Run backtest"}
+          </Button>
+          {btError && <div className={`mt-2 rounded border px-2.5 py-1.5 text-[11px] ${c.border} ${c.loss}`}>{btError}</div>}
+
+          {bt?.ok && s && bt.params && (
+            <div className="mt-3 flex flex-col gap-2">
+              <div className={`grid grid-cols-4 gap-2 text-[11px]`}>
+                <Stat label="Trades" val={String(s.trades)} />
+                <Stat label="Win rate" val={`${s.winRatePct}%`} />
+                <Stat label="PnL" val={fmtCents(s.pnlCents)} tone={s.pnlCents >= 0 ? "gain" : "loss"} />
+                <Stat label="ROI" val={`${s.roiPct}%`} tone={s.roiPct >= 0 ? "gain" : "loss"} />
+                <Stat label="Max DD" val={`${s.maxDrawdownPct}%`} />
+                <Stat label="Fees" val={fmtCents(s.feesCents)} />
+                <Stat label="Avg edge" val={`${s.avgEdgeAtEntry} pts`} />
+                <Stat label="Ticks" val={String(bt.ticks ?? 0)} />
+              </div>
+              {bt.curve && bt.curve.length > 1 && (
+                <div className={`rounded-lg border p-2 ${c.border}`}>
+                  <EquityCurve curve={bt.curve} baselineCents={bt.params.simCapitalCents} />
+                  <div className={`flex justify-between text-[10px] ${c.text3}`}>
+                    <span>sim capital {fmtCents(bt.params.simCapitalCents)}</span>
+                    <span>{bt.marketQuestion?.slice(0, 44)}</span>
+                  </div>
+                </div>
+              )}
+              {(s.openAtEnd || s.skippedForLiquidity > 0) && (
+                <div className={`text-[10.5px] ${c.text3}`}>
+                  {s.openAtEnd ? "Position still open at end of data — marked to market, not settled. " : ""}
+                  {s.skippedForLiquidity > 0 ? `${s.skippedForLiquidity} ticks skipped (order > 5% of recorded liquidity).` : ""}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LabSlider({ label, unit, value, setValue, min, max, step }: { label: string; unit: string; value: number; setValue: (v: number) => void; min: number; max: number; step: number }) {
+  return (
+    <div>
+      <div className={`flex justify-between text-[11px] ${c.text2}`}>
+        <span>{label}</span>
+        <span className={mono + " " + c.text}>{value}{unit}</span>
+      </div>
+      <Slider value={[value]} onValueChange={(v) => setValue(v[0])} min={min} max={max} step={step} className="mt-1.5" />
+    </div>
+  );
+}
+
+function Stat({ label, val, tone }: { label: string; val: string; tone?: "gain" | "loss" }) {
+  return (
+    <div className={`rounded-lg border px-2 py-1.5 ${c.border}`}>
+      <div className={`text-[9.5px] uppercase tracking-wide ${c.text3}`}>{label}</div>
+      <div className={`${mono} text-[12px] font-semibold ${tone === "gain" ? c.gain : tone === "loss" ? c.loss : c.text}`}>{val}</div>
+    </div>
+  );
+}
+
+function EquityCurve({ curve, baselineCents }: { curve: CurvePoint[]; baselineCents: number }) {
+  const w = 560;
+  const h = 120;
+  const pad = 6;
+  const vals = curve.map((p) => p.equityCents);
+  const min = Math.min(...vals, baselineCents);
+  const max = Math.max(...vals, baselineCents);
+  const span = Math.max(1, max - min);
+  const x = (i: number) => pad + (i / (curve.length - 1)) * (w - 2 * pad);
+  const y = (v: number) => h - pad - ((v - min) / span) * (h - 2 * pad);
+  const path = curve.map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.equityCents).toFixed(1)}`).join(" ");
+  const up = vals[vals.length - 1] >= baselineCents;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label="Backtest equity curve">
+      <line x1={pad} x2={w - pad} y1={y(baselineCents)} y2={y(baselineCents)} strokeDasharray="4 4" stroke="#2E3C5F" strokeWidth="1" />
+      <path d={path} fill="none" stroke={up ? "#2FC08E" : "#F0525F"} strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// ── Notify dispatcher card — Settings (S-02 / F8, Resend) ────────────────────
+export function NotifyCard() {
+  const [s, setS] = useState<NotifyStatusDTO | null>(null);
+  useEffect(() => {
+    fetch("/api/settings/notify")
+      .then((r) => safeJson<NotifyStatusDTO>(r))
+      .then((j) => setS(j))
+      .catch(() => undefined);
+  }, []);
+  return (
+    <div className={`${card} p-4`}>
+      <div className="mb-1 flex items-center justify-between">
+        <div className={`text-[13px] font-semibold`}>Notification dispatcher — email fan-out (S-02/F8)</div>
+        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${s?.resendConfigured ? `${c.gain} bg-[#2FC08E]/10` : `${c.paper} bg-[#D9B25C]/10`}`}>
+          {s ? (s.resendConfigured ? "RESEND ACTIVE" : "NO KEY — FEED ONLY") : "…"}
+        </span>
+      </div>
+      <div className={`mb-3 text-[11.5px] ${c.text3}`}>
+        The transactional outbox drains to the in-app feed first; severity events (risk pause, reconciliation) also page the user by email via Resend when an API key is present. Per-event email status is recorded — nothing is silently dropped.
+      </div>
+      {s && (
+        <div className="grid grid-cols-3 gap-2 text-[11px] sm:grid-cols-4">
+          <Stat label="Sent 24h" val={String(s.last24h.sent)} tone="gain" />
+          <Stat label="Failed 24h" val={String(s.last24h.failed)} tone={s.last24h.failed > 0 ? "loss" : undefined} />
+          <Stat label="No-key 24h" val={String(s.last24h.noKey)} />
+          <Stat label="From" val={s.from?.replace(/<.*>/, "").trim() || "—"} />
+        </div>
+      )}
+      {s && !s.resendConfigured && <div className={`mt-2 text-[10.5px] ${c.text2}`}>{s.note}</div>}
     </div>
   );
 }

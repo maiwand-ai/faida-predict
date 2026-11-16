@@ -169,7 +169,52 @@ async function main(): Promise<void> {
     });
   }
 
-  console.log("seed complete:", { userId: user.id, robots: ROBOTS.length, matrix: SEED_MATRIX.length });
+  // A-05 recorder: SYNTHETIC-labeled tick history for the top tradeable markets,
+  // so backtests work immediately (live syncs and cycles append real ticks).
+  // Deterministic walk (seeded RNG) around each market's current price —
+  // clearly labeled SYNTHETIC, never passed off as live data (D-03).
+  const tickMarkets = await db.market.findMany({
+    where: {
+      ambiguityFlag: false,
+      resolvedAt: null,
+      yesPriceCents: { gte: 2, lte: 98 },
+      noPriceCents: { gte: 2, lte: 98 },
+    },
+    orderBy: { volumeCents: "desc" },
+    take: 3,
+  });
+  let seededTicks = 0;
+  for (const m of tickMarkets) {
+    const existing = await db.marketPriceTick.count({ where: { marketId: m.id } });
+    if (existing >= 100) continue; // already has history (live or prior seed)
+    let state = 42 + m.venueSymbol.length; // deterministic per-market seed
+    const rand = () => {
+      state = (state * 1103515245 + 12345) % 2147483648;
+      return state / 2147483648;
+    };
+    const anchor = m.yesPriceCents ?? 50;
+    let yes = anchor;
+    const base = new Date(Date.now() - 120 * 5 * 60 * 1000);
+    const rows: Array<{ marketId: string; yesCents: number; noCents: number; source: string; capturedAt: Date }> = [];
+    for (let i = 0; i < 120; i++) {
+      // mean-reverting walk with small drift toward the anchor
+      const pull = (anchor - yes) * 0.12;
+      const shock = (rand() - 0.5) * 6;
+      yes = Math.max(2, Math.min(98, Math.round(yes + pull + shock)));
+      const no = Math.max(2, Math.min(98, 100 - yes + (rand() < 0.3 ? 1 : 0)));
+      rows.push({
+        marketId: m.id,
+        yesCents: yes,
+        noCents: no,
+        source: "SYNTHETIC",
+        capturedAt: new Date(base.getTime() + i * 5 * 60 * 1000),
+      });
+    }
+    await db.marketPriceTick.createMany({ data: rows });
+    seededTicks += rows.length;
+  }
+
+  console.log("seed complete:", { userId: user.id, robots: ROBOTS.length, matrix: SEED_MATRIX.length, syntheticTicks: seededTicks });
 }
 
 main()
