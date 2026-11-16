@@ -1,0 +1,272 @@
+// FAIDA Predict — walking skeleton schema (Phase 1, R-03)
+// Money is ALWAYS integer cents (S-09: no floats anywhere).
+// States are app-level unions stored as strings (SQLite).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String?
+  country        String   @default("NL") // ISO 3166-1 alpha-2, checked against EligibilityRule
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  wallets        Wallet[]
+  robots         Robot[]
+  ledgerEntries  LedgerEntry[]
+  notifications  Notification[]
+  riskConfigs    RiskConfig[]
+  orders         Order[]
+}
+
+// B1 decision: SELF-CUSTODY — we store the address only, never keys.
+model Wallet {
+  id           String   @id @default(cuid())
+  userId       String
+  address      String   @unique
+  chainId      Int      @default(137) // Polygon
+  signingModel String   @default("SELF_CUSTODY_EIP712") // never "PLATFORM_CUSTODY"
+  label        String?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model Robot {
+  id               String    @id @default(cuid())
+  userId           String
+  name             String
+  // PROBABILITY_EDGE | MARKET_MAKING | AI_RESEARCH | ARBITRAGE (planned)
+  family           String
+  // RUNNING | PAUSED_BY_RISK | PAUSED_BY_USER | PAUSED_BY_AI_BUDGET | ERROR | STOPPED | PAPER_ONLY
+  status           String    @default("PAPER_ONLY")
+  statusReason     String?
+  paperMode        Boolean   @default(true) // skeleton: paper only; live blocked by Phase 7 gates
+  allocatedCents   Int       @default(0)
+  maxPositionCents Int       @default(0)
+  maxOpenPositions Int       @default(0)
+  dailyLossStopPct Int       @default(5)   // user-adjustable within platform max
+  drawdownStopPct  Int       @default(10)
+  activeVersion    Int       @default(1)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id])
+  versions         StrategyVersion[]
+  orders           Order[]
+  positions        Position[]
+  traces           DecisionTrace[]
+}
+
+// C5: strategy versions are immutable; orders record the exact version.
+model StrategyVersion {
+  id        String   @id @default(cuid())
+  robotId   String
+  version   Int
+  config    String   // JSON blob, immutable once created
+  createdAt DateTime @default(now())
+  robot     Robot    @relation(fields: [robotId], references: [id])
+}
+
+model Market {
+  id                String    @id @default(cuid())
+  venue             String    @default("POLYMARKET")
+  venueSymbol       String    @unique // gamma market id / slug
+  question          String
+  category          String    @default("unknown")
+  yesTokenId        String?
+  noTokenId         String?
+  yesPriceCents     Int?      // last book mid/best ask, 1..100
+  noPriceCents      Int?
+  liquidityCents    BigInt?
+  volumeCents       BigInt?
+  closeDate         DateTime?
+  // C16: resolution criteria surfaced; C16a: ambiguity flag blocks trading
+  resolutionSource  String?
+  ambiguityFlag     Boolean   @default(false)
+  resolvedAt        DateTime?
+  resolutionOutcome String?   // YES | NO
+  dataSource        String    @default("GAMMA_LIVE") // GAMMA_LIVE | DEMO_SNAPSHOT
+  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime  @default(now())
+  orders            Order[]
+  positions         Position[]
+  traces            DecisionTrace[]
+}
+
+// S-01: order state machine. States:
+// CREATED -> VALIDATED -> SUBMITTED -> OPEN -> PARTIALLY_FILLED -> FILLED
+// any pre-fill -> CANCELLED | REJECTED | EXPIRED
+// post-submission uncertainty -> RECONCILING -> UNKNOWN -> (reconciled) FILLED | CANCELLED | REJECTED
+// FILLED/CANCELLED/REJECTED/EXPIRED are terminal.
+model Order {
+  id                String    @id @default(cuid())
+  userId            String
+  robotId           String?
+  marketId          String
+  strategyVersionId String?   // the exact version that produced this order (C5)
+  mode              String    @default("PAPER") // PAPER | LIVE
+  side              String    // BUY_YES | BUY_NO
+  state             String    @default("CREATED")
+  stateReason       String?
+  priceCents        Int       // limit price 1..100
+  sizeCents         Int       // notional in cents
+  filledCents       Int       @default(0)
+  feeCents          Int       @default(0)
+  venueOrderId      String?
+  idempotencyKey    String    @unique // S-03 composition
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id])
+  robot             Robot?    @relation(fields: [robotId], references: [id])
+  market            Market    @relation(fields: [marketId], references: [id])
+  events            OrderEvent[]
+  fills             Fill[]
+  reconciliation    ReconciliationEntry[]
+}
+
+// Immutable journal: every transition of the S-01 machine is recorded.
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  fromState String
+  toState   String
+  reason    String
+  detail    String?  // JSON: actor, lease id, error class...
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id])
+}
+
+model Fill {
+  id        String   @id @default(cuid())
+  orderId   String
+  priceCents Int
+  sizeCents Int
+  feeCents  Int      @default(0)
+  venue     String   @default("PAPER_BOOK")
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id])
+}
+
+model Position {
+  id           String   @id @default(cuid())
+  robotId      String
+  marketId     String
+  side         String   // YES | NO
+  sizeCents    Int
+  avgPriceCents Int
+  status       String   @default("OPEN") // OPEN | CLOSED | SETTLED
+  openedAt     DateTime @default(now())
+  closedAt     DateTime?
+  robot        Robot    @relation(fields: [robotId], references: [id])
+  market       Market   @relation(fields: [marketId], references: [id])
+}
+
+// P-02: virtual paper ledger — separate from any future live ledger by `mode`.
+model LedgerEntry {
+  id              String   @id @default(cuid())
+  userId          String
+  mode            String   @default("PAPER") // PAPER | LIVE
+  type            String   // DEPOSIT | FILL | FEE | SETTLEMENT | ADJUSTMENT
+  amountCents     Int      // signed
+  balanceAfterCents Int
+  refId           String?  // orderId / settlement ref
+  memo            String?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+// S-02: transactional outbox — written in the SAME transaction as state changes.
+model OutboxEvent {
+  id            String    @id @default(cuid())
+  aggregateType String    // ORDER | ROBOT | LEDGER | RECONCILIATION
+  aggregateId   String
+  eventType     String    // ORDER_STATE_CHANGED | RISK_PAUSE | ...
+  payload       String    // JSON
+  status        String    @default("PENDING") // PENDING | DISPATCHED | FAILED
+  attempts      Int       @default(0)
+  createdAt     DateTime  @default(now())
+  dispatchedAt  DateTime?
+}
+
+// S-04: reconciliation of venue truth vs local state.
+model ReconciliationEntry {
+  id           String    @id @default(cuid())
+  orderId      String
+  venueOrderId String?
+  kind         String    // MISSING_ON_VENUE | UNKNOWN_STATE | AMOUNT_MISMATCH | RESOLVED
+  detail       String?
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+  order        Order     @relation(fields: [orderId], references: [id])
+}
+
+// A-08: every robot decision, trade or no-trade, is recorded with its checks.
+model DecisionTrace {
+  id                String   @id @default(cuid())
+  robotId           String
+  marketId          String
+  strategyVersionId String?
+  trigger           String   // SCHEDULE_TICK | MARKET_EVENT | MANUAL
+  modelEstimatePct  Int?     // 0..100 (paper skeleton: heuristic estimate)
+  marketPriceCents  Int?
+  edgeNetPct        Int?     // signed, net of fees
+  decision          String   // TRADE | NO_TRADE
+  reason            String
+  riskChecks        String   // JSON array [{check, passed, detail}]
+  createdAt         DateTime @default(now())
+  robot             Robot    @relation(fields: [robotId], references: [id])
+  market            Market   @relation(fields: [marketId], references: [id])
+}
+
+// C10/B5: two-tier risk config. PLATFORM rows are founder-set maximums;
+// USER/ROBOT rows may only be stricter.
+model RiskConfig {
+  id        String  @id @default(cuid())
+  scope     String  // PLATFORM | USER | ROBOT
+  userId    String?
+  robotId   String?
+  key       String  // DAILY_LOSS_STOP_PCT | DRAWDOWN_STOP_PCT | PER_EVENT_EXPOSURE_PCT | AI_MONTHLY_BUDGET_CENTS ...
+  valueNum  Int
+  user      User?   @relation(fields: [userId], references: [id])
+}
+
+// C4.5: eligibility matrix — editable config, never hardcoded.
+model EligibilityRule {
+  id      String  @id @default(cuid())
+  country String  @unique // ISO alpha-2
+  allowed Boolean
+  reason  String? // e.g. "Venue geo-block", "Sanctioned jurisdiction", "Counsel review pending"
+  source  String  @default("PLATFORM") // PLATFORM | VENUE | SANCTION_LIST
+}
+
+// A-06/A-07: provider-agnostic AI gateway config. Any provider key makes it work.
+model AiProvider {
+  id                String  @id @default(cuid())
+  name              String  @unique // GLM | OPENAI | ANTHROPIC | OPENAI_COMPATIBLE
+  enabled           Boolean @default(false)
+  model             String  @default("glm-4.6")
+  apiKey            String? // stored server-side, NEVER returned by APIs (masked only)
+  baseUrl           String? // for OPENAI_COMPATIBLE
+  priority          Int     @default(100) // lower = tried first
+  monthlyBudgetCents Int    @default(10000)
+  spentCents        Int     @default(0)
+  updatedAt         DateTime @updatedAt
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  severity  String    // CRITICAL | WARNING | INFO
+  family    String    // RISK | EXECUTION | AI_BUDGET | SYSTEM
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id])
+}
