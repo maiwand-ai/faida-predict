@@ -16,6 +16,7 @@ import {
   type LedgerRowDTO,
   type RiskViewDTO,
   type EligibilityRuleDTO,
+  type ProbabilityDTO,
 } from "./types";
 import { c, card, mono, fmtCents, VenueBadge, venueScopeStyle } from "./ui";
 import { LIVE_VENUE_IDS, ROLE_LABEL, VENUE_LABEL, VENUES } from "@/lib/venues";
@@ -45,6 +46,7 @@ export default function FaidaApp() {
   const [ordersData, setOrdersData] = useState<{ orders: OrderRowDTO[]; ledger: LedgerRowDTO[] } | null>(null);
   const [riskView, setRiskView] = useState<RiskViewDTO | null>(null);
   const [eligibility, setEligibility] = useState<EligibilityRuleDTO[]>([]);
+  const [probability, setProbability] = useState<ProbabilityDTO | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [tradeMarket, setTradeMarket] = useState<MarketDTO | null>(null);
   // venue-first navigation: dashboard → venue workspace → studio pre-scoped
@@ -83,14 +85,23 @@ export default function FaidaApp() {
       if (json?.rules) setEligibility(json.rules);
     } catch { /* transient */ }
   }, []);
+  // Phase 5: model registry + AI governance state (Settings cards)
+  const refreshProbability = useCallback(async () => {
+    try {
+      const res = await fetch("/api/probability");
+      if (res.ok) setProbability(await safeJson<ProbabilityDTO>(res));
+    } catch { /* transient */ }
+  }, []);
 
   useEffect(() => {
     refreshDashboard();
     refreshMarkets();
     refreshOrders();
+    refreshProbability();
     const t = setInterval(refreshDashboard, 15000);
-    return () => clearInterval(t);
-  }, [refreshDashboard, refreshMarkets, refreshOrders]);
+    const t5 = setInterval(refreshProbability, 15000);
+    return () => { clearInterval(t); clearInterval(t5); };
+  }, [refreshDashboard, refreshMarkets, refreshOrders, refreshProbability]);
 
   const post = useCallback(
     async (url: string, body: unknown, okMsg: string) => {
@@ -172,7 +183,7 @@ export default function FaidaApp() {
                 <span className={`text-[14px] font-bold tracking-wide ${c.text}`}>FAIDA</span>
                 <span className={`text-[9px] font-bold tracking-[0.2em] ${c.bright}`}>PREDICT</span>
               </div>
-              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 4</div>
+              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 5</div>
             </div>
           </div>
           <nav className="flex flex-col gap-1">
@@ -271,6 +282,7 @@ export default function FaidaApp() {
                 dash={dash}
                 riskView={riskView}
                 eligibility={eligibility}
+                probability={probability}
                 onSaveRisk={async (key, value) => {
                   await fetch("/api/risk", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ key, value }) });
                   toast({ title: "Risk limit updated", description: `${key} → clamped to platform max if looser` });
@@ -290,12 +302,19 @@ export default function FaidaApp() {
                   else toast({ title: "Refused", description: String(json?.error ?? "empty response"), variant: "destructive" });
                   refreshEligibility();
                 }}
-                onOpenRisk={() => { refreshRisk(); }}
+                onProbabilityAction={async (body, okMsg) => {
+                  const res = await fetch("/api/probability", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+                  const json = await safeJson<{ ok?: boolean; error?: string; detail?: string }>(res);
+                  if (res.ok && json?.ok) toast({ title: okMsg, description: json.detail ?? "" });
+                  else toast({ title: "Refused", description: String(json?.error ?? json?.detail ?? "empty response"), variant: "destructive" });
+                  refreshProbability();
+                }}
+                onOpenRisk={() => { refreshRisk(); refreshProbability(); }}
               />
             )}
           </main>
           <footer className={`border-t ${c.border} px-6 py-3 text-center text-[11px] ${c.text3}`}>
-            FAIDA Predict — Phase 4 (venue #3 Limitless · thin-liquidity structural rules · A-04 exposure clustering). All figures paper-labeled per D-03/D-05. Live trading requires Phase 7 gates + explicit authorization.
+            FAIDA Predict — Phase 5 (probability & AI layer hardening · A-01 model registry · A-02 provenance · A-06 screening · A-07 governance). All figures paper-labeled per D-03/D-05. Live trading requires Phase 7 gates + explicit authorization.
           </footer>
         </div>
       </div>

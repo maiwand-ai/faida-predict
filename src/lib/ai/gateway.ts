@@ -3,6 +3,8 @@
 // priority order. The gateway tries each enabled provider in turn and falls
 // back to the deterministic heuristic estimator when none is configured.
 // Server-side only. Keys are never returned to the client (masked only).
+// Phase 5 (A-07): every attempt is logged (AiCallLog: latency, cost, outcome)
+// and crossing a provider budget raises an AI_BUDGET notification once.
 import { db } from "@/lib/db";
 
 export interface EstimateResult {
@@ -21,24 +23,72 @@ interface ProviderRow {
   spentCents: number;
 }
 
-export async function estimateWithAi(question: string, marketPct: number): Promise<EstimateResult | null> {
+export async function estimateWithAi(question: string, marketPct: number, cacheLabel: "NONE" | "MISS" = "NONE"): Promise<EstimateResult | null> {
   const providers = await db.aiProvider.findMany({
     where: { enabled: true, OR: [{ apiKey: { not: null } }, { name: "GLM" }] }, // GLM runs keyless via SDK
     orderBy: { priority: "asc" },
   });
   for (const p of providers) {
-    if (p.spentCents >= p.monthlyBudgetCents) continue; // A-07: budget gate per provider
+    if (p.spentCents >= p.monthlyBudgetCents) {
+      // A-07: budget gate per provider — the blocked attempt is logged so the
+      // governance card shows WHY an estimate came from the heuristic.
+      await logCall({ provider: p.name, model: p.model, latencyMs: 0, costCents: 0, outcome: "BUDGET_BLOCKED", cache: "NONE" });
+      continue;
+    }
+    const t0 = Date.now();
     try {
       const result = await callProvider(p, question, marketPct);
+      const latencyMs = Date.now() - t0;
       if (result) {
-        await db.aiProvider.update({ where: { id: p.id }, data: { spentCents: { increment: 2 } } }); // ~$0.02/call bookkeeping
+        const before = p.spentCents;
+        const after = await db.aiProvider.update({ where: { id: p.id }, data: { spentCents: { increment: 2 } }, select: { spentCents: true } }); // ~$0.02/call bookkeeping
+        await logCall({ provider: p.name, model: p.model, latencyMs, costCents: 2, outcome: "OK", cache: cacheLabel });
+        await maybeBudgetNotification(p, before, after.spentCents);
         return result;
       }
-    } catch {
+      await logCall({ provider: p.name, model: p.model, latencyMs, costCents: 0, outcome: "FAILED", cache: cacheLabel });
+    } catch (e) {
+      await logCall({ provider: p.name, model: p.model, latencyMs: Date.now() - t0, costCents: 0, outcome: "FAILED", cache: cacheLabel });
       // try the next provider; failures are never silent in production logs
+      console.error("[ai-gateway] provider attempt failed:", String(e).slice(0, 160));
     }
   }
   return null; // caller falls back to the heuristic estimator
+}
+
+async function logCall(row: { provider: string; model: string; latencyMs: number; costCents: number; outcome: string; cache: string }) {
+  try {
+    await db.aiCallLog.create({
+      data: { providerName: row.provider, model: row.model, latencyMs: row.latencyMs, costCents: row.costCents, outcome: row.outcome, cache: row.cache },
+    });
+  } catch {
+    // logging must never break estimation
+  }
+}
+
+// A-07: crossing 100% of a provider budget raises ONE AI_BUDGET notification
+// (guarded by the before/after comparison — no storms).
+let budgetNotified = new Set<string>();
+async function maybeBudgetNotification(p: ProviderRow, before: number, after: number): Promise<void> {
+  if (before < p.monthlyBudgetCents && after >= p.monthlyBudgetCents && !budgetNotified.has(p.name)) {
+    budgetNotified.add(p.name);
+    const user = await db.user.findUnique({ where: { email: "founder@faida.local" }, select: { id: true } });
+    if (user) {
+      await db.notification.create({
+        data: {
+          userId: user.id,
+          severity: "WARNING",
+          family: "AI_BUDGET",
+          title: `AI provider ${p.name} hit its monthly budget`,
+          body: `Spend ${after}¢ reached the ${p.monthlyBudgetCents}¢ budget — further AI estimates fall back to the heuristic baseline until the budget is raised or the month resets (A-07).`,
+        },
+      });
+    }
+  }
+}
+
+export function resetBudgetNotificationGuard(): void {
+  budgetNotified.clear();
 }
 
 async function callProvider(p: ProviderRow, question: string, marketPct: number): Promise<EstimateResult | null> {

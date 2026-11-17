@@ -1,4 +1,4 @@
-// FAIDA Predict — schema (Phase 3: autonomy, Manifold harness, safety layer)
+// FAIDA Predict — schema (Phase 5: probability & AI layer hardening)
 // Money is ALWAYS integer cents (S-09: no floats anywhere).
 // States are app-level unions stored as strings (SQLite).
 
@@ -265,21 +265,78 @@ model ReconciliationEntry {
 }
 
 // A-08: every robot decision, trade or no-trade, is recorded with its checks.
+// Phase 5 (A-02): every trace names the exact model that produced the
+// estimate and carries the full provenance envelope (evidence hash, prompt
+// hash, screening verdict, cache state, latency) — a forecast without
+// provenance is not evidence and the edge gate refuses it.
 model DecisionTrace {
   id                String   @id @default(cuid())
   robotId           String
   marketId          String
   strategyVersionId String?
   trigger           String   // SCHEDULE_TICK | MARKET_EVENT | MANUAL
-  modelEstimatePct  Int?     // 0..100 (paper skeleton: heuristic estimate)
+  modelEstimatePct  Int?     // 0..100 — estimate of the producing model
   marketPriceCents  Int?
   edgeNetPct        Int?     // signed, net of fees
   decision          String   // TRADE | NO_TRADE
   reason            String
   riskChecks        String   // JSON array [{check, passed, detail}]
+  modelKey          String?  // A-01/A-02: "heuristic-contrarian-v1" | "ai:GLM/glm-4.6" | ...
+  provenance        String?  // A-02 JSON envelope (see src/lib/probability/estimate.ts)
   createdAt         DateTime @default(now())
   robot             Robot    @relation(fields: [robotId], references: [id])
   market            Market   @relation(fields: [marketId], references: [id])
+
+  @@index([modelKey])
+}
+
+// A-01: model registry — every estimator is a row. The ACTIVE model drives
+// robot decisions; candidates accumulate calibration evidence; a model whose
+// calibration degrades past the baseline tolerance is DEMOTED (drill-tested).
+// Exactly one ACTIVE model at a time; the baseline heuristic always exists as
+// the floor every model must beat (A-03).
+model ProbabilityModel {
+  id            String    @id @default(cuid())
+  key           String    @unique // "heuristic-contrarian-v1" | "ai:GLM/glm-4.6"
+  kind          String    @default("HEURISTIC") // HEURISTIC | AI
+  providerName  String?   // for AI kind: AiProvider.name
+  providerModel String?   // for AI kind: AiProvider.model
+  status        String    @default("CANDIDATE") // ACTIVE | CANDIDATE | DEMOTED | RETIRED
+  notes         String?
+  // A-01 calibration snapshot (JSON): {n, nLive, nSynthetic, brier,
+  // logLoss, baselineBrier, deltaPts, eligible, computedAt}
+  calibration   String?
+  promotedAt    DateTime?
+  demotedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// A-07: estimate cache — same (provider, model, market state) within the TTL
+// returns the cached estimate with zero cost and cache=HIT provenance.
+model AiCacheEntry {
+  id           String   @id @default(cuid())
+  cacheKey     String   @unique // sha256(provider|model|question|marketPct)
+  providerName String
+  model        String
+  estimatePct  Int
+  basis        String
+  createdAt    DateTime @default(now())
+}
+
+// A-07: every AI call attempt is logged with cost, latency and outcome —
+// the governance card and the B10 evidence read this, never folklore.
+model AiCallLog {
+  id           String   @id @default(cuid())
+  providerName String
+  model        String
+  cache        String   @default("NONE") // HIT | MISS | NONE
+  latencyMs    Int      @default(0)
+  costCents    Int      @default(0)
+  outcome      String   // OK | FAILED | BUDGET_BLOCKED | SCREENED
+  createdAt    DateTime @default(now())
+
+  @@index([providerName, createdAt])
 }
 
 // C10/B5: two-tier risk config. PLATFORM rows are founder-set maximums;
@@ -349,3 +406,7 @@ model RobotLease {
   acquiredAt DateTime @default(now())
   expiresAt  DateTime
 }
+
+// A-04 event clustering note: eventKey carries the A-01/A-04 stacking key for
+// risk; the A-01 model registry above carries the calibration key. Traces
+// reference models by key (modelKey) so calibration survives provider edits.

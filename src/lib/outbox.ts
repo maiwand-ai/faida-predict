@@ -4,7 +4,7 @@
 import { db } from "@/lib/db";
 import { EMAIL_EVENT_TYPES, emailSubjectFor, notifyEnvStatus, sendEmail } from "@/lib/notify";
 
-export type OutboxAggregate = "ORDER" | "ROBOT" | "LEDGER" | "RECONCILIATION";
+export type OutboxAggregate = "ORDER" | "ROBOT" | "LEDGER" | "RECONCILIATION" | "MODEL";
 export type OutboxEventType =
   | "ORDER_STATE_CHANGED"
   | "ORDER_FILLED"
@@ -14,7 +14,9 @@ export type OutboxEventType =
   | "RECONCILIATION_OPENED"
   | "RECONCILIATION_RESOLVED"
   | "PLATFORM_PAUSED"
-  | "PLATFORM_RESUMED";
+  | "PLATFORM_RESUMED"
+  | "MODEL_PROMOTED"
+  | "MODEL_DEMOTED";
 
 export interface OutboxDraft {
   aggregateType: OutboxAggregate;

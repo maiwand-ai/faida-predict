@@ -49,6 +49,9 @@ export interface TraceDTO {
   marketPriceCents: number | null;
   edgeNetPct: number | null;
   riskChecks: string;
+  // Phase 5 (A-02): the producing model + provenance envelope.
+  modelKey?: string | null;
+  provenance?: string | null;
   createdAt: string;
   robot?: { name: string };
   market?: { question: string; venue: string };
@@ -228,6 +231,87 @@ export interface NotifyStatusDTO {
   from: string | null;
   last24h: { sent: number; failed: number; noKey: number };
   note: string;
+}
+
+// Phase 5 — A-01 model registry / A-03 baseline / A-07 governance / B10 gate
+export interface CalibrationDTO {
+  n: number;
+  nLive: number;
+  nSynthetic: number;
+  brier: number;
+  logLoss: number;
+  baselineBrier: number;
+  deltaPct: number;
+  eligible: boolean;
+  demote: boolean;
+  computedAt: string;
+  window: string;
+}
+
+export interface ModelRowDTO {
+  key: string;
+  kind: string;
+  providerName: string | null;
+  providerModel: string | null;
+  status: string;
+  notes: string | null;
+  calibration: CalibrationDTO | null;
+  promotedAt: string | null;
+  demotedAt: string | null;
+}
+
+export interface BaselineDTO {
+  key: string;
+  version: number;
+  formula: string;
+  tiltPct: number;
+  kind: string;
+  recordedIn: string;
+}
+
+export interface ModelKnobsDTO {
+  minSamples: number;
+  promotionMarginPct: number;
+  demotionTolerancePct: number;
+}
+
+export interface ProviderGovernanceDTO {
+  name: string;
+  enabled: boolean;
+  spentCents: number;
+  monthlyBudgetCents: number;
+  budgetUsedPct: number;
+  calls24h: number;
+  blocked24h: number;
+  p50Ms: number | null;
+  p95Ms: number | null;
+}
+
+export interface GovernanceDTO {
+  providers: ProviderGovernanceDTO[];
+  cache: { entries: number; hits24h: number; misses24h: number; hitRatePct: number };
+  totals24h: { calls: number; blocked: number; failed: number };
+}
+
+export interface EdgeGateCheckDTO {
+  check: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface EdgeGateDTO {
+  robotId: string;
+  ready: boolean;
+  checks: EdgeGateCheckDTO[];
+  generatedAt: string;
+}
+
+export interface ProbabilityDTO {
+  baseline: BaselineDTO;
+  knobs: ModelKnobsDTO;
+  models: ModelRowDTO[];
+  governance: GovernanceDTO;
+  edgeGate?: EdgeGateDTO | null;
 }
 
 // Phase 3 — platform control plane (C19/S-07 pause, P3.2 autopilot)

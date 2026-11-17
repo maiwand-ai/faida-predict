@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FAIDA Predict — Autonomous prediction-market trading",
   description:
-    "Walking skeleton: paper-trading platform core with order state machine, reconciliation, robot studio and live Polymarket market data. Live trading stays disabled until Phase 7 gates pass.",
+    "Paper-trading prediction-market platform: order state machine, reconciliation, venue adapters (Polymarket, Manifold, Limitless), model registry with calibration governance and AI cost controls. Live trading stays disabled until Phase 7 gates pass.",
   keywords: ["FAIDA Predict", "prediction markets", "trading robots", "Polymarket"],
   icons: {
     icon: "/brand/logo_mark.png",

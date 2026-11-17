@@ -1,4 +1,4 @@
-# FAIDA Predict — Phase 4 (venue #3 Limitless · thin-liquidity rules · exposure intelligence)
+# FAIDA Predict — Phase 5 (probability & AI layer hardening · model registry · provenance)
 
 Autonomous prediction-market trading platform — paper-mode core with the full
 trust architecture from the specification review brief. **All execution is
@@ -9,6 +9,37 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
 
 ## What is working
 
+- **Model registry (A-01, Phase 5)** — every estimator is a registry row
+  (`ProbabilityModel`): the baseline heuristic is the floor (A-03), AI models
+  accumulate calibration evidence as CANDIDATES and only the founder can
+  promote one (B8) once it beats the baseline by the margin over ≥30 resolved
+  forecasts; an ACTIVE model drifting worse than baseline by >5% over its
+  recent window is demoted automatically and the baseline re-activates, with
+  a MODEL_GOVERNANCE notification + MODEL outbox event. Demotion drill:
+  `bun run drill` (DRILL PASS 2026-11-17).
+- **Baseline definition (A-03, Phase 5)** — `heuristic-contrarian-v1`:
+  `est = clamp(p + round((50 − p) × tilt / 100), 2, 98)`, tilt 25, recorded
+  in DECISIONS.md and PlatformControl; baseline Brier on any sample is
+  derived analytically so comparisons can never cherry-pick their sample.
+- **Forecast provenance (A-02, Phase 5)** — every trace records `modelKey`
+  plus the provenance envelope: evidence hash (sha256 of market/venue/
+  question/book state), screening verdict, cache state, latency, estimator
+  version, and an honest `fallbackFrom` on fallbacks. Traces wear a model
+  chip (BL / AI:<PROVIDER> · cache-HIT · screening flag).
+- **Evidence integrity + prompt-injection screening (A-06, Phase 5)** —
+  market text is untrusted: instruction-override, role-impersonation,
+  prompt-leak, output-steering and control-character patterns are screened
+  before any AI prompt; flagged evidence fails closed to the baseline with
+  the FLAGGED verdict in the trace.
+- **AI cost & latency governance (A-07, Phase 5)** — every attempt logged
+  (`AiCallLog`: latency, cost, OK/FAILED/BUDGET_BLOCKED); identical estimates
+  served from the cache within the TTL free; budget-blocked providers logged
+  and honestly fallen back; Settings card shows calls, p50/p95, hit rate and
+  per-provider spend bars.
+- **Edge gate evidence (B10, Phase 5)** — `GET /api/probability?robotId=…`
+  aggregates the six live-activation checks (model calibrated, provenance
+  completeness, evidence clean, backtest evidence, paper session, recorded
+  consent) — real evidence now; the gate stays `ready=false` until Phase 7.
 - **Order state machine (S-01)** — CREATED → VALIDATED → SUBMITTED → FILLED,
   with RECONCILING/UNKNOWN states that only reconciliation evidence can
   resolve. Every transition is journaled (`OrderEvent`).
@@ -88,16 +119,18 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
 - **Eligibility matrix (C4.5)** — editable per-country allow/block with a hard
   sanction-list invariant; default-deny for unknown countries.
 - **AI gateway (A-06)** — provider-agnostic: GLM (keyless via SDK), OpenAI,
-  Anthropic, any OpenAI-compatible base URL. Heuristic estimator fallback.
+  Anthropic, any OpenAI-compatible base URL. One estimator chain since
+  Phase 5: ACTIVE registry model → screening → cache → gateway → baseline
+  fallback; unproven candidates never estimate for robots.
 - **Decision traces (A-08)** — every robot decision, trade or no-trade, with
-  model estimate, fee-adjusted net edge and all risk checks — config-driven
-  per version.
+  model estimate, fee-adjusted net edge, all risk checks — config-driven per
+  version, and since Phase 5 fully provenance-stamped (A-02).
 - **UI** — venue-first dashboard cockpit: KPI band, in-trade table, venue
   grid (per-venue color identity, B12) → venue workspaces (robots, markets
-  with the TOUCH depth column, positions, orders, traces); Robot Studio
-  (wizard + **Strategy Lab**); Trading (ticket + orders + ledger +
-  reconciliation drill); Settings (risk, AI providers, dispatcher status,
-  eligibility).
+  with the TOUCH depth column, positions, orders, traces with model chips);
+  Robot Studio (wizard + **Strategy Lab**); Trading (ticket + orders + ledger
+  + reconciliation drill); Settings (risk, AI providers, **model registry +
+  calibration**, **AI governance**, dispatcher status, eligibility).
 
 ## Run locally
 
@@ -106,6 +139,8 @@ bun install
 bun run db:push
 bun prisma/seed.ts
 bun run conformance   # S-05 Limitless contract test against recorded fixtures
+bun run drill         # A-01 demotion drill (governance round trip)
+bun run smoke:phase5  # Phase-5 acceptance smoke against a running instance
 bun run dev           # http://localhost:3000
 ```
 
@@ -135,7 +170,14 @@ bun run dev           # http://localhost:3000
    SYNTHETIC/LIVE honesty badge.
 8. **Soak** — `bun scripts/soak.ts --duration-min 72 --interval-sec 60`
    against a running instance; the verdict lands in `soak-report.json`.
-9. **Settings** — flip an eligibility country (IR refuses); paste any LLM
+9. **Settings → Model registry** — **Recompute calibration**; watch a
+   candidate become promotion-ready; **PROMOTE** an eligible model and see
+   the baseline step down to the floor; run `bun run drill` to watch the
+   full demotion round trip (promote → corrupted window → demoted → baseline
+   back) with the audit trail in Recent activity.
+10. **Settings → AI governance** — read calls 24 h, cache hit rate, GLM
+   p50/p95 latency and the per-provider spend bars; **Clear estimate cache**.
+11. **Settings** — flip an eligibility country (IR refuses); paste any LLM
    key; tighten a risk limit; read the dispatcher card.
 
 ## API surface (all JSON)
@@ -154,6 +196,7 @@ bun run dev           # http://localhost:3000
 | `/api/risk` | GET, PUT | effective two-tier risk, set user limit |
 | `/api/settings/ai` | GET, PUT | masked providers, upsert key/config |
 | `/api/settings/notify` | GET | dispatcher status (Resend env + 24h counts) |
+| `/api/probability` | GET, POST | model registry + calibration + governance + edge gate; recompute/promote/demote/screen/cache actions |
 | `/api/eligibility` | GET, PUT | matrix, flip country (sanctions locked) |
 
 ## Deploy (Vercel + Postgres)
@@ -183,3 +226,6 @@ runner).
 9. Thin liquidity is structural, never an afterthought: venue entry rules
    live in `src/lib/venue/rules.ts` as config, the engine stays venue-blind,
    missing books fail closed (S-05/B9).
+10. Unproven models never drive decisions — only the registry ACTIVE model
+   estimates, promotion is a founder action, demotion restores the baseline,
+   and every forecast carries provenance (A-01/A-02/A-03).

@@ -10,7 +10,7 @@
 > Before closing any phase, tick its acceptance criteria here and commit the
 > tick. Nothing gets dropped because it is written down here.
 
-Last revised: 2026-11-17 (Phase 4 closed — Limitless live with structural thin-liquidity rules, A-04 clustering landed; next: Phase 5).
+Last revised: 2026-11-17 (Phase 5 closed — model registry, provenance, screening, governance, edge gate; next: Phase 6).
 
 ---
 
@@ -270,13 +270,79 @@ accounts (Phase 8). Verification evidence: `bunx tsc --noEmit` clean,
 `scripts/smoke_phase4.py` PASS (all acceptance criteria on live APIs),
 screenshot pass over the four touched views (§7.4).
 
-### Phase 5 — Probability & AI layer hardening
+### Phase 5 — Probability & AI layer hardening (DONE, commit pending push)
 
 Model registry A-01 (promotion/demotion by calibration), forecast provenance
 A-02, baseline definition A-03, evidence integrity + prompt-injection
 screening A-06, AI cost/latency governance A-07 (per-provider budgets,
 cache). The **edge gate (B10)** starts consuming real evidence here.
 Demotion drills pass before this phase closes.
+
+- **P5.1 — Baseline definition (A-03).** The baseline estimator is the
+  deterministic contrarian heuristic, now a first-class registry row
+  (`heuristic-contrarian-v1`) with its formula recorded in PlatformControl
+  (`MODEL_BASELINE`) and in DECISIONS.md: `est = clamp(p + round((50 − p) ×
+  tilt / 100), 2, 98)`, tilt 25. It is the floor every model must beat; the
+  baseline Brier on any calibration sample is derived **analytically** from
+  the recorded book price, so model comparisons can never cherry-pick their
+  sample. Registry knobs (min samples 30, promotion margin 5%, demotion
+  tolerance 5%) live in PlatformControl (`MODEL_KNOBS`), not folklore.
+- **P5.2 — Model registry (A-01).** `ProbabilityModel` table + `src/lib/
+  probability/registry.ts`: every estimator is a row (HEURISTIC/AI kind,
+  ACTIVE/CANDIDATE/DEMOTED/RETIRED status); keys seen in traces register on
+  sight; legacy traces backfill their model key from the stated basis.
+  Calibration recomputes per model over resolved forecasts (Brier, log loss,
+  live/synthetic evidence split per D-03). Promotion eligibility: ≥ min
+  samples AND Brier < baseline × (1 − margin); the founder promotes via
+  Settings (B8 — humans own activation; a disabled provider's model refuses).
+  Demotion: an ACTIVE model whose recent window drifts worse than baseline ×
+  (1 + tolerance) is demoted, the baseline re-activates, WARNING notification
+  + `MODEL_DEMOTED` outbox event. Exactly one ACTIVE model drives cycles.
+  *Acceptance: demotion drills pass.* — **sandbox-verified 2026-11-17:
+  `scripts/demotion_drill.py` DRILL PASS — promotion round trip (eligible →
+  promoted → baseline steps down), corrupted-window demotion (brier 0.9016
+  vs baseline 0.4425 → DEMOTED → baseline ACTIVE), audit trail recorded,
+  post-demotion cycle estimates with the baseline.**
+- **P5.3 — Forecast provenance (A-02).** Every DecisionTrace now records
+  `modelKey` + a provenance envelope: kind, provider/model, latency, cache
+  state, `evidenceHash` (sha256 of market id, venue, question, book state),
+  screening verdict, estimator version, and an honest `fallbackFrom` when the
+  chain fell back to the baseline. The dashboard and venue workspaces show a
+  model chip on every trace (BL / AI:<PROVIDER> · cache-HIT · screening
+  flag). A forecast without provenance is not evidence.
+- **P5.4 — Evidence integrity + prompt-injection screening (A-06).**
+  `src/lib/probability/screening.ts` screens market text before any prompt:
+  instruction-override, role-impersonation, chat-template tokens, prompt-leak
+  requests, output-contract steering, JSON directive smuggling, control
+  characters. Flagged evidence never reaches an AI prompt — fail-closed, the
+  baseline estimates and the trace carries the FLAGGED verdict.
+  *Acceptance: injected market text produces a FLAGGED trace estimated by the
+  baseline.* — **sandbox-verified 2026-11-17 (smoke P5-2).**
+- **P5.5 — AI cost/latency governance (A-07).** Every AI attempt lands in
+  `AiCallLog` (provider, latency, cost, outcome OK/FAILED/BUDGET_BLOCKED);
+  `AiCacheEntry` serves identical (provider, model, market state) estimates
+  within the TTL free (`AI_CACHE_TTL_S`, default 6 h); crossing a provider
+  budget raises ONE `AI_BUDGET` notification and budget-blocked attempts are
+  logged, never silent. Settings card: calls 24 h, failed/blocked, p50/p95
+  latency, cache hit rate, per-provider spend bars.
+  *Acceptance: second identical estimate is a HIT; zero-budget provider logs
+  BUDGET_BLOCKED and the trace states the fallback.* — **sandbox-verified
+  2026-11-17 (smoke P5-4).**
+- **P5.6 — Edge gate consumes evidence (B10).** `src/lib/probability/
+  edgeGate.ts` + `GET /api/probability?robotId=…` aggregate the six evidence
+  checks: MODEL_CALIBRATED (active model vs baseline floor), PROVENANCE_
+  COMPLETENESS (≥95% of recent traces carry provenance), EVIDENCE_CLEAN (no
+  trades on flagged evidence), BACKTEST_EVIDENCE (A-05), PAPER_SESSION (≥20
+  traces), RECORDED_CONSENT_C25 (false by contract until Phase 7). The gate
+  reports honestly and `ready` stays false — Phase 7 owns the execution
+  gates. **sandbox-verified 2026-11-17 (smoke P5-5).**
+
+**Non-goals for Phase 5 (kept):** live orders of any kind; billing; Drift/
+Azuro/Kalshi adapters; Robot Studio UX (Phase 6); multi-user accounts
+(Phase 8). Verification evidence: `bunx tsc --noEmit` clean, `bun run lint`
+clean, `scripts/demotion_drill.py` DRILL PASS, `scripts/smoke_phase5.py`
+SMOKE PASS (28 checks on live APIs), screenshot pass over Settings (registry
++ governance cards) and dashboard traces (§7.4).
 
 ### Phase 6 — Robot Studio completion + venue #4 (Drift BET)
 

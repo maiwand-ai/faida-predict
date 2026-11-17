@@ -17,6 +17,32 @@ truth for choices that must not drift; code reads them via config, not folklore.
 | B10 | Live money gates | Edge gate + backtest (A-05 fill-model) + paper session + recorded consent (C25) before any live order | RATIFIED | `placeOrder()` on the live adapter throws by contract |
 | B11 | Venue visibility & scoping | Every robot is scoped to exactly one venue; the UI states the venue on every market, order, robot card, trace and ticket. Venues without a live adapter are visible but marked "adapter pending" and refused at robot creation (422) | RATIFIED | `src/lib/venues.ts` registry; `Robot.venue` column; cycle engine selects markets by `robot.venue`; wizard step 1 = venue picker |
 | B12 | Venue color identity | Each venue carries a distinct accent color — Polymarket `#3E8EFF`, Manifold `#14D9C4`, Limitless `#F26BC8`, Drift BET `#C6F542`, Azuro `#B18CFF`, Kalshi `#FFB25C` — used on the dashboard venue cards, the venue workspace interior (header glow/strip, primary CTA, section dots), venue badges, market sections, the studio venue picker and the trade ticket. Pending venues render their hue muted toward slate until the adapter ships. Role chips are neutral gray so the venue hue carries identity. Colors are FAIDA-internal identity, not venue brand marks | RATIFIED | `VenueDef.hex` + `VENUE_COLOR`/`venueColor` in `src/lib/venues.ts`; `vc-*` utility layer in `src/app/globals.css` (CSS var `--vc` + color-mix); applied in dashboard.tsx, app.tsx, views.tsx. Requested by the founder before Phase 4 (2026-11-16) |
+| A-03 | Baseline estimator | **heuristic-contrarian-v1**: `est = clamp(p + round((50 − p) × tilt / 100), 2, 98)`, tilt 25 — the deterministic contrarian fade of the YES book toward 50%. It is the calibration floor every registered model must beat (Brier, ≥30 resolved forecasts, 5% margin) and the fallback the platform always returns to. Baseline Brier is derived analytically from the recorded book price, so comparisons can never cherry-pick their sample | RATIFIED | `src/lib/probability/baseline.ts` + `MODEL_BASELINE` in PlatformControl; recorded with Phase 5 (2026-11-17) |
+| A-01 | Model governance | Unproven models never drive decisions: a candidate estimates nothing until the founder promotes it on calibration evidence (B8); an ACTIVE model that drifts worse than baseline by >5% over its recent window is demoted automatically and the baseline re-activates. Every promote/demote writes a MODEL_GOVERNANCE notification + MODEL outbox event. Drills must pass before a phase that touches models closes | RATIFIED | `ProbabilityModel` table + `src/lib/probability/registry.ts`; demotion drill `scripts/demotion_drill.py` |
+| A-06 | Evidence integrity | Market text is untrusted: every forecast input passes prompt-injection screening before any AI prompt, and flagged evidence fails closed to the baseline with the FLAGGED verdict recorded in the trace provenance. Every estimate carries an evidence hash binding it to its exact inputs | RATIFIED | `src/lib/probability/screening.ts`; traces carry `provenance` (A-02) since Phase 5 |
+
+## Phase-5 checkpoint status (probability & AI layer hardening)
+
+- Phase 5 scope — **locked and implemented** (2026-11-17): A-03 baseline
+  recorded as a decision (see A-03 row); A-01 model registry live with
+  calibration/promotion/demotion (demotion drill PASS — promotion round trip,
+  corrupted-window demotion, audit trail, baseline fallback re-verified);
+  A-02 provenance on every new trace (model key, evidence hash, screening,
+  cache, latency, fallback); A-06 injection screening fail-closed (injected
+  market text produced a FLAGGED trace estimated by the baseline);
+  A-07 governance (call log, cache with 6 h TTL, budget-blocked outcomes
+  logged, p50/p95 + hit-rate card); B10 edge gate now aggregates six real
+  evidence checks per robot and stays `ready=false` by contract.
+- Estimator chain — **one path, no side doors**: ACTIVE registry model →
+  screening → cache → AI gateway → baseline fallback; unproven candidates
+  never estimate for robots regardless of provider state (the pre-Phase-5
+  behavior of "any enabled key drives estimates" is retired).
+- Acceptance evidence in `docs/DEVELOPMENT_PLAN.md` §4 (Phase 5):
+  `scripts/demotion_drill.py` DRILL PASS, `scripts/smoke_phase5.py` SMOKE
+  PASS (28 checks), tsc + lint clean, screenshot pass over the Settings
+  registry/governance cards and dashboard traces.
+- Live trading — **still disabled by contract** (Phase 7 gates + explicit
+  authorization).
 
 ## Phase-4 checkpoint status (venue #3 Limitless, exposure intelligence)
 

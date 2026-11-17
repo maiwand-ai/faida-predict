@@ -280,6 +280,7 @@ export function DashboardView(props: {
             <div key={t.id} className={`border-b py-2.5 last:border-0 ${c.border}`}>
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${t.decision === "TRADE" ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#151D30]`}`}>{t.decision}</span>
+                <ModelChip modelKey={t.modelKey} provenance={t.provenance} />
                 <span className={`text-[12px] font-semibold ${c.text}`}>{t.robot?.name}</span>
                 {t.market?.venue && <VenueBadge venue={t.market.venue} withLabel={false} />}
                 <span className={`text-[11px] ${c.text3}`}>on {t.market?.question.slice(0, 60)}</span>
@@ -655,6 +656,7 @@ export function VenueWorkspace(props: {
                 <div key={t.id} className={`border-b px-4 py-2.5 last:border-0 ${c.border}`}>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${t.decision === "TRADE" ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#151D30]`}`}>{t.decision}</span>
+                    <ModelChip modelKey={t.modelKey} provenance={t.provenance} />
                     <span className={`text-[12px] font-semibold ${c.text}`}>{t.robot?.name}</span>
                     {t.modelEstimatePct != null && (
                       <span className={`ml-auto text-[11px] ${c.text2} ${mono}`}>est {t.modelEstimatePct}% · mkt {t.marketPriceCents}¢ · edge {t.edgeNetPct} pts</span>
@@ -680,6 +682,36 @@ function MiniStat({ label, value, sub, tone = "text" }: { label: string; value: 
       <div className={`mt-1 text-[18px] font-semibold ${mono} ${tone === "gain" ? c.gain : tone === "loss" ? c.loss : c.text}`}>{value}</div>
       <div className={`mt-0.5 text-[9.5px] ${c.text3}`}>{sub}</div>
     </div>
+  );
+}
+
+// Phase 5 (A-02): which estimator produced this forecast — visible on every
+// trace. BL = baseline heuristic, AI:<PROVIDER> = registry AI model; a cache
+// hit or a screening flag is stated so provenance is glanceable (D-03 style).
+function ModelChip({ modelKey, provenance }: { modelKey?: string | null; provenance?: string | null }) {
+  if (!modelKey) return null;
+  let cache: string | null = null;
+  let flagged = false;
+  try {
+    const p = provenance ? (JSON.parse(provenance) as { cache?: string; screening?: string }) : null;
+    cache = p?.cache ?? null;
+    flagged = p?.screening === "FLAGGED";
+  } catch {
+    /* provenance is optional metadata */
+  }
+  const isAI = modelKey.startsWith("ai:");
+  const label = isAI ? `AI:${modelKey.slice(3).split("/")[0]}` : "BL";
+  return (
+    <span
+      title={`${modelKey}${cache ? " · cache " + cache : ""}${flagged ? " · A-06 screening FLAGGED" : ""}`}
+      className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${
+        isAI ? `text-[#C9A6FF] bg-[#C9A6FF]/10` : `${c.text3} bg-[#151D30]`
+      }`}
+    >
+      {label}
+      {cache === "HIT" && <span className="text-[#2FC08E]"> ·C</span>}
+      {flagged && <span className="text-[#F0525F]"> ·A-06</span>}
+    </span>
   );
 }
 

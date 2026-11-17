@@ -157,6 +157,62 @@ async function main(): Promise<void> {
     await db.aiProvider.upsert({ where: { name: p.name }, update: {}, create: { ...p, enabled: false } });
   }
 
+  // Phase 5 (A-01/A-03): the model registry. The baseline heuristic is the
+  // floor every model must beat; the keyless GLM slot registers as a CANDIDATE
+  // that must earn promotion through calibration evidence. An unproven model
+  // never drives decisions — that is the Phase 5 hardening contract.
+  const { BASELINE_KEY } = { BASELINE_KEY: "heuristic-contrarian-v1" }; // keep seed standalone (mirrors src/lib/probability/baseline.ts)
+  await db.probabilityModel.upsert({
+    where: { key: BASELINE_KEY },
+    update: {},
+    create: {
+      key: BASELINE_KEY,
+      kind: "HEURISTIC",
+      status: "ACTIVE",
+      notes: "A-03 baseline (v1): est = clamp(p + round((50 − p) × 25 / 100), 2, 98) — contrarian fade toward 50; recorded in DECISIONS.md",
+    },
+  });
+  for (const p of providers) {
+    if (p.name === "OPENAI_COMPATIBLE") continue; // no concrete model until configured
+    await db.probabilityModel.upsert({
+      where: { key: `ai:${p.name}/${p.model}` },
+      update: {},
+      create: {
+        key: `ai:${p.name}/${p.model}`,
+        kind: "AI",
+        providerName: p.name,
+        providerModel: p.model,
+        status: "CANDIDATE",
+        notes: "registered from the provider lineup — accumulates calibration evidence; promotion is a founder action (B8)",
+      },
+    });
+  }
+  await db.platformControl.upsert({
+    where: { key: "MODEL_BASELINE" },
+    update: {},
+    create: {
+      key: "MODEL_BASELINE",
+      value: JSON.stringify({
+        key: BASELINE_KEY,
+        version: 1,
+        formula: "est = clamp(p + round((50 - p) * tilt / 100), 2, 98) — contrarian fade of the YES book toward 50%",
+        tiltPct: 25,
+        kind: "HEURISTIC",
+        recordedIn: "DECISIONS.md (A-03 baseline definition, Phase 5)",
+      }),
+    },
+  });
+  await db.platformControl.upsert({
+    where: { key: "MODEL_KNOBS" },
+    update: {},
+    create: { key: "MODEL_KNOBS", value: JSON.stringify({ minSamples: 30, promotionMarginPct: 5, demotionTolerancePct: 5 }) },
+  });
+  await db.platformControl.upsert({
+    where: { key: "AI_CACHE_TTL_S" },
+    update: {},
+    create: { key: "AI_CACHE_TTL_S", value: JSON.stringify(21600) }, // 6 h
+  });
+
   if ((await db.notification.count({ where: { userId: user.id } })) === 0) {
     await db.notification.create({
       data: {

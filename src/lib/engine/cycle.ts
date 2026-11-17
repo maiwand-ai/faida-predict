@@ -1,7 +1,8 @@
 // Robot evaluation cycle — one tick per robot.
 // Heuristic estimator by default (deterministic, no key required); upgrades to
-// the AI gateway automatically when any provider key is enabled (A-06).
-// Every decision — trade or no-trade — writes a DecisionTrace (A-08).
+// the registry ACTIVE model automatically when it is calibrated (A-01).
+// Every decision — trade or no-trade — writes a DecisionTrace (A-08), and
+// since Phase 5 every trace names the exact model + full provenance (A-02).
 // Phase 2: entry/exit knobs come from the robot's active strategy version
 // (C5) and every cycle appends a MarketPriceTick to the A-05 recorder.
 // Phase 3: global pause gate (C19/S-07, propagation measured), per-robot
@@ -9,12 +10,14 @@
 // Phase 4: edge computed AFTER venue taker fees (rule b — fee schedule is
 // stored on the market at sync), risk checks carry the entry side so venue
 // structural rules (touch depth, per-market cap) arm per venue.
+// Phase 5: single estimator chain (screen → cache → AI → baseline fallback)
+// with prompt-injection screening fail-closed and cache/cost governance.
 import { db } from "@/lib/db";
 import { parityGapCents } from "@/lib/money";
 import { feeDragPts } from "@/lib/venue/rules";
 import { placePaperOrder } from "./paper";
 import { preTradeRiskChecks } from "@/lib/risk";
-import { estimateWithAi } from "@/lib/ai/gateway";
+import { estimateForMarket } from "@/lib/probability/estimate";
 import { parseConfig, DEFAULT_CONFIG, type StrategyConfig } from "@/lib/strategy";
 import {
   acquireRobotLease,
@@ -35,15 +38,6 @@ export interface RiskCheck {
   check: string;
   passed: boolean;
   detail: string;
-}
-
-function heuristicEstimate(market: { yesPriceCents: number | null; noPriceCents: number | null }, cfg: StrategyConfig): { estimatePct: number; basis: string } {
-  // Deterministic paper heuristic: fade the book toward 50 with the strategy's
-  // configured tilt, so demo robots produce both trades and no-trades.
-  const p = market.yesPriceCents ?? 50;
-  const tilt = Math.round((50 - p) * (cfg.estimatorTiltPct / 100));
-  const est = Math.max(2, Math.min(98, p + tilt));
-  return { estimatePct: est, basis: `heuristic: contrarian tilt ${cfg.estimatorTiltPct}% of book price toward 50%` };
 }
 
 export async function recordTick(marketId: string, yesCents: number, noCents: number, source: string) {
@@ -128,9 +122,17 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
       await recordTick(market.id, market.yesPriceCents, market.noPriceCents, "CYCLE");
     }
 
-    // 1) estimate — AI when configured, strategy-config heuristic otherwise
-    const ai = await estimateWithAi(market.question, market.yesPriceCents ?? 50);
-    const est = ai ?? heuristicEstimate(market, cfg);
+    // 1) estimate — one chain: registry ACTIVE model → screen → cache → AI →
+    //    baseline fallback; every output carries the A-02 provenance envelope.
+    const est = await estimateForMarket({
+      question: market.question,
+      yesPriceCents: market.yesPriceCents,
+      noPriceCents: market.noPriceCents,
+      marketId: market.id,
+      venue: robot.venue,
+      dataSource: market.dataSource,
+      estimatorTiltPct: cfg.estimatorTiltPct,
+    });
     const marketPct = market.yesPriceCents ?? 50;
     const grossEdgePts = est.estimatePct - marketPct;
     const parity = market.yesPriceCents != null && market.noPriceCents != null ? parityGapCents(market.yesPriceCents, market.noPriceCents) : null;
@@ -176,7 +178,7 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
       reason = `no-trade: risk check failed — ${failed.check}: ${failed.detail}`;
     } else if (edgeMagnitude < cfg.minEdgePts) {
       reason = `no-trade: edge ${grossEdgePts} pts gross${feeClause} below minimum ${cfg.minEdgePts} pts net of fees (strategy v${robot.activeVersion})`;
-    } else if (est.basis.startsWith("ai:") && est.estimatePct < 3) {
+    } else if (est.provenance.kind === "AI" && est.estimatePct < 3) {
       reason = `no-trade: AI estimate unreliable (${est.estimatePct}%)`;
     } else {
       decision = "TRADE";
@@ -185,6 +187,8 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
 
     // 4) trace (A-08) — immutable record either way; edgeNetPct is the fee-
     //    adjusted edge so backtests and the live gate see the honest number.
+    //    Phase 5 (A-02): the trace names the producing model and carries the
+    //    provenance envelope — a forecast without provenance is not evidence.
     const trace = await db.decisionTrace.create({
       data: {
         robotId: robot.id,
@@ -197,6 +201,8 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
         decision,
         reason,
         riskChecks: JSON.stringify(riskChecks),
+        modelKey: est.modelKey,
+        provenance: JSON.stringify(est.provenance),
       },
     });
 

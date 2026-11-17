@@ -14,8 +14,10 @@ import {
   type EligibilityRuleDTO,
   type LedgerRowDTO,
   type MarketDTO,
+  type ModelRowDTO,
   type NotifyStatusDTO,
   type OrderRowDTO,
+  type ProbabilityDTO,
   type ProviderDTO,
   type RiskViewDTO,
   type VersionDTO,
@@ -401,9 +403,11 @@ export function SettingsView(props: {
   dash: DashboardDTO | null;
   riskView: RiskViewDTO | null;
   eligibility: EligibilityRuleDTO[];
+  probability: ProbabilityDTO | null;
   onSaveRisk: (key: string, value: number) => Promise<void>;
   onSaveProvider: (p: { id: string; apiKey?: string | null; model?: string; enabled?: boolean; baseUrl?: string | null }) => Promise<void>;
   onFlipCountry: (country: string, allowed: boolean) => Promise<void>;
+  onProbabilityAction: (body: Record<string, unknown>, okMsg: string) => Promise<void>;
   onOpenRisk: () => void;
 }) {
   const { dash, riskView, eligibility } = props;
@@ -422,7 +426,7 @@ export function SettingsView(props: {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-baseline gap-3">
         <h1 className="text-[19px] font-semibold">Settings</h1>
-        <span className={`text-[12px] ${c.text3}`}>custody, risk two-tier config, AI providers, eligibility matrix</span>
+        <span className={`text-[12px] ${c.text3}`}>custody, risk two-tier config, AI providers, model registry, eligibility matrix</span>
       </div>
 
       {/* custody */}
@@ -499,6 +503,12 @@ export function SettingsView(props: {
         </div>
       </div>
 
+      {/* model registry & calibration (Phase 5: A-01/A-03) */}
+      <ModelRegistryCard probability={props.probability} onAction={props.onProbabilityAction} />
+
+      {/* AI cost & latency governance (Phase 5: A-07) */}
+      <GovernanceCard probability={props.probability} onAction={props.onProbabilityAction} />
+
       {/* notification dispatcher (Phase 2) */}
       <NotifyCard />
 
@@ -518,6 +528,144 @@ export function SettingsView(props: {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Model registry & calibration — A-01/A-03 (Phase 5) ──────────────────────
+function ModelRegistryCard({ probability, onAction }: { probability: ProbabilityDTO | null; onAction: (body: Record<string, unknown>, okMsg: string) => Promise<void> }) {
+  const prob = probability;
+  return (
+    <div className={`${card} p-4`}>
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <div className={`text-[13px] font-semibold`}>Model registry — calibration, promotion & demotion (A-01/A-03)</div>
+        <Button size="sm" variant="outline" className="border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]"
+          onClick={() => onAction({ action: "RECOMPUTE" }, "Calibration recomputed")}>
+          Recompute calibration
+        </Button>
+      </div>
+      <div className={`mb-3 text-[11.5px] ${c.text3}`}>
+        Baseline (A-03): <span className={mono}>{prob?.baseline.key}</span> — {prob?.baseline.formula}. A candidate may drive decisions only after beating the
+        baseline by {prob?.knobs.promotionMarginPct}% Brier over ≥ {prob?.knobs.minSamples} resolved forecasts; an ACTIVE model drifting more than {prob?.knobs.demotionTolerancePct}% worse is demoted (drill-tested). Promotion is a founder action (B8).
+      </div>
+      {!prob && <div className={`py-3 text-center text-[12px] ${c.text3}`}>Loading registry…</div>}
+      {prob && (
+        <div className="flex flex-col gap-2">
+          {prob.models.map((m: ModelRowDTO) => {
+            const cal = m.calibration;
+            const statusCls =
+              m.status === "ACTIVE" ? `text-[#2FC08E] bg-[#2FC08E]/10`
+              : m.status === "DEMOTED" ? `text-[#F0525F] bg-[#F0525F]/10`
+              : m.status === "RETIRED" ? `${c.text3} bg-[#151D30]`
+              : `text-[#D9B25C] bg-[#D9B25C]/10`;
+            return (
+              <div key={m.key} className={`rounded-lg border p-3 ${c.border}`}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${statusCls}`}>{m.status}</span>
+                  <span className={`text-[12px] font-semibold ${mono} ${c.text}`}>{m.key}</span>
+                  <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#151D30]`}>{m.kind}</span>
+                  {cal && cal.eligible && m.status !== "ACTIVE" && <span className="rounded bg-[#2FC08E]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#2FC08E]">promotion-ready</span>}
+                  {cal && cal.demote && m.status === "ACTIVE" && <span className="rounded bg-[#F0525F]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#F0525F]">demotion warranted</span>}
+                  <div className="ml-auto flex gap-2">
+                    {m.status !== "ACTIVE" && (
+                      <Button size="sm" variant="outline" className="h-7 border-[#2E3C5F] bg-[#151D30] px-2 text-[10.5px] text-[#E9EEF7] hover:bg-[#1B2540]"
+                        onClick={() => onAction({ action: "PROMOTE", modelKey: m.key }, `Promote ${m.key}`)}>
+                        Promote
+                      </Button>
+                    )}
+                    {m.status === "ACTIVE" && m.key !== prob.baseline.key && (
+                      <Button size="sm" variant="outline" className="h-7 border-[#F0525F]/40 bg-[#151D30] px-2 text-[10.5px] text-[#F0525F] hover:bg-[#2A1A22]"
+                        onClick={() => onAction({ action: "DEMOTE", modelKey: m.key, reason: "manual demotion from Settings" }, `Demote ${m.key}`)}>
+                        Demote
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className={`mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] ${c.text2}`}>
+                  {cal ? (
+                    <>
+                      <span className={mono}>n {cal.n}</span>
+                      <span className={mono}>brier {cal.brier.toFixed(4)}</span>
+                      <span className={mono}>baseline {cal.baselineBrier.toFixed(4)}</span>
+                      <span className={mono}>
+                        Δ {cal.deltaPct > 0 ? "+" : ""}{cal.deltaPct.toFixed(1)}% vs baseline
+                      </span>
+                      <span className={c.text3}>evidence {cal.nLive} live / {cal.nSynthetic} synthetic (D-03)</span>
+                      <span className={c.text3}>window {cal.window}</span>
+                    </>
+                  ) : (
+                    <span className={c.text3}>no calibration yet — no resolved forecasts recorded for this model</span>
+                  )}
+                </div>
+                {m.notes && <div className={`mt-1 text-[10.5px] ${c.text3}`}>{m.notes}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── AI cost & latency governance — A-07 (Phase 5) ────────────────────────────
+function GovernanceCard({ probability, onAction }: { probability: ProbabilityDTO | null; onAction: (body: Record<string, unknown>, okMsg: string) => Promise<void> }) {
+  const g = probability?.governance;
+  return (
+    <div className={`${card} p-4`}>
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <div className={`text-[13px] font-semibold`}>AI cost & latency governance (A-07)</div>
+        <Button size="sm" variant="outline" className="border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]"
+          onClick={() => onAction({ action: "CLEAR_CACHE" }, "Estimate cache cleared")}>
+          Clear estimate cache
+        </Button>
+      </div>
+      <div className={`mb-3 text-[11.5px] ${c.text3}`}>
+        Per-provider budgets gate every call; identical estimates within the cache TTL are served free. Blocked attempts are logged, never silent — the fallback is stated in the trace.
+      </div>
+      {!g && <div className={`py-3 text-center text-[12px] ${c.text3}`}>Loading governance…</div>}
+      {g && (
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className={`rounded-lg border p-3 ${c.border}`}>
+              <div className={`text-[9px] font-semibold tracking-wider ${c.text3}`}>CALLS 24H</div>
+              <div className={`mt-1 text-[16px] font-semibold ${mono} ${c.text}`}>{g.totals24h.calls}</div>
+              <div className={`text-[9.5px] ${c.text3}`}>{g.totals24h.failed} failed · {g.totals24h.blocked} budget-blocked</div>
+            </div>
+            <div className={`rounded-lg border p-3 ${c.border}`}>
+              <div className={`text-[9px] font-semibold tracking-wider ${c.text3}`}>CACHE HIT RATE</div>
+              <div className={`mt-1 text-[16px] font-semibold ${mono} ${c.text}`}>{g.cache.hitRatePct}%</div>
+              <div className={`text-[9.5px] ${c.text3}`}>{g.cache.hits24h} hits / {g.cache.misses24h} misses · {g.cache.entries} entries</div>
+            </div>
+            {g.providers.slice(0, 2).map((p) => (
+              <div key={p.name} className={`rounded-lg border p-3 ${c.border}`}>
+                <div className={`text-[9px] font-semibold tracking-wider ${c.text3}`}>{p.name} P50 / P95</div>
+                <div className={`mt-1 text-[16px] font-semibold ${mono} ${c.text}`}>
+                  {p.p50Ms != null ? `${p.p50Ms}ms` : "—"} / {p.p95Ms != null ? `${p.p95Ms}ms` : "—"}
+                </div>
+                <div className={`text-[9.5px] ${c.text3}`}>{p.calls24h} calls 24h · {p.blocked24h} blocked</div>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col gap-2">
+            {g.providers.map((p) => (
+              <div key={p.name}>
+                <div className={`flex justify-between text-[11.5px] ${c.text2}`}>
+                  <span>{p.name}{!p.enabled && ` (disabled)`}</span>
+                  <span className={mono}>
+                    {fmtCents(p.spentCents)} / {fmtCents(p.monthlyBudgetCents)} · {p.budgetUsedPct}%
+                  </span>
+                </div>
+                <div className={`mt-1 h-1.5 w-full rounded-full ${p.budgetUsedPct >= 100 ? "bg-[#F0525F]/30" : "bg-[#151D30]"}`}>
+                  <div
+                    className={`h-1.5 rounded-full ${p.budgetUsedPct >= 100 ? "bg-[#F0525F]" : "bg-[#00B0F0]"}`}
+                    style={{ width: `${Math.min(100, p.budgetUsedPct)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
