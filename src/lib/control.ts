@@ -172,16 +172,27 @@ export interface LeaseAcquireResult {
 export async function acquireRobotLease(robotId: string, holder: string, ttlMs = LEASE_TTL_MS): Promise<LeaseAcquireResult> {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + ttlMs);
-  const existing = await db.robotLease.findUnique({ where: { robotId } });
-  if (existing && existing.expiresAt > now) {
-    return { ok: false, holder: existing.holder, expiresAt: existing.expiresAt };
+  try {
+    // Atomic claim (S-06 hardening, Phase 7.5 chaos X5): INSERT wins or loses
+    // the robotId unique constraint in one statement — the check-then-upsert
+    // this replaces had a race window under concurrent schedulers where two
+    // runners could both observe "no live lease" and both evaluate.
+    await db.robotLease.create({ data: { robotId, holder, expiresAt } });
+    return { ok: true, holder, expiresAt };
+  } catch {
+    // A lease row already exists. Takeover is a single conditional UPDATE:
+    // only an EXPIRED lease flips, and SQLite serializes the two statements,
+    // so the second contender's WHERE no longer matches and it refuses.
+    const takeover = await db.robotLease.updateMany({
+      where: { robotId, expiresAt: { lte: now } },
+      data: { holder, expiresAt, acquiredAt: now },
+    });
+    if (takeover.count === 1) {
+      return { ok: true, holder, expiresAt };
+    }
+    const existing = await db.robotLease.findUnique({ where: { robotId } });
+    return { ok: false, holder: existing?.holder, expiresAt: existing?.expiresAt };
   }
-  await db.robotLease.upsert({
-    where: { robotId },
-    create: { robotId, holder, expiresAt },
-    update: { holder, expiresAt, acquiredAt: now },
-  });
-  return { ok: true, holder, expiresAt };
 }
 
 export async function releaseRobotLease(robotId: string, holder: string): Promise<void> {

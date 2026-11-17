@@ -63,44 +63,53 @@ export async function POST(req: Request) {
   const maxOpen = Math.max(1, Math.floor(body.maxOpenPositions ?? 4));
 
   // C5: activation never happens at creation — every robot starts PAPER_ONLY.
-  const robot = await db.robot.create({
-    data: {
-      userId: user.id,
-      name: body.name.slice(0, 60),
-      family: body.family,
-      venue,
-      status: "PAPER_ONLY",
-      statusReason: "created in Robot Studio — live activation requires Phase 7 gates",
-      paperMode: true,
-      allocatedCents: allocated,
-      maxPositionCents: Math.min(maxPos, allocated),
-      maxOpenPositions: maxOpen,
-      dailyLossStopPct: Math.max(1, Math.min(50, Math.floor(body.dailyLossStopPct ?? 5))),
-      drawdownStopPct: Math.max(1, Math.min(60, Math.floor(body.drawdownStopPct ?? 10))),
+  // Phase 7.5 hardening (B5 load finding): Robot + StrategyVersion v1 +
+  // notification + outbox are ONE interactive transaction. The previous
+  // four-step version left orphaned robots (no strategy version, no journal)
+  // whenever SQLite write queueing pushed a later step past the 5 s default
+  // transaction timeout (P2028) — a robot that can never tick, silently.
+  const robot = await db.$transaction(
+    async (tx) => {
+      const r = await tx.robot.create({
+        data: {
+          userId: user.id,
+          name: body.name!.slice(0, 60),
+          family: body.family!,
+          venue,
+          status: "PAPER_ONLY",
+          statusReason: "created in Robot Studio — live activation requires Phase 7 gates",
+          paperMode: true,
+          allocatedCents: allocated,
+          maxPositionCents: Math.min(maxPos, allocated),
+          maxOpenPositions: maxOpen,
+          dailyLossStopPct: Math.max(1, Math.min(50, Math.floor(body.dailyLossStopPct ?? 5))),
+          drawdownStopPct: Math.max(1, Math.min(60, Math.floor(body.drawdownStopPct ?? 10))),
+        },
+      });
+      await tx.strategyVersion.create({
+        data: { robotId: r.id, version: 1, config: JSON.stringify(body.config ?? {}) },
+      });
+      await tx.notification.create({
+        data: {
+          userId: user.id,
+          severity: "INFO",
+          family: "SYSTEM",
+          title: `Robot created: ${r.name}`,
+          body: "Paper-only. Run the edge gate, backtest and paper session before requesting live activation.",
+        },
+      });
+      await enqueueOutbox(tx, [
+        {
+          aggregateType: "ROBOT",
+          aggregateId: r.id,
+          eventType: "ROBOT_STATE_CHANGED",
+          payload: { userId: user.id, status: "PAPER_ONLY" },
+        },
+      ]);
+      return r;
     },
-  });
-  await db.strategyVersion.create({
-    data: { robotId: robot.id, version: 1, config: JSON.stringify(body.config ?? {}) },
-  });
-  await db.notification.create({
-    data: {
-      userId: user.id,
-      severity: "INFO",
-      family: "SYSTEM",
-      title: `Robot created: ${robot.name}`,
-      body: "Paper-only. Run the edge gate, backtest and paper session before requesting live activation.",
-    },
-  });
-  await db.$transaction(async (tx) => {
-    await enqueueOutbox(tx, [
-      {
-        aggregateType: "ROBOT",
-        aggregateId: robot.id,
-        eventType: "ROBOT_STATE_CHANGED",
-        payload: { userId: user.id, status: "PAPER_ONLY" },
-      },
-    ]);
-  });
+    { timeout: 20_000, maxWait: 10_000 },
+  );
   return NextResponse.json({ robot });
 }
 

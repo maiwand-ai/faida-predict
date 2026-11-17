@@ -10,7 +10,7 @@
 > Before closing any phase, tick its acceptance criteria here and commit the
 > tick. Nothing gets dropped because it is written down here.
 
-Last revised: 2026-11-18 (Phase 7 closed — gated live automation: B10 gate stack, S-08 custody rubric executed, C25 consent, small-capital pilot, Polymarket CLOB write path under DRY-RUN send armor, C19.1 kill-switch drill executed; live sends stay held until the founder arms on the founder host).
+Last revised: 2026-11-18 (Phase 7.5 closed — hardening + closed beta readiness: six runbooks written AND drilled R1–R6, C19.1 re-executed, chaos suite executed with three in-phase fixes (atomic lease claim, atomic wizard create, WAL + connection_limit=1 posture), B5 load measured — 500 robots, p95 699 ms, 100% availability — closed-beta program locked in docs/BETA_PHASE75.md; live sends still held until the founder arms on the founder host).
 
 ---
 
@@ -510,12 +510,78 @@ regression green after the documented Settings re-baseline (the live-trading
 card joined the clipped region). S-08 custody rubric verdict recorded in
 `DECISIONS.md`.
 
-### Phase 7.5 — Hardening + closed beta (R-02, locked)
+### Phase 7.5 — Hardening + closed beta (R-02, locked) — **DONE, push pending founder PAT**
 
-Runbooks written and drilled (startup reconciliation, stuck-robot diagnosis,
-venue outage, fee update, jurisdiction update, model demotion); kill-switch
-drill C19.1 executed; load at B5 targets; chaos suite reviewed; closed-beta
-cohort (10–25, paper + small live) with weekly rounds and an exit defect bar.
+Runbooks written and drilled; C19.1 re-executed on the 7.5 cadence; load
+measured at the B5 targets; chaos suite executed and reviewed; closed-beta
+program locked. Evidence per item (all 2026-11-18, sandbox; founder-host
+reruns owed where noted):
+
+- **P75.1 — Runbooks (six, written AND drilled).** `docs/RUNBOOKS.md`: R1
+  startup reconciliation, R2 stuck-robot diagnosis, R3 venue outage, R4 fee
+  update, R5 jurisdiction update, R6 model demotion, plus the standing C19.1
+  drill and a drill matrix with evidence dates. Every procedure references
+  the real API surface, DB tables and invariants (S-01/S-04, S-06, S-10, B11,
+  C4.5, C4.4) — nothing generic.
+- **P75.2 — Runbook drills R1–R5.** `scripts/drill_phase75.py` drives each
+  procedure through the real stack, self-cleaning: DRILL PASS (28 checks) —
+  UNKNOWN order resolved via venue evidence only (S-01), drift closed (S-04),
+  outbox drained; stuck lease refuses naming the holder then takeover after
+  expiry; venue outage fails closed under an 8-tick burst naming the venue
+  (B11); a +300 bps fee bump reprices the very next tick's drag by the C4.4
+  formula (p × bps / 10000); jurisdiction flip refuses orders at ELIGIBILITY
+  and sanctioned rows stay unflippable (403, hard invariant).
+- **P75.3 — Chaos suite executed and reviewed.** `scripts/chaos_phase75.py`
+  X1–X6: CHAOS PASS (25 checks) — outage burst, adversarial freshness budget
+  (S-10 clamp honored), pause mid-burst with MEASURED propagation (C19), B10
+  flip fail-closed with named blockers, 12-way lease storm against a held
+  lease, UNKNOWN-never-fills-without-evidence (no money movement). **Review
+  verdict: the suite earned its keep — it exposed two real races and one
+  config hazard, all fixed in-phase:** (1) `acquireRobotLease` was check-
+  then-upsert; under concurrent schedulers three contenders could win one
+  epoch — now an atomic INSERT-or-conditional-takeover (S-06 hardening, X5
+  re-verified); (2) the Robot Studio wizard wrote Robot + StrategyVersion +
+  notification + outbox in four steps — under SQLite write queueing the
+  transaction expired (P2028) leaving orphaned robots that can never tick —
+  now one interactive transaction (timeout 20 s, maxWait 10 s); (3) DELETE
+  journal mode + untuned Prisma pool convoyed under concurrent transactions
+  (5 s socket-timeout quantization, P1008/P2028) — posture now
+  `journal_mode=wal` (persistent) + `DATABASE_URL
+  …?connection_limit=1&pool_timeout=120` (documented in DECISIONS.md; the R1
+  startup check references it).
+- **P75.4 — Load at B5 targets.** `scripts/load_phase75.py`: 500 robots
+  seeded through the real wizard API, every robot ticked concurrently through
+  the per-robot tick endpoint (`POST /api/robots/[id]/cycle`, added in 7.5 —
+  the S-06 leases make external schedulers safe), health probed across the
+  window. **B5 PASS at the protocol concurrency (16):** 500/500 ticks, zero
+  5xx, 500/500 DecisionTraces, decision latency p95 **699 ms ≤ 750 ms**
+  (p50 339 ms), availability **100% ≥ 99.5%** (20/20 probes), throughput
+  44 robots/s. Stress pass at a 32-way lockstep burst recorded honestly:
+  capacity and availability still hold (500/500, 100%) but p95 is 977 ms —
+  a lockstep burst exceeds the latency budget; paced schedulers do not.
+  D-03 labeling: sandbox dev server, SQLite — the founder-host production
+  re-run is owed before the live pilot scales (beta exit item 5).
+- **P75.5 — Closed beta program locked.** `docs/BETA_PHASE75.md`: cohort
+  10–25 (paper + small live under the Phase 7 ceilings), six-step weekly
+  rounds (R-0..R-5) with a per-round runbook rehearsal and C19.1 drill, S0–S3
+  defect ladder, and a measurable exit defect bar (zero open S0/S1, ≤ 3 open
+  S2, invariants re-verified ≤ 7 days, all runbooks drilled ≤ 14 days, B5
+  founder-host pass, 72 h soak, DRY-RUN live-pilot sanity, cohort signal).
+  Round 1 starts on founder-host readiness (PAT + B3 sign-off).
+- **P75.6 — Acceptance smoke.** `scripts/smoke_phase75.py`: SMOKE PASS
+  (P75-1..P75-9, isolation-run) — docs checks, R1–R5 + R6 + C19.1 + chaos +
+  B5-short as subprocesses, per-robot endpoint graceful degradation, platform
+  ends SAFE (pause off, paper-only).
+- **Verification protocol:** `bunx tsc --noEmit` clean, `bun run lint` clean,
+  smoke_phase4 + smoke_phase5 regression re-runs PASS (isolated). Carry-
+  forward updates: B5 latency p95 + load measured (row below); C19.1 moves to
+  the 7.5 monthly/beta-round cadence; R-01 defaults stand, founder-host
+  revisit owed at the live pilot.
+
+**Non-goals for Phase 7.5 (kept):** no billing (Phase 8, B4 pricing owed); no
+Azuro/Kalshi adapters (Phases 8/9); no ARMED live send (founder authorization
+on the founder host); beta round 1 does NOT start until the founder host is
+ready — the program doc is the contract, not a claim that users exist.
 
 ### Phase 8 — Commercial platform + venue #5 (Azuro)
 
@@ -536,14 +602,14 @@ These are scheduled spec obligations that no phase may silently drop:
 | Item | Obligation | When |
 |------|-----------|------|
 | S-05 conformance catalogue | Every new venue: catalog row + [VERIFY] check + contract tests + fee schedule | With each venue adapter (P3.1, 4, 6, 8, 9) |
-| C19.1 kill-switch drill | Scheduled operational drill, not just a feature | **Executed 2026-11-18 (rehearsal DRILL PASS, §4 Phase 7)**; periodically from 7.5 |
+| C19.1 kill-switch drill | Scheduled operational drill, not just a feature | **Executed 2026-11-18 (rehearsal DRILL PASS, §4 Phase 7); re-executed on the 7.5 cadence (smoke P75-5); monthly + per beta round from 7.5** |
 | S-08 custody rubric | Rubric results recorded in DECISIONS.md before live signing | **Recorded 2026-11-18** (rubric verdict + S1–S6 self-test in DECISIONS.md) |
 | B3 [VERIFY] rows | Counsel sign-off on geo/restriction entries | Rehearsal sign-off only (smoke P7-13, resets on exit) — **real counsel sign-off owed before the live pilot** |
-| B5 operational targets | Freshness 5 s (live), decision latency 750 ms p95 [VERIFY], 500 concurrent robots, availability 99.5% | Live book budget landed + measured in P7-9; latency p95 + load measured in 7.5 |
+| B5 operational targets | Freshness 5 s (live), decision latency 750 ms p95 [VERIFY], 500 concurrent robots, availability 99.5% | Live book budget landed + measured in P7-9; **latency p95 + load measured in 7.5 (P75.4): 500 robots, p95 699 ms @ 16-way, 100% availability — sandbox numbers; founder-host production re-run owed before the live pilot scales** |
 | A-04 clustering | Related-market exposure stacking | **Landed in Phase 4** (`eventKey` stacking in `src/lib/risk.ts`; re-check for every new venue adapter) |
 | D-03 honesty badges | SYNTHETIC vs LIVE labeling everywhere evidence is shown | Standing rule, every phase |
 | P-01 organizations | Data model early, feature later | Model when billing lands (Phase 8) |
-| R-01 B5 defaults | Founder numbers recorded in DECISIONS.md | Confirmed via B5; revisit at the live pilot (7.5) |
+| R-01 B5 defaults | Founder numbers recorded in DECISIONS.md | Confirmed via B5; **7.5 stress pass recorded (32-way lockstep burst p95 977 ms — capacity holds, latency budget needs paced scheduling); revisit at the live pilot** |
 | Kalshi credential kind | RSA key auth ≠ wallet signing — adapter + settings must support it | Phase 9 |
 | Push discipline | Local commits are not delivered until the founder provides a fresh fine-grained PAT | Every handoff |
 

@@ -18,7 +18,11 @@
     "visual": "bun scripts/visual-regression.ts",
     "smoke:phase6": "python3 scripts/smoke_phase6.py",
     "drill:killswitch": "python3 scripts/kill_switch_drill.py",
-    "smoke:phase7": "python3 scripts/smoke_phase7.py"
+    "smoke:phase7": "python3 scripts/smoke_phase7.py",
+    "smoke:phase75": "python3 scripts/smoke_phase75.py",
+    "drill:phase75": "python3 scripts/drill_phase75.py",
+    "chaos:phase75": "python3 scripts/chaos_phase75.py",
+    "load:phase75": "python3 scripts/load_phase75.py --robots 500 --concurrency 16"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -1,4 +1,4 @@
-# FAIDA Predict — Phase 7 (Gated live automation · B10 gates · C25 consent · DRY-RUN send armor)
+# FAIDA Predict — Phase 7.5 (Hardening + closed beta readiness · runbooks drilled · B5 load measured · beta program locked)
 
 Autonomous prediction-market trading platform — paper-mode core with the full
 trust architecture from the specification review brief. **All execution is
@@ -12,6 +12,22 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
 
 ## What is working
 
+- **Runbooks written AND drilled (Phase 7.5)** — `docs/RUNBOOKS.md`: startup
+  reconciliation, stuck-robot diagnosis, venue outage, fee update,
+  jurisdiction update, model demotion (R1–R6) — every one drilled through the
+  real API stack (`bun run drill:phase75`, 28 checks DRILL PASS) with a
+  standing C19.1 kill-switch cadence and a chaos suite
+  (`bun run chaos:phase75`, X1–X6 all fail-closed).
+- **B5 targets measured (Phase 7.5)** — 500 concurrent robots ticked through
+  the per-robot scheduler endpoint with zero 5xx, decision latency p95 699 ms
+  ≤ 750 ms, availability 100% (`bun run load:phase75`); two real races the
+  chaos suite exposed (lease double-claim, wizard orphan-creation) are fixed;
+  SQLite runs WAL + a serialized Prisma connection as the documented
+  concurrency posture.
+- **Closed-beta program locked (Phase 7.5)** — `docs/BETA_PHASE75.md`:
+  10–25 member cohort (paper + small live under the Phase 7 ceilings),
+  six-step weekly rounds, S0–S3 defect ladder, measurable exit defect bar
+  gating Phase 8. Round 1 starts on founder-host readiness.
 - **B10 gate stack (Phase 7)** — the live gate runs an evidence half (model
   calibrated, provenance completeness, evidence clean, backtest evidence,
   paper session ≥20 traces, recorded consent) plus an execution half (robot

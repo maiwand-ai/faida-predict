@@ -21,6 +21,46 @@ truth for choices that must not drift; code reads them via config, not folklore.
 | A-01 | Model governance | Unproven models never drive decisions: a candidate estimates nothing until the founder promotes it on calibration evidence (B8); an ACTIVE model that drifts worse than baseline by >5% over its recent window is demoted automatically and the baseline re-activates. Every promote/demote writes a MODEL_GOVERNANCE notification + MODEL outbox event. Drills must pass before a phase that touches models closes | RATIFIED | `ProbabilityModel` table + `src/lib/probability/registry.ts`; demotion drill `scripts/demotion_drill.py` |
 | A-06 | Evidence integrity | Market text is untrusted: every forecast input passes prompt-injection screening before any AI prompt, and flagged evidence fails closed to the baseline with the FLAGGED verdict recorded in the trace provenance. Every estimate carries an evidence hash binding it to its exact inputs | RATIFIED | `src/lib/probability/screening.ts`; traces carry `provenance` (A-02) since Phase 5 |
 
+## Phase-7.5 checkpoint status (hardening + closed beta readiness)
+
+- Phase 7.5 scope — **locked, implemented and verified (2026-11-18)**: six
+  operational runbooks written AND drilled (`docs/RUNBOOKS.md` R1–R6,
+  `scripts/drill_phase75.py` DRILL PASS 28 checks), C19.1 re-executed on the
+  new cadence, chaos suite executed and reviewed (25 checks, all fail-closed),
+  B5 load measured at target (500 robots, p95 699 ms ≤ 750 ms, availability
+  100% at the protocol concurrency 16; honest 32-way lockstep stress recorded
+  at p95 977 ms), closed-beta program locked (`docs/BETA_PHASE75.md`,
+  10–25 cohort, weekly rounds, measurable exit defect bar gating Phase 8).
+  Acceptance smoke `scripts/smoke_phase75.py` SMOKE PASS (P75-1..P75-9,
+  isolation-run); tsc + lint clean; smoke_phase4/5 regression re-runs PASS.
+- SQLite concurrency posture — **decided and applied (2026-11-18)**: the B5
+  load protocol exposed that concurrent Prisma interactive transactions on
+  SQLite convoy (5 s socket-timeout quantization → P1008/P2028 failures, up
+  to 25 s waits). Posture is now: `PRAGMA journal_mode=wal` (persistent on
+  `db/custom.db`) + `DATABASE_URL …?connection_limit=1&pool_timeout=120`
+  (single serialized connection — transactions queue on the pool instead of
+  colliding on the file lock; measured W=6 concurrent creates: 10.4 s →
+  15 ms). The R1 runbook carries this as a startup check. Founder note: when
+  the platform migrates off SQLite (§5 roadmap), this posture row is
+  superseded by the target DB's pool config.
+- Chaos-suite product fixes — **two races fixed in-phase (2026-11-18)**:
+  (1) `acquireRobotLease` (S-06) was check-then-upsert — concurrent
+  schedulers could double-claim an epoch (chaos X5 observed 3 winners);
+  now an atomic INSERT racing the unique constraint + a single conditional
+  expired-takeover UPDATE. (2) The Robot Studio wizard wrote Robot +
+  StrategyVersion + notification + outbox in four steps — under write
+  queueing the transaction expired leaving orphaned robots that can never
+  tick (P2028); now one interactive transaction (timeout 20 s, maxWait 10 s)
+  — wizard create is all-or-nothing.
+- Per-robot tick endpoint — **added (2026-11-18)**:
+  `POST /api/robots/[id]/cycle` runs the same engine path as `/api/cycle`
+  for ONE robot; external schedulers tick robots concurrently and the S-06
+  lease makes double-ticks safe. This is the surface the B5 load protocol
+  drives.
+- Closed beta — **program locked, cohort NOT yet recruited (2026-11-18)**:
+  round 1 starts only on founder-host readiness (fine-grained PAT, B3
+  counsel sign-off, 72 h soak host). The exit defect bar gates Phase 8.
+
 ## Phase-7 checkpoint status (gated live automation — first real-money path)
 
 - S-08 custody rubric — **executed and recorded (2026-11-18, before any live
