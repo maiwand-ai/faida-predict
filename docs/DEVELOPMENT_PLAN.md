@@ -1,0 +1,299 @@
+# FAIDA Predict — Development Plan (living document)
+
+> This is the planning source of truth for development. Decisions live in
+> `DECISIONS.md`; run instructions live in `README.md`. The founding brief
+> (`FAIDA_Predict_Spec_Review_and_Layout_Blueprints.pdf/docx`) stays as the
+> point-in-time review record — when this file and the brief disagree, this
+> file wins, because it tracks what the founder has actually ratified since.
+>
+> Rule of use: before starting any phase, re-read this file end to end.
+> Before closing any phase, tick its acceptance criteria here and commit the
+> tick. Nothing gets dropped because it is written down here.
+
+Last revised: 2026-11-16 (dashboard pass — venue-first cockpit; next: Phase 4).
+
+---
+
+## 1. Product in one paragraph
+
+FAIDA Predict is a self-hosted platform where users build autonomous trading
+robots for prediction markets. Execution is **paper-only** until the Phase 7
+gates pass and the user gives recorded consent (C25). The trust architecture
+(order state machine, transactional outbox, idempotency, reconciliation,
+append-only paper ledger, two-tier risk) is not a feature layer — it is the
+product. Every venue, robot, order and decision states which market it
+belongs to (B11).
+
+## 2. Ratified founder decisions (B1–B11)
+
+Full reasoning in `DECISIONS.md`. The binding summary:
+
+| # | Decision | Binding choice |
+|---|----------|----------------|
+| B1 | Custody | SELF-CUSTODY, EIP-712; platform never holds keys; live signing only in Phase 7 |
+| B2 | Launch venue | Polymarket only at first; adapter architecture for the rest of the lineup |
+| B3 | Jurisdiction | Editable eligibility matrix, EU-first allow set, sanctions hard-blocked, default-deny; [VERIFY] rows need counsel sign-off pre-launch |
+| B4 | Pricing | Free/Pro/Professional — engineering drafts, founder approves **before** billing code exists (Phase 8) |
+| B5 | Risk defaults | Platform ceilings + user defaults, users only stricter, editable in-app |
+| B6 | Robot families | Probability Edge, Market-Making, AI Research at launch; Arbitrage/Parity as family #4 |
+| B7 | AI strategy | Provider-agnostic gateway (any key works); deterministic fallback when none |
+| B8 | Venue automation | Robots run autonomously post-activation; humans own activation/pause/resume |
+| B9 | Venue lineup | See §3 — the final, founder-ratified six-venue lineup |
+| B10 | Live money gates | Edge gate + backtest (A-05) + paper session + recorded consent before any live order |
+| B11 | Venue visibility | Every robot/order/trace/ticket names its venue; venues without an adapter are visible but refuse robot creation (422) |
+
+## 3. Venue lineup — final (B9, founder-ratified)
+
+`src/lib/venues.ts` is the machine-readable registry; this table is the
+contract each adapter must satisfy. **Adapter states**: `LIVE` = market-data
+adapter implemented (robots may be created and trade paper on it);
+`PENDING` = on the roadmap, robot creation refused (422). No venue accepts
+real orders before Phase 7 — `placeOrder()` throws by contract everywhere.
+
+| Order | Venue | Markets / money | API surface | Status | Binding integration notes |
+|-------|-------|-----------------|-------------|--------|---------------------------|
+| 1 | **Polymarket** | Polygon PoS, USDC, CLOB order book | Gamma (discovery) + CLOB REST & WebSocket | **LIVE** (market data) | Primary venue — where robots earn. Write path (EIP-712 L2 auth) only in Phase 7. Tick-size regimes and order-type hazards per S-05 catalogue. |
+| 2 | **Manifold** | Play money (Mana), free | Public REST `api.manifold.markets/v0` | **LIVE** from Phase 3 | Week-one harness. Binary markets only. Zero-risk proving ground: the whole pipeline (sync → decision → paper fill → ledger → trace) must run on Manifold before the edge gate exists. |
+| 3 | **Limitless** | Base network, USDC, order book | API/SDK | PENDING (fast-follow) | Closest Polymarket twin. **Structural thin-liquidity rules, not afterthoughts**: (a) refuse entry if touch depth < configured minimum; (b) edge computed **after** venue fees; (c) per-market position cap. Thin books make robots conservative, not broken. |
+| 4 | **Drift BET** | Solana, SDK-first | TypeScript SDK | PENDING (fast-follow) | Bot-friendly. Adapter module only — no core changes expected (S-05 contract tests decide readiness). |
+| 5 | **Azuro** | EVM, sports-leaning | SDK + subgraph odds | PENDING (fast-follow) | Sports events shape: shorter closes, different resolution sources — eligibility matrix and category handling must cover it. |
+| 6 | **Kalshi** | CFTC-regulated US DCM, USD | REST + RSA key auth | PENDING (fast-follow, last) | The US-persons complement where Polymarket is venue-restricted. Key-based auth (not wallet) — adapter must handle a second credential kind. |
+
+Standing rules for every venue adapter, no exceptions:
+
+1. One adapter module implementing `VenueAdapter` (`src/lib/venue/types.ts`) — no venue logic leaks into the engine.
+2. One compliance-catalog row (S-05) with `[VERIFY]` items checked against current official docs **before** the adapter lands.
+3. One fee schedule in config, never hardcoded.
+4. Venue conformance contract tests (S-05) run against a recorded fixture.
+5. The engine stays venue-blind: it reads `robot.venue` and the registry.
+6. UI states the venue everywhere (B11) — this is already built; adapters must not bypass it.
+
+## 4. Phase ledger — adapted roadmap
+
+The original spec's phases were compressed by the walking-skeleton decision
+(R-03): Phase 1 pulled the trust architecture + paper execution forward, and
+Phase 2 pulled backtesting (A-05) forward. The ledger below maps the
+remaining spec work onto the phase numbers we actually use. Original-spec
+section codes (C…, S…, A…, P…, R…) are kept so the brief stays traceable.
+
+### Phase 1 — Walking skeleton (DONE, commit `7b609de`)
+
+Order state machine S-01 (UNKNOWN → reconciliation-only), outbox S-02,
+idempotency S-03, paper ledger P-02, risk engine C10/B5 two-tier, eligibility
+C4.5, live Polymarket market data (Gamma, read-only), AI gateway A-06
+(provider-agnostic), decision traces A-08, brand UI shell. Live trading
+disabled by contract.
+
+### Phase 2 — Strategy lab (DONE, commit `1b6a7e9`)
+
+Strategy versioning C5 (immutable versions, activation = pointer move, orders
+record the exact version), backtest engine A-05 (deterministic replay,
+adverse slippage + fees + liquidity guard, SYNTHETIC/LIVE honesty badge),
+price recorder (ticks on every sync and cycle), email fan-out F8 via Resend
+(best-effort, honest NO_KEY).
+
+### B11 — Venue awareness pass (DONE, commit `5119177`)
+
+`Robot.venue`, registry-driven API validation (unknown venue 400, pending
+venue 422), engine scoping by venue, venue badges/filters/picker across the
+whole UI. Venue lineup ratified (`f5352d9`, Kalshi amendment `bbf2574`).
+
+### Phase 3 — Autonomy, venue #2 (Manifold), safety layer (CURRENT)
+
+The original Phase 3 core (risk engine, paper execution, first rule-based
+robot) shipped early with Phase 1. What remains of it, plus the founder's
+venue plan, is this phase's scope:
+
+- **P3.1 — Manifold adapter → LIVE.** Public REST sync (binary markets,
+  probability → cents), venue-aware sync API (`POST /api/markets {venue}`),
+  tick source `MANIFOLD_SYNC`, compliance row updated, registry flips
+  MANIFOLD to LIVE. Robots on Manifold run the full paper pipeline.
+  *Acceptance: ≥20 Manifold markets synced; a Manifold robot completes
+  decision → paper fill → ledger → trace end to end; Polymarket sync
+  unchanged.* — **sandbox-verified 2026-11-16: 30 markets synced; Manifold
+  robot traded the full pipeline; Polymarket resync unchanged (30 markets).**
+- **P3.2 — Robot autonomy (S-06 loop leases, B8).** Autopilot runner:
+  interval-driven cycles + reconciliation passes without manual clicks;
+  per-robot lease so a retried tick or a second worker can never double-run
+  a robot; lease expiry allows takeover. Human owns start/stop (B8).
+  *Acceptance: two overlapping cycle calls on the same robot — exactly one
+  runs; autopilot on/off from the UI; interval persisted.* —
+  **sandbox-verified 2026-11-16: parallel cycles show lease refusal; autopilot
+  ran on the persisted 30 s cadence from the UI.**
+- **P3.3 — Global pause / kill switch (C19/S-07).** Platform-wide pause with
+  reason; every cycle and every order path checks it first; propagation is
+  **measured** (time from pause decision to first refused tick), not
+  asserted; CRITICAL notification via outbox; red banner in UI. Kill-switch
+  drill (C19.1) scheduled pre-Phase 7 — checklist lives in §6 of the drill
+  runbook to be written in 7.5.
+  *Acceptance: pause mid-run stops new decisions; refused ticks carry the
+  pause reason; measured propagation time logged; resume restores.* —
+  **sandbox-verified 2026-11-16: cycles AND manual tickets refused with
+  reason + measured propagation; banner + CRITICAL notification render.**
+- **P3.4 — Pre-trade staleness gate (S-10).** A robot refuses to decide on
+  market data older than the configured freshness threshold (platform
+  control, default 15 min for sync-fed paper; the B5 5-second book budget
+  applies when the live book adapter arrives in Phase 7). Refusals are
+  recorded in the trace with the measured age.
+  *Acceptance: forcing an old `updatedAt` produces a STALE_DATA no-trade
+  trace with the age stated.* — **sandbox-verified 2026-11-16: stale Gamma
+  rows produced STALE_DATA refusals with measured age; fresh Manifold rows
+  passed the gate and traded.**
+- **P3.5 — Paper soak runner (adapted 72-hour soak, C28).** `scripts/soak.ts`
+  drives cycles on an interval for a configurable duration against a running
+  instance, then reports: traces completeness, unresolved reconciliation
+  entries, UNKNOWN orders. Soak verdict written to `soak-report.json`.
+  *Acceptance (full soak, on the founder's host): zero unresolved drift
+  entries at the end; every cycle produced a trace; no unhandled errors.* —
+  **smoke variant PASS 2026-11-16 (6 runs, 24/24 traces, 0 errors, 0
+  unresolved drift, 0 unknown orders). Full 72 h soak owed on the founder
+  host. Bonus fix found by the soak: reconciliation resolution now closes
+  open drift entries (S-04) and looks up the venue adapter per order.**
+
+**Non-goals for Phase 3:** live orders of any kind; billing; Limitless /
+Drift / Azuro / Kalshi adapters; AI estimator upgrades (Phase 5); multi-user
+accounts (Phase 8).
+
+### Dashboard pass — venue-first cockpit (DONE, commit `aeccfe5`)
+
+Between-phase UI scope requested by the founder (2026-11-16, MT5 FAIDA
+screenshots used as inspiration, not a spec). The default view is now a
+dashboard that answers the founder's three questions at a glance:
+
+1. **Total balance** — KPI band: paper balance, risk exposure (+ meter vs
+   per-event cap), today's net flow, in-trade count with paper mark.
+2. **What is in trade** — "In trade now" table: venue · market · robot ·
+   side · size · entry→mark · unrealized P/L. Marks reuse the risk-engine
+   formula (same math as `src/lib/risk.ts`) so UI and risk checks can never
+   disagree. Glanceable status strip: autopilot, adapters live, markets
+   synced, robots active/paused, alerts, outbox, pause banner (C19).
+3. **Venue → its options** — registry-driven venue grid (B9 lineup always
+   visible, "IN TRADE" ribbon on live exposure): pick a venue → its
+   workspace (robots, markets, positions, orders, traces) → "+ Create robot
+   on <venue>" opens the studio wizard pre-scoped to that venue. Pending
+   venues render an honest "adapter pending" panel and the CTA stays
+   disabled — creation still refused per B11.
+
+Implementation: no schema changes; per-venue rollup + alert count +
+per-position `unrealizedCents` added to `/api/dashboard`; new
+`src/components/faida/dashboard.tsx` (`DashboardView`, `VenueWorkspace`);
+old Overview view retired.
+*Acceptance: typecheck + lint clean; browser-verified golden path
+(dashboard → Manifold workspace → pre-scoped wizard → pending-venue state
+on Kalshi with disabled CTA); mobile stacking verified.*
+
+### Venue color identity pass (B12, founder-requested before Phase 4)
+
+Each venue now wears a distinct accent so the user always sees which market
+they entered: Polymarket `#3E8EFF` (electric blue), Manifold `#14D9C4`
+(turquoise), Limitless `#F26BC8` (magenta), Drift BET `#C6F542` (lime),
+Azuro `#B18CFF` (lavender), Kalshi `#FFB25C` (orange). `VenueDef.hex` in
+`src/lib/venues.ts` is the single source; a `vc-*` utility layer in
+`globals.css` derives tints, borders, strips and glows from one CSS var
+(`--vc`) via `color-mix`, so pending venues render their hue muted toward
+slate until the adapter ships. Applied to: dashboard venue cards (color
+strip, hover glow, in-trade chip), venue workspace interior (header glow,
+venue-colored primary CTA, section heading dots), every VenueBadge, Markets
+venue sections, the studio venue picker (selected row tints in the venue
+color) and the manual trade ticket (dialog strip + side buttons + place
+button). Role chips (PRIMARY/HARNESS/FAST-FOLLOW) went neutral gray so the
+venue hue carries the identity. No behavior changes — colors only.
+
+### Phase 4 — Venue #3 (Limitless) + exposure intelligence
+
+Limitless adapter with the **structural thin-liquidity rules** from §3
+(min-depth refusal, edge-after-fees, per-market cap). Event clustering A-04
+(so complementary exposure across related markets stacks visibly in risk
+checks). S-05 conformance fixtures for Limitless. *Acceptance: thin-book
+markets refuse entry with a stated depth reason; clustered positions sum in
+per-event exposure.*
+
+### Phase 5 — Probability & AI layer hardening
+
+Model registry A-01 (promotion/demotion by calibration), forecast provenance
+A-02, baseline definition A-03, evidence integrity + prompt-injection
+screening A-06, AI cost/latency governance A-07 (per-provider budgets,
+cache). The **edge gate (B10)** starts consuming real evidence here.
+Demotion drills pass before this phase closes.
+
+### Phase 6 — Robot Studio completion + venue #4 (Drift BET)
+
+Robot templates P-03, trace UI depth (A-08 front-end), visual regression,
+three-user usability check (template → first backtest in one guided
+session). Drift BET adapter per §3 contract.
+
+### Phase 7 — Gated live automation (first real money)
+
+B1 custody rubric executed and recorded in DECISIONS.md (S-08 evidence);
+EIP-712 signing; Polymarket CLOB write path; Phase 7 gates (B10): edge gate
++ A-05 backtest + paper session + recorded consent C25; pause propagation
+and revocation-to-stop measured (≤60 s target); geographic transitions
+tested. Small-capital pilot only.
+
+### Phase 7.5 — Hardening + closed beta (R-02, locked)
+
+Runbooks written and drilled (startup reconciliation, stuck-robot diagnosis,
+venue outage, fee update, jurisdiction update, model demotion); kill-switch
+drill C19.1 executed; load at B5 targets; chaos suite reviewed; closed-beta
+cohort (10–25, paper + small live) with weekly rounds and an exit defect bar.
+
+### Phase 8 — Commercial platform + venue #5 (Azuro)
+
+Billing per B4 (entitlement snapshots, dunning, refunds P-05 — founder
+approves pricing before any billing code), notification taxonomy + anti-storm
+P-04, export + read-only API keys P-06, compliance ops + retention P-07,
+metrics P-08. Azuro adapter per §3 contract.
+
+### Phase 9 — Mobile + venue #6 (Kalshi)
+
+Mobile shell per C18 + store-policy re-check per target market; Kalshi
+adapter (key-based credential kind, US-persons complement).
+
+## 5. Carry-forward register (must never be lost)
+
+These are scheduled spec obligations that no phase may silently drop:
+
+| Item | Obligation | When |
+|------|-----------|------|
+| S-05 conformance catalogue | Every new venue: catalog row + [VERIFY] check + contract tests + fee schedule | With each venue adapter (P3.1, 4, 6, 8, 9) |
+| C19.1 kill-switch drill | Scheduled operational drill, not just a feature | Before Phase 7 and periodically after (7.5) |
+| S-08 custody rubric | Rubric results recorded in DECISIONS.md before live signing | Any time before Phase 7 |
+| B3 [VERIFY] rows | Counsel sign-off on geo/restriction entries | Before Phase 7 pilot |
+| B5 operational targets | Freshness 5 s (live), decision latency 750 ms p95 [VERIFY], 500 concurrent robots, availability 99.5% | Measured in 7 / 7.5 |
+| A-04 clustering | Related-market exposure stacking | Phase 4 |
+| D-03 honesty badges | SYNTHETIC vs LIVE labeling everywhere evidence is shown | Standing rule, every phase |
+| P-01 organizations | Data model early, feature later | Model when billing lands (Phase 8) |
+| R-01 B5 defaults | Founder numbers recorded in DECISIONS.md | Confirmed via B5; revisit before Phase 7 |
+| Kalshi credential kind | RSA key auth ≠ wallet signing — adapter + settings must support it | Phase 9 |
+| Push discipline | Local commits are not delivered until the founder provides a fresh fine-grained PAT | Every handoff |
+
+## 6. Hard invariants (repeat verbatim at every code review)
+
+1. Money is integer cents — floats never touch amounts (S-09).
+2. UNKNOWN orders resolve only via reconciliation evidence (S-01/S-04).
+3. Platform never stores wallet private keys (B1).
+4. Sanctioned jurisdictions can never be allowed (C4.5).
+5. Live order placement throws until Phase 7 gates + explicit authorization (B10).
+6. Every order records the strategy version that produced it (C5).
+7. Backtests are evidence, never promises: adverse slippage, fees, honest labels (A-05/D-03).
+8. Every robot, market, order, position and trace names its venue (B11).
+
+## 7. Verification protocol (every milestone)
+
+1. `bun run typecheck` (excluding `examples/`, `skills/`) and `bun run lint` — both clean.
+2. `bun run db:push` after schema changes; reseed when the seed gains content.
+3. Dev-server smoke of the new API surface (exact routes exercised, status codes checked).
+4. Screenshot every touched view; venue naming must be visible where relevant (B11).
+5. `DECISIONS.md` updated when a founder decision is made or a checkpoint lands.
+6. Conventional commit message; keep the working tree clean at handoff.
+7. Nothing in this file may be left un-ticked while its phase is called done.
+
+## 8. Open founder inputs
+
+- **Fresh fine-grained PAT** to push pending commits (`f5352d9`, `bbf2574`,
+  plus the Phase 3 plan and implementation commits) to
+  `maiwand-ai/faida-predict`. Tokens are injected per-process only and never
+  stored; revoke each after use.
+- B4 pricing draft approval remains owed before any billing code (Phase 8).
+- Full 72-hour soak (P3.5 acceptance) runs on the founder's host — the
+  sandbox runs the shortened variant.

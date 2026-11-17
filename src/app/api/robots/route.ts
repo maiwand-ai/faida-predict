@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { enqueueOutbox } from "@/lib/outbox";
+import { isVenue, isLiveVenue, VENUE_IDS, VENUE_LABEL } from "@/lib/venues";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
   const body = (await req.json()) as {
     name?: string;
     family?: string;
+    venue?: string;
     allocatedCents?: number;
     maxPositionCents?: number;
     maxOpenPositions?: number;
@@ -43,6 +45,19 @@ export async function POST(req: Request) {
   if (!body.name || !body.family || !FAMILIES.includes(body.family)) {
     return NextResponse.json({ error: "name and a valid family are required" }, { status: 400 });
   }
+
+  // B11: robots are venue-scoped. Unknown venue → 400; venue without a live
+  // adapter → 422 with a pointer at the roadmap (B9) so the UI can explain why.
+  const venue = body.venue ?? "POLYMARKET";
+  if (!isVenue(venue)) {
+    return NextResponse.json({ error: `unknown venue "${venue}" — allowed: ${VENUE_IDS.join(", ")}` }, { status: 400 });
+  }
+  if (!isLiveVenue(venue)) {
+    return NextResponse.json(
+      { error: `${VENUE_LABEL[venue]} adapter is not live yet (roadmap B9) — robots can only be scoped to venues with a live adapter` },
+      { status: 422 },
+    );
+  }
   const allocated = Math.max(0, Math.floor(body.allocatedCents ?? 100000));
   const maxPos = Math.max(0, Math.floor(body.maxPositionCents ?? allocated / 10));
   const maxOpen = Math.max(1, Math.floor(body.maxOpenPositions ?? 4));
@@ -53,6 +68,7 @@ export async function POST(req: Request) {
       userId: user.id,
       name: body.name.slice(0, 60),
       family: body.family,
+      venue,
       status: "PAPER_ONLY",
       statusReason: "created in Robot Studio — live activation requires Phase 7 gates",
       paperMode: true,

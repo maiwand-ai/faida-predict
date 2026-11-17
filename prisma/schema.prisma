@@ -1,4 +1,4 @@
-// FAIDA Predict — schema (Phase 2: strategy versioning, backtests, email dispatch)
+// FAIDA Predict — schema (Phase 3: autonomy, Manifold harness, safety layer)
 // Money is ALWAYS integer cents (S-09: no floats anywhere).
 // States are app-level unions stored as strings (SQLite).
 
@@ -44,6 +44,9 @@ model Robot {
   name             String
   // PROBABILITY_EDGE | MARKET_MAKING | AI_RESEARCH | ARBITRAGE (planned)
   family           String
+  // Venue scoping: robots only ever evaluate markets on their own venue.
+  // Registry is the source of truth — see src/lib/venues.ts (B9/B11)
+  venue            String    @default("POLYMARKET")
   // RUNNING | PAUSED_BY_RISK | PAUSED_BY_USER | PAUSED_BY_AI_BUDGET | ERROR | STOPPED | PAPER_ONLY
   status           String    @default("PAPER_ONLY")
   statusReason     String?
@@ -87,6 +90,20 @@ model Market {
   liquidityCents    BigInt?
   volumeCents       BigInt?
   closeDate         DateTime?
+  // S-05 structural thin-liquidity data (LIMITLESS adapter, Phase 4): USDC
+  // notional available at the touch (best ask for YES entry, best bid for NO
+  // entry) at last sync. null = book never captured — the venue entry rules
+  // treat that as fail-closed. Other venues leave these null (rule not armed).
+  yesTouchDepthCents Int?
+  noTouchDepthCents  Int?
+  // Taker fee snapshot per side at last sync (bps of notional) — fee schedule
+  // is config, never hardcoded (C4.4); paper fills charge it (Phase 4).
+  yesTakerFeeBps    Int?
+  noTakerFeeBps     Int?
+  // A-04 event clustering: markets sharing an eventKey are related outcomes
+  // (Limitless groupId / sports eventId, Polymarket event slug) — their open
+  // exposure stacks in the per-event risk check instead of hiding apart.
+  eventKey          String?
   // C16: resolution criteria surfaced; C16a: ambiguity flag blocks trading
   resolutionSource  String?
   ambiguityFlag     Boolean   @default(false)
@@ -100,6 +117,8 @@ model Market {
   traces            DecisionTrace[]
   ticks             MarketPriceTick[]
   backtests         BacktestRun[]
+
+  @@index([eventKey])
 }
 
 // A-05: recorder — every price observation lands here and feeds backtests
@@ -308,4 +327,25 @@ model Notification {
   readAt    DateTime?
   createdAt DateTime  @default(now())
   user      User      @relation(fields: [userId], references: [id])
+}
+
+// C19/S-07: platform control plane (self-host single-tenant). JSON values in
+// one KV table — global pause, autopilot state, staleness threshold. Read by
+// every cycle and every order path; written only via /api/control.
+model PlatformControl {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// S-06: per-robot loop lease — one active cycle per robot, ever. A retried
+// tick or a second worker gets refused until the lease expires, so a crashed
+// runner cannot wedge the robot forever (expiry allows takeover).
+model RobotLease {
+  id         String   @id @default(cuid())
+  robotId    String   @unique
+  holder     String
+  acquiredAt DateTime @default(now())
+  expiresAt  DateTime
 }

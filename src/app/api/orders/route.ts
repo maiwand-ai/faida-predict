@@ -13,7 +13,7 @@ export async function GET() {
       where: { mode: "PAPER" },
       orderBy: { createdAt: "desc" },
       take: 40,
-      include: { market: { select: { question: true } }, robot: { select: { name: true } } },
+      include: { market: { select: { question: true, venue: true } }, robot: { select: { name: true } } },
     }),
     db.ledgerEntry.findMany({ where: { mode: "PAPER" }, orderBy: { createdAt: "desc" }, take: 30 }),
   ]);

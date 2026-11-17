@@ -21,7 +21,8 @@ import {
   type VersionDTO,
   FAMILIES,
 } from "./types";
-import { StateChip, card, c, fmtCents, mono } from "./ui";
+import { StateChip, VenueBadge, card, c, fmtCents, mono, venueScopeStyle } from "./ui";
+import { ROLE_LABEL, VENUES, VENUE_LABEL, isVenue } from "@/lib/venues";
 
 // Tolerant JSON parse — never let a transient empty response crash the UI.
 async function safeJson<T = unknown>(res: Response): Promise<T | null> {
@@ -33,9 +34,12 @@ async function safeJson<T = unknown>(res: Response): Promise<T | null> {
 }
 
 // ── Robot Studio ─────────────────────────────────────────────────────────────
-export function StudioView({ dash, onCreate, onAfterChange }: { dash: DashboardDTO | null; onCreate: (p: unknown) => Promise<unknown>; onAfterChange?: () => void }) {
+export function StudioView({ dash, onCreate, onAfterChange, initialVenue }: { dash: DashboardDTO | null; onCreate: (p: unknown) => Promise<unknown>; onAfterChange?: () => void; initialVenue?: string }) {
   const [step, setStep] = useState(1);
   const [family, setFamily] = useState<string>("PROBABILITY_EDGE");
+  // B11: every robot is scoped to exactly one venue; only live adapters selectable.
+  // initialVenue pre-scopes the wizard when arriving from a venue workspace.
+  const [venue, setVenue] = useState<string>(initialVenue && isVenue(initialVenue) ? initialVenue : "POLYMARKET");
   const [name, setName] = useState("");
   const [allocated, setAllocated] = useState(2000); // dollars
   const [posCap, setPosCap] = useState(200);
@@ -52,6 +56,7 @@ export function StudioView({ dash, onCreate, onAfterChange }: { dash: DashboardD
     await onCreate({
       name: name.trim(),
       family,
+      venue,
       allocatedCents: allocated * 100,
       maxPositionCents: posCap * 100,
       maxOpenPositions: maxOpen,
@@ -96,7 +101,26 @@ export function StudioView({ dash, onCreate, onAfterChange }: { dash: DashboardD
         <div className="flex flex-col gap-3">
           {step === 1 && (
             <div className={`${card} flex flex-col gap-2.5 p-4`}>
-              <div className={`text-[12px] font-semibold ${c.text2}`}>Robot family</div>
+              <div className={`text-[12px] font-semibold ${c.text2}`}>Venue — which market does this robot trade on?</div>
+              {VENUES.map((v) => (
+                // B12: each venue option shows its color; the selected venue
+                // tints the row so the robot's scope is unmistakable.
+                <button key={v.id} onClick={() => setVenue(v.id)} disabled={v.adapter === "PENDING"}
+                  style={venueScopeStyle(v.id)}
+                  className={`vc-scope rounded-lg border p-3 text-left transition-colors ${venue === v.id ? "vc-border vc-tint" : `border-[#202B45] hover:bg-[#131A2C]`} ${v.adapter === "PENDING" ? "vc-pending cursor-not-allowed opacity-50" : ""}`}>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[12.5px] font-semibold ${c.text}`}>{v.label}</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${c.text3} bg-[#151D30]`}>
+                        {ROLE_LABEL[v.role]}{v.adapter === "PENDING" ? " · PENDING" : " · LIVE"}
+                      </span>
+                      {venue === v.id && <span className="vc-chip rounded px-1.5 py-0.5 text-[9px] font-bold">SELECTED</span>}
+                    </span>
+                  </div>
+                  <div className={`mt-1 text-[11px] ${c.text2}`}>{v.note}</div>
+                </button>
+              ))}
+              <div className={`text-[12px] font-semibold ${c.text2} mt-1`}>Robot family</div>
               {FAMILIES.map((f) => (
                 <button key={f.id} onClick={() => setFamily(f.id)} disabled={f.id === "ARBITRAGE"}
                   className={`rounded-lg border p-3 text-left transition-colors ${family === f.id ? "border-[#00B0F0] bg-[#00B0F0]/5" : `border-[#202B45] hover:bg-[#131A2C]`} ${f.id === "ARBITRAGE" ? "cursor-not-allowed opacity-50" : ""}`}>
@@ -163,6 +187,7 @@ export function StudioView({ dash, onCreate, onAfterChange }: { dash: DashboardD
             <div className={`${card} flex flex-col gap-2 p-4`}>
               <div className={`text-[12px] font-semibold ${c.text2}`}>Review — term sheet</div>
               {[
+                ["Venue", <span key="venue" className="vc-scope vc-text" style={venueScopeStyle(venue)}>{VENUE_LABEL[venue] ?? venue}</span>],
                 ["Family", FAMILIES.find((f) => f.id === family)?.label ?? family],
                 ["Name", name || "—"],
                 ["Capital allocation", fmtCents(allocated * 100)],
@@ -173,7 +198,7 @@ export function StudioView({ dash, onCreate, onAfterChange }: { dash: DashboardD
                 ["Backtest", "required before live (recorder data, A-05)"],
                 ["Paper session", "required before live"],
               ].map(([k, v]) => (
-                <div key={k} className={`flex justify-between border-b py-1.5 text-[12px] last:border-0 ${c.border}`}>
+                <div key={String(k)} className={`flex justify-between border-b py-1.5 text-[12px] last:border-0 ${c.border}`}>
                   <span className={c.text2}>{k}</span><span className={c.text}>{v}</span>
                 </div>
               ))}
@@ -194,8 +219,8 @@ export function StudioView({ dash, onCreate, onAfterChange }: { dash: DashboardD
         {/* summary rail */}
         <div className={`${card} h-fit p-4`}>
           <div className={`mb-2 text-[13px] font-semibold`}>Configuration summary</div>
-          {[["Family", FAMILIES.find((f) => f.id === family)?.label ?? family], ["Name", name || "—"], ["Allocation", fmtCents(allocated * 100)], ["Position cap", fmtCents(posCap * 100)], ["Daily stop", `${dailyLoss}%`], ["Drawdown stop", `${drawdown}%`]].map(([k, v]) => (
-            <div key={k} className={`flex justify-between py-1 text-[12px]`}>
+          {[["Venue", <span key="venue" className="vc-scope vc-text" style={venueScopeStyle(venue)}>{VENUE_LABEL[venue] ?? venue}</span>], ["Family", FAMILIES.find((f) => f.id === family)?.label ?? family], ["Name", name || "—"], ["Allocation", fmtCents(allocated * 100)], ["Position cap", fmtCents(posCap * 100)], ["Daily stop", `${dailyLoss}%`], ["Drawdown stop", `${drawdown}%`]].map(([k, v]) => (
+            <div key={String(k)} className={`flex justify-between py-1 text-[12px]`}>
               <span className={c.text2}>{k}</span><span className={c.text}>{v}</span>
             </div>
           ))}
@@ -261,10 +286,23 @@ export function TradingView(props: {
             onChange={(e) => setExplicitSelected(e.target.value)}
             className={`w-full rounded-lg border px-3 py-2 text-[12px] ${c.borderStrong} ${c.elevated} ${c.text}`}
           >
-            {markets.map((m) => (
-              <option key={m.id} value={m.id}>{m.question.slice(0, 64)}</option>
-            ))}
+            {VENUES.map((v) => {
+              const rows = markets.filter((m) => m.venue === v.id);
+              if (rows.length === 0) return null;
+              return (
+                <optgroup key={v.id} label={v.label}>
+                  {rows.map((m) => (
+                    <option key={m.id} value={m.id}>{m.question.slice(0, 64)}</option>
+                  ))}
+                </optgroup>
+              );
+            })}
           </select>
+          {market && (
+            <div className={`flex items-center gap-1.5 text-[10.5px] ${c.text3}`}>
+              entering via <VenueBadge venue={market.venue} />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => setSide("BUY_YES")} className={`rounded-lg border py-2 text-[12px] font-semibold ${side === "BUY_YES" ? "border-[#00B0F0] bg-[#00B0F0]/10 text-[#00B0F0]" : `${c.borderStrong} ${c.elevated} ${c.text2}`}`}>
               Buy YES · {market?.yesPriceCents ?? "—"}¢
@@ -306,7 +344,7 @@ export function TradingView(props: {
               <table className="w-full">
                 <thead className={`sticky top-0 ${c.surface}`}>
                   <tr className={`border-b text-left text-[10px] tracking-wider ${c.border} ${c.text3}`}>
-                    <th className="px-4 py-2 font-semibold">MARKET</th><th className="px-3 py-2 font-semibold">SIDE</th>
+                    <th className="px-4 py-2 font-semibold">MARKET</th><th className="px-3 py-2 font-semibold">VENUE</th><th className="px-3 py-2 font-semibold">SIDE</th>
                     <th className="px-3 py-2 font-semibold">PRICE</th><th className="px-3 py-2 font-semibold">SIZE</th>
                     <th className="px-3 py-2 font-semibold">STATE</th>
                   </tr>
@@ -315,6 +353,7 @@ export function TradingView(props: {
                   {stateJournal.map((o) => (
                     <tr key={o.id} className={`border-b text-[12px] last:border-0 ${c.border}`}>
                       <td className={`max-w-[220px] truncate px-4 py-2 ${c.text}`}>{o.market?.question}{o.robot ? ` · ${o.robot.name}` : ""}</td>
+                      <td className="px-3 py-2">{o.market?.venue ? <VenueBadge venue={o.market.venue} withLabel={false} /> : "—"}</td>
                       <td className={`px-3 py-2 ${c.text2}`}>{o.side.replace("BUY_", "BUY ")}</td>
                       <td className={`px-3 py-2 ${mono} ${c.text2}`}>{o.priceCents}¢</td>
                       <td className={`px-3 py-2 ${mono} ${c.text2}`}>{fmtCents(o.sizeCents)}</td>
@@ -322,7 +361,7 @@ export function TradingView(props: {
                     </tr>
                   ))}
                   {(ordersData?.orders.length ?? 0) === 0 && (
-                    <tr><td colSpan={5} className={`px-4 py-6 text-center text-[12px] ${c.text3}`}>No orders yet — place one or run a robot cycle.</td></tr>
+                    <tr><td colSpan={6} className={`px-4 py-6 text-center text-[12px] ${c.text3}`}>No orders yet — place one or run a robot cycle.</td></tr>
                   )}
                 </tbody>
               </table>

@@ -1,0 +1,16 @@
+{
+  "startedAt": "2026-11-16T09:44:50.133Z",
+  "endedAt": "2026-11-16T09:45:50.133Z",
+  "durationMin": 1,
+  "intervalSec": 10,
+  "runs": 6,
+  "trades": 0,
+  "noTrades": 24,
+  "cycleErrors": 0,
+  "leaseSkips": 0,
+  "tracesDuringSoak": 24,
+  "scheduleTickTracesDuringSoak": 24,
+  "unresolvedReconciliationEntries": 0,
+  "unknownOrdersAtEnd": 0,
+  "PASS": true
+}

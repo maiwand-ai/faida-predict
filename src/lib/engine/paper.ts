@@ -6,9 +6,10 @@ import { db } from "@/lib/db";
 import { assertTransition, REASONS, type OrderState } from "@/lib/order-machine";
 import { composeIdempotencyKey } from "@/lib/idempotency";
 import { enqueueOutbox } from "@/lib/outbox";
-import { DEFAULT_PAPER_FEE_SCHEDULE, feeForNotionalCents, isValidPriceCents, isValidSizeCents } from "@/lib/money";
+import { isValidPriceCents, isValidSizeCents } from "@/lib/money";
 import { isVenueTradeAllowed } from "@/lib/eligibility";
 import { preTradeRiskChecks } from "@/lib/risk";
+import { getPauseState } from "@/lib/control";
 
 export interface PlacePaperOrderInput {
   userId: string;
@@ -30,7 +31,7 @@ export interface PlaceOrderResult {
 }
 export interface PlaceOrderRejection {
   ok: false;
-  stage: "ELIGIBILITY" | "MARKET" | "RISK" | "VALIDATION" | "BALANCE";
+  stage: "PLATFORM" | "ELIGIBILITY" | "MARKET" | "RISK" | "VALIDATION" | "BALANCE";
   reason: string;
   details?: unknown;
 }
@@ -46,6 +47,12 @@ export async function placePaperOrder(input: PlacePaperOrderInput): Promise<Plac
   // ── 1. validation (cheap, local, pre-transaction) ────────────────────────
   if (!isValidPriceCents(input.priceCents) || !isValidSizeCents(input.sizeCents)) {
     return { ok: false, stage: "VALIDATION", reason: "price must be 1-100¢ integer; size must be positive integer cents" };
+  }
+
+  // ── 1b. global pause gate (C19/S-07): no order path bypasses the switch ──
+  const pause = await getPauseState();
+  if (pause.paused) {
+    return { ok: false, stage: "PLATFORM", reason: `platform paused (C19): ${pause.reason ?? "manual pause"}` };
   }
 
   // ── 2. idempotency dedupe (S-03): same key returns the original order ────
@@ -84,28 +91,34 @@ export async function placePaperOrder(input: PlacePaperOrderInput): Promise<Plac
     return { ok: false, stage: "MARKET", reason: "no live price for the requested side" };
   }
 
-  // ── 5. robot + balance + risk checks (C10) ───────────────────────────────
+  // ── 5. robot + balance + risk checks (C10 + Phase 4 venue structural rules)
+  //    robot is null for manual tickets: robot-scoped checks are skipped, but
+  //    the venue's structural entry rules (touch depth, per-market cap) still
+  //    apply — thin books refuse humans and robots alike.
   const robot = input.robotId
     ? await db.robot.findUnique({ where: { id: input.robotId } })
     : null;
   if (input.robotId && !robot) return { ok: false, stage: "RISK", reason: "robot not found" };
   const balance = await paperBalanceCents(input.userId);
-  const riskChecks = robot
-    ? await preTradeRiskChecks({
-        userId: input.userId,
-        robot,
-        marketId: input.marketId,
-        sizeCents: input.sizeCents,
-        balanceCents: balance,
-      })
-    : [];
+  const riskChecks = await preTradeRiskChecks({
+    userId: input.userId,
+    robot,
+    marketId: input.marketId,
+    side: input.side,
+    sizeCents: input.sizeCents,
+    balanceCents: balance,
+  });
   const failedRisk = riskChecks.find((c) => !c.passed);
   if (failedRisk) {
     return { ok: false, stage: "RISK", reason: `risk check failed: ${failedRisk.check} — ${failedRisk.detail}`, details: riskChecks };
   }
 
   // ── 6. the transactional pipeline ────────────────────────────────────────
-  const feeCents = feeForNotionalCents(input.sizeCents, DEFAULT_PAPER_FEE_SCHEDULE, false);
+  // Fee schedule is config, never hardcoded (C4.4): the venue taker bps were
+  // computed from the documented fee regime at sync and stored on the market.
+  // Paper fills charge them so paper P/L matches what a live taker would pay.
+  const entryBps = (input.side === "BUY_YES" ? market.yesTakerFeeBps : market.noTakerFeeBps) ?? 0;
+  const feeCents = Math.floor((input.sizeCents * entryBps) / 10000);
   const created = await db.$transaction(async (tx) => {
     // strategy version pin (C5)
     let strategyVersionId: string | null = null;
@@ -224,7 +237,7 @@ export async function placePaperOrder(input: PlacePaperOrderInput): Promise<Plac
       });
     };
     await append("FILL", -input.sizeCents, `${input.side} ${input.sizeCents}¢ @ ${input.priceCents}¢ on ${market.question.slice(0, 60)}`, order.id);
-    if (feeCents > 0) await append("FEE", -feeCents, "taker fee", order.id);
+    if (feeCents > 0) await append("FEE", -feeCents, `${market.venue} taker fee ${entryBps}bps`, order.id);
 
     enqueueOutbox(tx, drafts);
     return order;

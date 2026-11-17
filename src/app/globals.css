@@ -146,3 +146,59 @@
 .fd-scroll::-webkit-scrollbar-track { background: transparent; }
 .fd-scroll::-webkit-scrollbar-thumb { background: #2E3C5F; border-radius: 4px; }
 .fd-scroll::-webkit-scrollbar-thumb:hover { background: #3E9BF0; }
+
+/* ── Venue color identity (B13) ──────────────────────────────────────────────
+   Each venue carries its own accent (set as `--vc` inline from the registry).
+   The classes below derive tints/borders/glows from that one variable with
+   color-mix, so every venue-scoped surface (card, workspace, badge, ticket)
+   shifts hue when the user enters a different market. Pending venues get
+   `vc-pending`, which grays --vc toward slate until the adapter ships. */
+.vc-scope {
+  --vc: #3E9BF0; /* fallback — platform accent for unknown venues */
+}
+.vc-pending {
+  --vc: color-mix(in srgb, var(--vc) 38%, #64748E);
+}
+.vc-text { color: var(--vc); }
+.vc-bg { background-color: var(--vc); }
+.vc-tint { background-color: color-mix(in srgb, var(--vc) 14%, transparent); }
+.vc-tint-soft { background-color: color-mix(in srgb, var(--vc) 7%, transparent); }
+.vc-border { border-color: color-mix(in srgb, var(--vc) 55%, transparent); }
+.vc-border-soft { border-color: color-mix(in srgb, var(--vc) 25%, transparent); }
+.vc-chip {
+  color: var(--vc);
+  background-color: color-mix(in srgb, var(--vc) 12%, transparent);
+}
+.vc-strip {
+  background: linear-gradient(90deg, var(--vc), color-mix(in srgb, var(--vc) 25%, transparent));
+}
+/* venue-tinted primary action (e.g. "+ Create robot on <venue>") */
+.vc-btn {
+  background-color: var(--vc);
+  color: #071018;
+}
+.vc-btn:hover {
+  background-color: color-mix(in srgb, var(--vc) 82%, white);
+}
+.vc-btn:disabled {
+  background-color: color-mix(in srgb, var(--vc) 35%, #151D30);
+  color: color-mix(in srgb, var(--vc) 55%, #64748E);
+  cursor: not-allowed;
+}
+/* venue card on the dashboard grid — the whole card leans into the venue hue */
+.venue-card {
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+.venue-card:hover {
+  border-color: color-mix(in srgb, var(--vc) 60%, transparent);
+  background-color: color-mix(in srgb, var(--vc) 9%, #0F1523);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--vc) 22%, transparent),
+    0 10px 32px -16px color-mix(in srgb, var(--vc) 55%, transparent);
+}
+/* soft wash behind a workspace header so entering a venue feels like a room */
+.vc-glow {
+  background:
+    radial-gradient(720px 220px at 18% 0%, color-mix(in srgb, var(--vc) 12%, transparent), transparent 70%),
+    radial-gradient(480px 180px at 85% 10%, color-mix(in srgb, var(--vc) 7%, transparent), transparent 75%);
+}

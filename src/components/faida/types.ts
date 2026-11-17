@@ -4,6 +4,8 @@ export interface RobotDTO {
   id: string;
   name: string;
   family: string;
+  // Venue scoping (B11): the only market venue this robot evaluates.
+  venue: string;
   status: string;
   statusReason: string | null;
   paperMode: boolean;
@@ -26,7 +28,7 @@ export interface OrderRowDTO {
   filledCents: number;
   feeCents: number;
   createdAt: string;
-  market?: { question: string };
+  market?: { question: string; venue: string };
   robot?: { name: string } | null;
 }
 
@@ -49,7 +51,7 @@ export interface TraceDTO {
   riskChecks: string;
   createdAt: string;
   robot?: { name: string };
-  market?: { question: string };
+  market?: { question: string; venue: string };
 }
 
 export interface PositionRowDTO {
@@ -57,8 +59,25 @@ export interface PositionRowDTO {
   side: string;
   sizeCents: number;
   avgPriceCents: number;
-  market?: { question: string; yesPriceCents: number | null };
+  openedAt: string;
+  status: string;
+  // Mark-to-market on the venue's last synced price — same math as the risk
+  // engine. null when the venue price feed has no quote for this side yet.
+  unrealizedCents: number | null;
+  market?: { question: string; venue: string; yesPriceCents: number | null; noPriceCents: number | null; eventKey?: string | null };
   robot?: { name: string };
+}
+
+// Per-venue rollup for the dashboard venue grid (B9/B11). Driven by the
+// registry — every venue in the lineup always appears, even with zero data.
+export interface VenueStatDTO {
+  venue: string;
+  markets: number;
+  robotsTotal: number;
+  robotsActive: number;
+  openPositions: number;
+  exposureCents: number;
+  unrealizedCents: number;
 }
 
 export interface ProviderDTO {
@@ -82,6 +101,8 @@ export interface DashboardDTO {
   exposureLimitPct: number;
   allocatedCents: number;
   todayFlowCents: number;
+  openAlerts: number;
+  venues: VenueStatDTO[];
   robots: RobotDTO[];
   orders: OrderRowDTO[];
   positions: PositionRowDTO[];
@@ -91,10 +112,12 @@ export interface DashboardDTO {
   outboxPending: number;
   providers: ProviderDTO[];
   risk: Array<{ scope: string; key: string; valueNum: number }>;
+  control?: ControlStateDTO;
 }
 
 export interface MarketDTO {
   id: string;
+  venue: string;
   venueSymbol: string;
   question: string;
   category: string;
@@ -105,6 +128,12 @@ export interface MarketDTO {
   closeDate: string | null;
   ambiguityFlag: boolean;
   dataSource: string;
+  // Phase 4 — structural thin-liquidity data (S-05) + A-04 cluster key.
+  yesTouchDepthCents: number | null;
+  noTouchDepthCents: number | null;
+  yesTakerFeeBps: number | null;
+  noTakerFeeBps: number | null;
+  eventKey: string | null;
 }
 
 export interface EligibilityRuleDTO {
@@ -199,6 +228,36 @@ export interface NotifyStatusDTO {
   from: string | null;
   last24h: { sent: number; failed: number; noKey: number };
   note: string;
+}
+
+// Phase 3 — platform control plane (C19/S-07 pause, P3.2 autopilot)
+export interface PauseStateDTO {
+  paused: boolean;
+  reason: string | null;
+  pausedAt: string | null;
+  pausedBy: string | null;
+}
+
+export interface AutopilotLastRunDTO {
+  at: string;
+  cycles: number;
+  trades: number;
+  noTrades: number;
+  errors: number;
+  reconciled?: number;
+  skipped?: string;
+}
+
+export interface AutopilotStateDTO {
+  enabled: boolean;
+  intervalSec: number;
+  startedAt: string | null;
+  lastRun: AutopilotLastRunDTO | null;
+}
+
+export interface ControlStateDTO {
+  pause: PauseStateDTO;
+  autopilot: AutopilotStateDTO;
 }
 
 export const FAMILIES = [

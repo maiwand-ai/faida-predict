@@ -1,8 +1,12 @@
 // S-04 — Reconciliation: venue truth vs local state.
 // UNKNOWN orders are resolved ONLY by reconciliation evidence, never by hope.
+// Phase 3: the adapter is looked up by the ORDER'S VENUE (B11/S-05 — the
+// engine never hardcodes a venue), and resolving an order closes its open
+// reconciliation entries (previously they were orphaned open drift).
 import { db } from "@/lib/db";
 import { assertTransition, REASONS, type OrderState } from "@/lib/order-machine";
 import { enqueueOutbox } from "@/lib/outbox";
+import { getVenueAdapter } from "@/lib/venue/registry";
 import { polymarket } from "@/lib/venue/polymarket";
 
 export interface ReconcileResult {
@@ -20,8 +24,11 @@ export async function reconcilePendingOrders(): Promise<ReconcileResult[]> {
   const results: ReconcileResult[] = [];
 
   for (const order of pending) {
+    // venue-aware evidence lookup (B11): ask the adapter that owns the order's market
+    const market = await db.market.findUnique({ where: { id: order.marketId }, select: { venue: true } });
+    const adapter = (market && getVenueAdapter(market.venue)) || polymarket;
     const guess = order.venueOrderId
-      ? await polymarket.queryOrderState(order.venueOrderId)
+      ? await adapter.queryOrderState(order.venueOrderId)
       : null;
 
     let toState: OrderState;
@@ -57,6 +64,12 @@ export async function reconcilePendingOrders(): Promise<ReconcileResult[]> {
         data: { orderId: fresh.id, fromState: fresh.state, toState, reason: detail },
       });
       await tx.order.update({ where: { id: fresh.id }, data: { state: toState, stateReason: detail } });
+      // S-04 hygiene: evidence landed, so close every open drift entry for
+      // this order (previously the UNKNOWN_STATE entry stayed open forever).
+      await tx.reconciliationEntry.updateMany({
+        where: { orderId: fresh.id, resolvedAt: null },
+        data: { resolvedAt: new Date() },
+      });
       await tx.reconciliationEntry.create({
         data: {
           orderId: fresh.id,

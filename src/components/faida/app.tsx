@@ -1,6 +1,7 @@
 "use client";
 
-// FAIDA Predict — walking skeleton UI. Single page, five views, brand-blue.
+// FAIDA Predict — UI shell. Single page: venue-first Dashboard (default),
+// per-venue Workspace, Markets, Robot Studio, Trading, Settings.
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
@@ -15,11 +16,11 @@ import {
   type LedgerRowDTO,
   type RiskViewDTO,
   type EligibilityRuleDTO,
-  FAMILIES,
-  FAMILY_LABEL,
 } from "./types";
-import { c, card, mono, fmtCents, Pill, Meter, SectionTitle } from "./ui";
+import { c, card, mono, fmtCents, VenueBadge, venueScopeStyle } from "./ui";
+import { LIVE_VENUE_IDS, ROLE_LABEL, VENUE_LABEL, VENUES } from "@/lib/venues";
 import { StudioView, TradingView, SettingsView } from "./views";
+import { DashboardView, VenueWorkspace } from "./dashboard";
 
 // Tolerant JSON parse — a transient empty body (dev recompile race, network
 // hiccup) must never surface as an uncaught promise rejection (D-07).
@@ -34,7 +35,7 @@ async function safeJson<T = unknown>(res: Response): Promise<T | null> {
 // ── overview-local helpers ──────────────────────────────────────────────
 
 // ── main app ─────────────────────────────────────────────────────────────────
-type View = "overview" | "markets" | "studio" | "trading" | "settings";
+type View = "overview" | "venue" | "markets" | "studio" | "trading" | "settings";
 
 export default function FaidaApp() {
   const { toast } = useToast();
@@ -46,6 +47,9 @@ export default function FaidaApp() {
   const [eligibility, setEligibility] = useState<EligibilityRuleDTO[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [tradeMarket, setTradeMarket] = useState<MarketDTO | null>(null);
+  // venue-first navigation: dashboard → venue workspace → studio pre-scoped
+  const [venueFocus, setVenueFocus] = useState<string | null>(null);
+  const [studioVenue, setStudioVenue] = useState<string | null>(null);
 
   const refreshDashboard = useCallback(async () => {
     try {
@@ -112,19 +116,31 @@ export default function FaidaApp() {
     [toast, refreshDashboard, refreshOrders],
   );
 
-  const syncMarkets = async () => {
+  // P3.1: venue-aware sync — no venue argument syncs every LIVE venue.
+  const syncMarkets = async (venue?: string) => {
     setBusy("sync");
     try {
-      const res = await fetch("/api/markets", { method: "POST" });
-      const json = await safeJson<{ synced: number; totalMarkets: number }>(res);
-      if (!json) {
-        toast({ title: "Polymarket unreachable from sandbox", description: "Empty response — showing cached markets", variant: "destructive" });
-        return;
+      const targets = venue ? [venue] : LIVE_VENUE_IDS;
+      const parts: string[] = [];
+      let synced = 0;
+      for (const v of targets) {
+        try {
+          const res = await fetch("/api/markets", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ venue: v }),
+          });
+          const json = await safeJson<{ synced: number; venue: string }>(res);
+          if (json?.synced) {
+            synced += json.synced;
+            parts.push(`${VENUE_LABEL[v] ?? v}: ${json.synced}`);
+          }
+        } catch { /* one venue failing must not block the others */ }
       }
-      if (json.synced > 0) {
-        toast({ title: `Synced ${json.synced} live markets from Polymarket`, description: `${json.totalMarkets} total cached` });
+      if (synced > 0) {
+        toast({ title: `Synced ${synced} live market${synced === 1 ? "" : "s"}`, description: parts.join(" · ") });
       } else {
-        toast({ title: "Polymarket unreachable from sandbox", description: "Showing cached/seeded markets — source labeled honestly per D-03", variant: "destructive" });
+        toast({ title: "Venue APIs unreachable from sandbox", description: "Showing cached/seeded markets — source labeled honestly per D-03", variant: "destructive" });
       }
       await refreshMarkets();
     } finally {
@@ -135,12 +151,14 @@ export default function FaidaApp() {
   const hasUnknown = (ordersData?.orders ?? []).some((o) => o.state === "UNKNOWN" || o.state === "RECONCILING");
 
   const navItems: Array<{ id: View; label: string; badge?: string }> = [
-    { id: "overview", label: "Overview" },
+    { id: "overview", label: "Dashboard" },
     { id: "markets", label: "Markets" },
     { id: "studio", label: "Robot Studio" },
     { id: "trading", label: "Trading" },
     { id: "settings", label: "Settings" },
   ];
+  // while inside a venue workspace, keep the Dashboard nav item lit
+  const activeView: View = view === "venue" ? "overview" : view;
 
   return (
     <div className={`min-h-screen ${c.bg} ${c.text} flex flex-col`} style={{ fontFamily: "var(--font-geist-sans)" }}>
@@ -154,7 +172,7 @@ export default function FaidaApp() {
                 <span className={`text-[14px] font-bold tracking-wide ${c.text}`}>FAIDA</span>
                 <span className={`text-[9px] font-bold tracking-[0.2em] ${c.bright}`}>PREDICT</span>
               </div>
-              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>WALKING SKELETON</div>
+              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 3</div>
             </div>
           </div>
           <nav className="flex flex-col gap-1">
@@ -163,17 +181,17 @@ export default function FaidaApp() {
                 key={n.id}
                 onClick={() => { setView(n.id); if (n.id === "settings") { refreshRisk(); refreshEligibility(); } if (n.id === "trading") refreshOrders(); }}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] transition-colors ${
-                  view === n.id ? `${c.elevated} ${c.text}` : `${c.text2} hover:${c.elevated}`
+                  activeView === n.id ? `${c.elevated} ${c.text}` : `${c.text2} hover:${c.elevated}`
                 }`}
               >
-                <span className={`h-2 w-2 rounded-[3px] ${view === n.id ? "bg-[#00B0F0]" : "bg-[#2E3C5F]"}`} />
+                <span className={`h-2 w-2 rounded-[3px] ${activeView === n.id ? "bg-[#00B0F0]" : "bg-[#2E3C5F]"}`} />
                 {n.label}
               </button>
             ))}
           </nav>
           <div className="mt-auto border-t ${c.border} pt-3" style={{ borderColor: "#202B45" }}>
             <div className={`flex justify-between px-2 text-[10.5px] ${c.text3}`}>
-              <span>● Venue: Polymarket</span><span className={mono}>data {dash?.marketCount ?? 0}</span>
+              <span>● Venues: {VENUES.filter((v) => v.adapter === "LIVE").map((v) => v.label).join(", ")} · {VENUES.filter((v) => v.adapter === "PENDING").length} planned</span><span className={mono}>data {dash?.marketCount ?? 0}</span>
             </div>
             <div className={`mt-1 flex justify-between px-2 text-[10.5px] ${c.text3}`}>
               <span>Mode</span><span className={`${c.paper}`}>PAPER ONLY</span>
@@ -204,13 +222,37 @@ export default function FaidaApp() {
 
           <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-5 sm:px-6">
             {view === "overview" && (
-              <OverviewView dash={dash} markets={markets} onSync={syncMarkets} busy={busy} onCycle={() => post("/api/cycle", {}, "Robot cycle executed")} onReconcile={() => post("/api/cycle", { action: "RECONCILE" }, "Reconciliation pass complete")} hasUnknown={hasUnknown} />
+              <DashboardView
+                dash={dash}
+                markets={markets}
+                onSync={syncMarkets}
+                busy={busy}
+                onCycle={() => post("/api/cycle", {}, "Robot cycle executed")}
+                onReconcile={() => post("/api/cycle", { action: "RECONCILE" }, "Reconciliation pass complete")}
+                hasUnknown={hasUnknown}
+                onControl={(body, msg) => post("/api/control", body, msg)}
+                onOpenVenue={(venueId) => { setVenueFocus(venueId); setView("venue"); }}
+              />
+            )}
+            {view === "venue" && venueFocus && (
+              <VenueWorkspace
+                venueId={venueFocus}
+                dash={dash}
+                markets={markets}
+                busy={busy}
+                onBack={() => setView("overview")}
+                onSyncVenue={(v) => syncMarkets(v)}
+                onCycle={() => post("/api/cycle", {}, "Robot cycle executed")}
+                onTrade={(m) => setTradeMarket(m)}
+                onCreateRobot={(v) => { setStudioVenue(v); setView("studio"); }}
+                onControl={(body, msg) => post("/api/control", body, msg)}
+              />
             )}
             {view === "markets" && (
               <MarketsView markets={markets} onSync={syncMarkets} busy={busy} onTrade={(m) => setTradeMarket(m)} />
             )}
             {view === "studio" && (
-              <StudioView dash={dash} onCreate={(payload) => post("/api/robots", payload, "Robot created as PAPER_ONLY draft")} onAfterChange={refreshDashboard} />
+              <StudioView key={studioVenue ?? "any"} initialVenue={studioVenue ?? undefined} dash={dash} onCreate={(payload) => post("/api/robots", payload, "Robot created as PAPER_ONLY draft")} onAfterChange={refreshDashboard} />
             )}
             {view === "trading" && (
               <TradingView
@@ -253,7 +295,7 @@ export default function FaidaApp() {
             )}
           </main>
           <footer className={`border-t ${c.border} px-6 py-3 text-center text-[11px] ${c.text3}`}>
-            FAIDA Predict walking skeleton — Phase 1 (R-03). All figures paper-labeled per D-03/D-05. Live trading requires Phase 7 gates + explicit authorization.
+            FAIDA Predict — Phase 3 (autonomy · Manifold harness · safety layer). All figures paper-labeled per D-03/D-05. Live trading requires Phase 7 gates + explicit authorization.
           </footer>
         </div>
       </div>
@@ -278,210 +320,96 @@ function summarize(json: Record<string, unknown>): string {
   return "";
 }
 
-// ── Overview ─────────────────────────────────────────────────────────────────
-function OverviewView(props: {
-  dash: DashboardDTO | null;
-  markets: MarketDTO[];
-  onSync: () => void;
-  onCycle: () => void;
-  onReconcile: () => void;
-  hasUnknown: boolean;
-  busy: string | null;
-}) {
-  const { dash, onCycle, onReconcile, hasUnknown, onSync } = props;
-  if (!dash) return <SkeletonPage />;
-  const exposurePct = dash.allocatedCents > 0 ? (dash.exposureCents / dash.allocatedCents) * 100 : 0;
-  const aiProvider = dash.providers.find((p) => p.enabled) ?? dash.providers[0];
-  return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[19px] font-semibold">Overview</h1>
-        <span className={`text-[12px] ${c.text3}`}>all values labeled SIMULATED / PAPER — nothing here is live money</span>
-        <div className="ml-auto flex gap-2">
-          <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1B2540]`} onClick={onSync} disabled={props.busy === "sync"}>
-            {props.busy === "sync" ? "Syncing…" : "Sync markets"}
-          </Button>
-          <Button size="sm" className="bg-[#00B0F0] font-semibold text-[#001040] hover:bg-[#2FC1F5]" onClick={onCycle} disabled={props.busy !== null}>
-            Run robot cycle
-          </Button>
-        </div>
-      </div>
-
-      {/* KPI band */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="PAPER BALANCE" value={fmtCents(dash.balanceCents)} tag="SIMULATED" />
-        <Kpi label="TOTAL EXPOSURE" value={fmtCents(dash.exposureCents)} tag="OPEN POSITIONS" meter={{ pct: exposurePct, detail: `${dash.exposureLimitPct}% per-event cap in effect` }} />
-        <Kpi label="TODAY NET FLOW" value={fmtCents(dash.todayFlowCents)} tag="PAPER LEDGER" tone={dash.todayFlowCents < 0 ? "loss" : "gain"} />
-        <Kpi label="ROBOTS" value={`${dash.robots.filter((r) => ["RUNNING", "PAPER_ONLY"].includes(r.status)).length} active · ${dash.robots.filter((r) => r.status.startsWith("PAUSED")).length} paused`} tag={`${dash.marketCount} LIVE MARKETS`} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* robots */}
-        <div className="lg:col-span-2">
-          <SectionTitle>Robots — {dash.robots.filter((r) => r.status === "PAPER_ONLY").length} paper · {dash.robots.filter((r) => r.status.startsWith("PAUSED")).length} paused</SectionTitle>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {dash.robots.map((r) => (
-              <div key={r.id} className={`${card} p-4`}>
-                <div className="flex items-center justify-between">
-                  <Pill status={r.status} />
-                  <span className={`text-[10px] ${c.text3}`}>v{r.activeVersion}</span>
-                </div>
-                <div className="mt-2 text-[13px] font-semibold">{r.name}</div>
-                <div className={`text-[11px] ${c.text3}`}>{FAMILY_LABEL[r.family] ?? r.family}</div>
-                <div className={`mt-2 border-t ${c.border} pt-2 text-[11px] ${c.text2}`}>
-                  <span className={mono}>alloc {fmtCents(r.allocatedCents)}</span>
-                  <span className={`ml-3 ${mono}`}>pos cap {fmtCents(r.maxPositionCents)}</span>
-                  <span className={`ml-3 ${mono}`}>open ≤ {r.maxOpenPositions}</span>
-                </div>
-                {r.statusReason && <div className={`mt-1.5 text-[10.5px] ${c.warn}`}>{r.statusReason}</div>}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* right rail */}
-        <div className="flex flex-col gap-4">
-          <div className={`${card} p-4`}>
-            <SectionTitle>Portfolio risk</SectionTitle>
-            <div className="flex flex-col gap-3">
-              <Meter label="Cluster exposure used" pct={exposurePct} detail={`of ${fmtCents(dash.allocatedCents)} allocation`} />
-              <Meter label="AI budget" pct={aiProvider ? (aiProvider.spentCents / Math.max(1, aiProvider.monthlyBudgetCents)) * 100 : 0} detail={aiProvider?.enabled ? `${aiProvider.name} enabled` : "no AI key — heuristic mode (add one in Settings)"} tone="ai" />
-              <Meter label="Outbox drained" pct={dash.outboxPending === 0 ? 100 : 60} detail={`${dash.outboxPending} pending event(s)`} tone={dash.outboxPending > 0 ? "warn" : "accent"} />
-            </div>
-          </div>
-          <div className={`${card} p-4`}>
-            <SectionTitle right={hasUnknown ? <Button size="sm" variant="outline" className={`h-7 border-[#E3A63B]/50 bg-[#151D30] text-[#E3A63B] hover:bg-[#1B2540]`} onClick={onReconcile}>Resolve now</Button> : undefined}>
-              Recent activity
-            </SectionTitle>
-            <div className="flex flex-col">
-              {dash.notifications.slice(0, 6).map((n) => (
-                <div key={n.id} className={`border-b py-2 last:border-0 ${c.border}`}>
-                  <div className="flex items-center gap-2">
-                    <span className={`h-1.5 w-1.5 rounded-sm ${n.severity === "CRITICAL" ? "bg-[#F0525F]" : n.severity === "WARNING" ? "bg-[#E3A63B]" : "bg-[#3E9BF0]"}`} />
-                    <span className={`text-[11.5px] ${c.text2}`}>{n.title}</span>
-                  </div>
-                  <div className={`ml-3.5 mt-0.5 text-[10px] ${c.text3}`}>{n.body.slice(0, 90)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* decision traces */}
-      <div className={card}>
-        <div className="p-4 pb-2"><SectionTitle>Decision traces — every robot decision, trade or no-trade (A-08)</SectionTitle></div>
-        <div className="flex flex-col px-4 pb-4">
-          {dash.traces.slice(0, 5).map((t) => (
-            <div key={t.id} className={`border-b py-2.5 last:border-0 ${c.border}`}>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${t.decision === "TRADE" ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#151D30]`}`}>{t.decision}</span>
-                <span className={`text-[12px] font-semibold ${c.text}`}>{t.robot?.name}</span>
-                <span className={`text-[11px] ${c.text3}`}>on {t.market?.question.slice(0, 60)}</span>
-                {t.modelEstimatePct != null && (
-                  <span className={`ml-auto text-[11px] ${c.text2} ${mono}`}>est {t.modelEstimatePct}% · mkt {t.marketPriceCents}¢ · edge {t.edgeNetPct} pts</span>
-                )}
-              </div>
-              <div className={`mt-1 text-[11px] ${c.text2}`}>{t.reason}</div>
-            </div>
-          ))}
-          {dash.traces.length === 0 && <div className={`py-4 text-center text-[12px] ${c.text3}`}>No cycles run yet — press “Run robot cycle”.</div>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Kpi({ label, value, tag, meter, tone = "text" }: { label: string; value: string; tag: string; meter?: { pct: number; detail: string }; tone?: "text" | "gain" | "loss" }) {
-  return (
-    <div className={`${card} p-4`}>
-      <div className={`flex items-center justify-between text-[10px] font-semibold tracking-wider ${c.text3}`}>
-        <span>{label}</span>
-        <span className={`rounded px-1.5 py-0.5 text-[9px] ${c.bright} bg-[#00B0F0]/10`}>{tag}</span>
-      </div>
-      <div className={`mt-2 text-[20px] font-semibold ${mono} ${tone === "gain" ? c.gain : tone === "loss" ? c.loss : c.text}`}>{value}</div>
-      {meter && (
-        <div className="mt-2">
-          <div className={`h-1.5 rounded bg-[#151D30]`}>
-            <div className="h-full rounded bg-[#3E9BF0]" style={{ width: `${Math.min(100, Math.max(2, meter.pct))}%` }} />
-          </div>
-          <div className={`mt-1 text-[10px] ${c.text3}`}>{meter.detail}</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SkeletonPage() {
-  return (
-    <div className="flex flex-col gap-4 py-10">
-      <div className={`h-6 w-40 animate-pulse rounded ${c.elevated}`} />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => <div key={i} className={`h-24 animate-pulse rounded-xl ${c.elevated}`} />)}
-      </div>
-      <div className={`h-64 animate-pulse rounded-xl ${c.elevated}`} />
-    </div>
-  );
-}
-
 // ── Markets ──────────────────────────────────────────────────────────────────
-function MarketsView({ markets, onSync, onTrade, busy }: { markets: MarketDTO[]; onSync: () => void; onTrade: (m: MarketDTO) => void; busy: string | null }) {
+// B9/B11: one separate section per venue — the user always sees which market
+// they are entering, and which venue a robot would be created for.
+function MarketsView({ markets, onSync, onTrade, busy }: { markets: MarketDTO[]; onSync: (venue?: string) => void; onTrade: (m: MarketDTO) => void; busy: string | null }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline gap-3">
         <h1 className="text-[19px] font-semibold">Market discovery</h1>
-        <span className={`text-[12px] ${c.text3}`}>live Polymarket data via the venue adapter — read-only (S-05: MARKET_DATA_ONLY)</span>
-        <Button size="sm" className="ml-auto bg-[#00B0F0] font-semibold text-[#001040] hover:bg-[#2FC1F5]" onClick={onSync} disabled={busy === "sync"}>
-          {busy === "sync" ? "Syncing…" : "Sync from Polymarket"}
+        <span className={`text-[12px] ${c.text3}`}>one section per venue — read-only market data via per-venue adapters (S-05: MARKET_DATA_ONLY)</span>
+        <Button size="sm" className="ml-auto bg-[#00B0F0] font-semibold text-[#001040] hover:bg-[#2FC1F5]" onClick={() => onSync()} disabled={busy === "sync"}>
+          {busy === "sync" ? "Syncing…" : "Sync all venues"}
         </Button>
       </div>
-      <div className={`${card} overflow-hidden`}>
-        <div className="fd-scroll max-h-[560px] overflow-y-auto">
-          <table className="w-full">
-            <thead className={`sticky top-0 ${c.surface}`}>
-              <tr className={`border-b text-left text-[10px] tracking-wider ${c.border} ${c.text3}`}>
-                <th className="px-4 py-2.5 font-semibold">MARKET</th>
-                <th className="px-3 py-2.5 font-semibold">YES</th>
-                <th className="px-3 py-2.5 font-semibold">NO</th>
-                <th className="px-3 py-2.5 font-semibold">PARITY</th>
-                <th className="px-3 py-2.5 font-semibold">VOLUME</th>
-                <th className="px-3 py-2.5 font-semibold">SOURCE</th>
-                <th className="px-3 py-2.5" />
-              </tr>
-            </thead>
-            <tbody>
-              {markets.map((m) => {
-                const parity = m.yesPriceCents != null && m.noPriceCents != null ? 100 - (m.yesPriceCents + m.noPriceCents) : null;
-                return (
-                  <tr key={m.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#131A2C]`}>
-                    <td className="max-w-[380px] px-4 py-2.5">
-                      <div className={`truncate ${c.text}`}>{m.question}</div>
-                      <div className={`text-[10px] ${c.text3}`}>{m.category}{m.ambiguityFlag ? " · ⚠ ambiguity check" : ""}</div>
-                    </td>
-                    <td className={`px-3 py-2.5 ${mono} ${c.text}`}>{m.yesPriceCents ?? "—"}¢</td>
-                    <td className={`px-3 py-2.5 ${mono} ${c.text2}`}>{m.noPriceCents ?? "—"}¢</td>
-                    <td className={`px-3 py-2.5 ${mono} ${parity != null && parity > 0 ? c.gain : c.text3}`}>{parity != null ? `${parity >= 0 ? "+" : ""}${parity}¢` : "—"}</td>
-                    <td className={`px-3 py-2.5 ${mono} ${c.text2}`}>{m.volumeCents != null ? fmtCents(m.volumeCents) : "—"}</td>
-                    <td className="px-3 py-2.5">
-                      <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${m.dataSource === "GAMMA_LIVE" ? `${c.bright} bg-[#00B0F0]/10` : `${c.warn} bg-[#E3A63B]/10`}`}>
-                        {m.dataSource === "GAMMA_LIVE" ? "LIVE" : "CACHED"}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <Button size="sm" variant="outline" className={`h-7 border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} onClick={() => onTrade(m)} disabled={m.ambiguityFlag}>
-                        {m.ambiguityFlag ? "Flagged" : "Trade"}
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {markets.length === 0 && (
-                <tr><td colSpan={7} className={`px-4 py-8 text-center text-[12px] ${c.text3}`}>No markets cached yet — press “Sync from Polymarket”.</td></tr>
+      {VENUES.map((v) => {
+        const rows = markets.filter((m) => m.venue === v.id);
+        return (
+          // B12: each venue section wears its venue color (strip, dot, live text).
+          <div key={v.id} className={`${card} vc-scope overflow-hidden`} style={venueScopeStyle(v.id)}>
+            <span className={`vc-strip block h-[3px] w-full ${v.adapter === "LIVE" ? "" : "opacity-80"}`} aria-hidden />
+            {/* venue section header */}
+            <div className={`flex flex-wrap items-center gap-2.5 border-b px-4 py-3 ${c.border}`}>
+              <span className="vc-bg h-2 w-2 rounded-[3px]" aria-hidden />
+              <VenueBadge venue={v.id} />
+              <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${c.text3} bg-[#151D30]`}>
+                {ROLE_LABEL[v.role]}
+              </span>
+              <span className={`text-[10.5px] font-semibold ${v.adapter === "LIVE" ? "vc-text" : c.text3}`}>
+                {v.adapter === "LIVE" ? "● adapter live" : "○ adapter pending"}
+              </span>
+              <span className={`hidden text-[11px] md:inline ${c.text3}`}>{v.note}</span>
+              {v.adapter === "LIVE" && (
+                <Button size="sm" variant="outline" className="h-7 border-[#2E3C5F] bg-[#151D30] text-[11px] text-[#E9EEF7] hover:bg-[#1B2540]" onClick={() => onSync(v.id)} disabled={busy === "sync"}>
+                  {busy === "sync" ? "Syncing…" : `Sync ${v.label}`}
+                </Button>
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              <span className={`text-[11px] ${mono} ${c.text2}`}>{rows.length} market{rows.length === 1 ? "" : "s"}</span>
+            </div>
+            {rows.length > 0 ? (
+              <div className="fd-scroll max-h-[420px] overflow-y-auto">
+                <table className="w-full">
+                  <thead className={`sticky top-0 ${c.surface}`}>
+                    <tr className={`border-b text-left text-[10px] tracking-wider ${c.border} ${c.text3}`}>
+                      <th className="px-4 py-2.5 font-semibold">MARKET</th>
+                      <th className="px-3 py-2.5 font-semibold">YES</th>
+                      <th className="px-3 py-2.5 font-semibold">NO</th>
+                      <th className="px-3 py-2.5 font-semibold">PARITY</th>
+                      <th className="px-3 py-2.5 font-semibold">VOLUME</th>
+                      <th className="px-3 py-2.5 font-semibold">SOURCE</th>
+                      <th className="px-3 py-2.5" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((m) => {
+                      const parity = m.yesPriceCents != null && m.noPriceCents != null ? 100 - (m.yesPriceCents + m.noPriceCents) : null;
+                      return (
+                        <tr key={m.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#131A2C]`}>
+                          <td className="max-w-[380px] px-4 py-2.5">
+                            <div className={`truncate ${c.text}`}>{m.question}</div>
+                            <div className={`text-[10px] ${c.text3}`}>{m.category}{m.ambiguityFlag ? " · ⚠ ambiguity check" : ""}</div>
+                          </td>
+                          <td className={`px-3 py-2.5 ${mono} ${c.text}`}>{m.yesPriceCents ?? "—"}¢</td>
+                          <td className={`px-3 py-2.5 ${mono} ${c.text2}`}>{m.noPriceCents ?? "—"}¢</td>
+                          <td className={`px-3 py-2.5 ${mono} ${parity != null && parity > 0 ? c.gain : c.text3}`}>{parity != null ? `${parity >= 0 ? "+" : ""}${parity}¢` : "—"}</td>
+                          <td className={`px-3 py-2.5 ${mono} ${c.text2}`}>{m.volumeCents != null ? fmtCents(m.volumeCents) : "—"}</td>
+                          <td className="px-3 py-2.5">
+                            <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${m.dataSource.endsWith("_LIVE") ? `${c.bright} bg-[#00B0F0]/10` : `${c.warn} bg-[#E3A63B]/10`}`}>
+                              {m.dataSource.endsWith("_LIVE") ? "LIVE" : "CACHED"}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-right">
+                            <Button size="sm" variant="outline" className={`h-7 border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} onClick={() => onTrade(m)} disabled={m.ambiguityFlag}>
+                              {m.ambiguityFlag ? "Flagged" : "Trade"}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className={`px-4 py-7 text-center text-[12px] ${c.text3}`}>
+                {v.adapter === "LIVE"
+                  ? `No ${v.label} markets cached yet — press “Sync ${v.label}” above.`
+                  : `No ${v.label} markets yet — the adapter ships per the B9 roadmap. Robots can be scoped here once it lands.`}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -496,16 +424,25 @@ function TradeDialog({ market, onClose, onPlace, busy }: { market: MarketDTO | n
   const valid = Number.isInteger(price) && price >= 1 && price <= 100 && Number.isInteger(sizeCents) && sizeCents > 0;
   return (
     <Dialog open={!!market} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className={`${c.surface} border-[#202B45] text-[#E9EEF7] sm:max-w-[420px]`}>
+      {/* B12: the ticket inherits the market's venue color — you always know
+          which market's room you are placing an order in. */}
+      <DialogContent
+        className={`${c.surface} vc-scope overflow-hidden border-[#202B45] text-[#E9EEF7] sm:max-w-[420px]`}
+        style={venueScopeStyle(market.venue)}
+      >
+        <span className="vc-strip -mx-6 -mt-6 mb-1 block h-[3px]" aria-hidden />
         <DialogHeader>
           <DialogTitle className="text-[14px]">Manual paper order — always net of fees</DialogTitle>
         </DialogHeader>
         <div className={`text-[11px] ${c.text2}`}>{market.question}</div>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <button onClick={() => { setSide("BUY_YES"); setPrice(market.yesPriceCents ?? 50); }} className={`rounded-lg border py-2.5 text-[12.5px] font-semibold transition-colors ${side === "BUY_YES" ? "border-[#00B0F0] bg-[#00B0F0]/10 text-[#00B0F0]" : `${c.borderStrong} ${c.elevated} ${c.text2}`}`}>
+        <div className={`mt-1 flex items-center gap-1.5 text-[10.5px] ${c.text3}`}>
+          entering via <VenueBadge venue={market.venue} />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => { setSide("BUY_YES"); setPrice(market.yesPriceCents ?? 50); }} className={`rounded-lg border py-2.5 text-[12.5px] font-semibold transition-colors ${side === "BUY_YES" ? "vc-border vc-tint vc-text" : `${c.borderStrong} ${c.elevated} ${c.text2}`}`}>
             Buy YES · {market.yesPriceCents ?? "—"}¢
           </button>
-          <button onClick={() => { setSide("BUY_NO"); setPrice(market.noPriceCents ?? 50); }} className={`rounded-lg border py-2.5 text-[12.5px] font-semibold transition-colors ${side === "BUY_NO" ? "border-[#00B0F0] bg-[#00B0F0]/10 text-[#00B0F0]" : `${c.borderStrong} ${c.elevated} ${c.text2}`}`}>
+          <button onClick={() => { setSide("BUY_NO"); setPrice(market.noPriceCents ?? 50); }} className={`rounded-lg border py-2.5 text-[12.5px] font-semibold transition-colors ${side === "BUY_NO" ? "vc-border vc-tint vc-text" : `${c.borderStrong} ${c.elevated} ${c.text2}`}`}>
             Buy NO · {market.noPriceCents ?? "—"}¢
           </button>
         </div>
@@ -524,7 +461,7 @@ function TradeDialog({ market, onClose, onPlace, busy }: { market: MarketDTO | n
           <div className={`flex justify-between text-[12px] ${c.text}`}>
             <span>Est. total</span><span className={mono}>{fmtCents(sizeCents)}</span>
           </div>
-          <Button className="bg-[#00B0F0] font-semibold text-[#001040] hover:bg-[#2FC1F5]" disabled={!valid || busy !== null} onClick={() => onPlace({ marketId: market.id, side, priceCents: price, sizeCents, nonce: crypto.randomUUID() })}>
+          <Button className="vc-btn font-semibold" disabled={!valid || busy !== null} onClick={() => onPlace({ marketId: market.id, side, priceCents: price, sizeCents, nonce: crypto.randomUUID() })}>
             Place paper order
           </Button>
           <div className={`text-[10px] ${c.text3}`}>Robot entry additionally requires the edge gate, liquidity and risk checks — this ticket is the manual path (C4.5 eligibility applies).</div>

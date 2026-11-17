@@ -1,7 +1,8 @@
 "use client";
 
 // Shared brand primitives for the FAIDA Predict UI.
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { VENUES, VENUE_COLOR, VENUE_LABEL, venueColor } from "@/lib/venues";
 
 export const c = {
   bg: "bg-[#0A0F1C]",
@@ -24,9 +25,36 @@ export const c = {
 export const card = `${c.surface} border ${c.border} rounded-xl`;
 export const mono = "font-mono tabular-nums";
 
+// B12: scope helper — set the venue accent (--vc) on any surface. Pair with the
+// vc-* classes in globals.css (vc-chip, vc-strip, vc-tint, venue-card, …).
+export function venueScopeStyle(venue: string): CSSProperties {
+  return { "--vc": venueColor(venue) } as CSSProperties;
+}
+
 export function fmtCents(v: number): string {
   const sign = v < 0 ? "-" : "";
   return `${sign}$${(Math.abs(v) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+// B11 + B12: venue chip — every market, order, robot and ticket states which
+// venue it belongs to, in that venue's own color. Live venues render the full
+// hue; pending venues render the same hue muted toward slate.
+export function VenueBadge({ venue, withLabel = true }: { venue: string; withLabel?: boolean }) {
+  const def = VENUES.find((v) => v.id === venue);
+  const live = def?.adapter === "LIVE";
+  return (
+    <span
+      title={def ? `${def.label} — ${def.note}` : venue}
+      style={venueScopeStyle(venue)}
+      className={`vc-scope inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide whitespace-nowrap vc-chip ${
+        live ? "" : "vc-pending"
+      }`}
+    >
+      <span className="opacity-80">{def?.short ?? "??"}</span>
+      {withLabel ? <span>{VENUE_LABEL[venue] ?? venue}</span> : null}
+      {!live && <span className="opacity-70">PENDING</span>}
+    </span>
+  );
 }
 
 export function StateChip({ state }: { state: string }) {

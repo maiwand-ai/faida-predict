@@ -13,8 +13,24 @@ truth for choices that must not drift; code reads them via config, not folklore.
 | B6 | Robot families at launch | Probability Edge, Market-Making, AI Research (Arbitrage/Parity planned as family #4) | RATIFIED | Skeleton ships all three as paper robots |
 | B7 | AI strategy | **Provider-agnostic gateway**: any provider key (GLM keyless in sandbox, OpenAI, Anthropic, OpenAI-compatible base URL) makes the research engine work; deterministic heuristic fallback when none configured | RATIFIED | `AiProvider` table + `src/lib/ai/gateway.ts`; keys masked, never returned |
 | B8 | Venue automation | Robots execute autonomously post-activation; humans own activation, emergency pause, and resume-from-risk states | CONFIRMED (spec premise) | Skeleton refuses `RUNNING` (live) until Phase 7 gates — enforced in API |
-| B9 | Venue #2 | Manifold (play-money) as pre-edge-gate test harness; then Limitless or Kalshi | ROADMAP | Adapter interface ready; no code yet |
+| B9 | Venue lineup | **Polymarket = primary** (CLOB REST + WebSocket, USDC on Polygon, API-only — where robots earn). **Manifold = free harness wired in from week one** (play money, public API, zero-risk environment pre-edge-gate; Polymarket-shaped enough to exercise the whole pipeline). **Limitless = fast-follow** (crypto-native order book on Base; thin liquidity handled structurally — min-depth + edge-after-fees). **Drift BET (Solana) + Azuro (EVM, sports) = fast-follow SDK adapters**. **Kalshi = fast-follow** (CFTC-regulated US DCM, REST + key auth — the US-persons complement where Polymarket is venue-restricted; re-added per founder) | RATIFIED | Lineup + roles encoded in `src/lib/venues.ts`; per-venue UI sections per B11; adapters land venue-by-venue. Ratified `f5352d9`, Kalshi amendment `bbf2574`. The per-venue adapter contracts and integration order are pinned in `docs/DEVELOPMENT_PLAN.md` §3 |
 | B10 | Live money gates | Edge gate + backtest (A-05 fill-model) + paper session + recorded consent (C25) before any live order | RATIFIED | `placeOrder()` on the live adapter throws by contract |
+| B11 | Venue visibility & scoping | Every robot is scoped to exactly one venue; the UI states the venue on every market, order, robot card, trace and ticket. Venues without a live adapter are visible but marked "adapter pending" and refused at robot creation (422) | RATIFIED | `src/lib/venues.ts` registry; `Robot.venue` column; cycle engine selects markets by `robot.venue`; wizard step 1 = venue picker |
+| B12 | Venue color identity | Each venue carries a distinct accent color — Polymarket `#3E8EFF`, Manifold `#14D9C4`, Limitless `#F26BC8`, Drift BET `#C6F542`, Azuro `#B18CFF`, Kalshi `#FFB25C` — used on the dashboard venue cards, the venue workspace interior (header glow/strip, primary CTA, section dots), venue badges, market sections, the studio venue picker and the trade ticket. Pending venues render their hue muted toward slate until the adapter ships. Role chips are neutral gray so the venue hue carries identity. Colors are FAIDA-internal identity, not venue brand marks | RATIFIED | `VenueDef.hex` + `VENUE_COLOR`/`venueColor` in `src/lib/venues.ts`; `vc-*` utility layer in `src/app/globals.css` (CSS var `--vc` + color-mix); applied in dashboard.tsx, app.tsx, views.tsx. Requested by the founder before Phase 4 (2026-11-16) |
+
+## Phase-3 checkpoint status (autonomy, Manifold harness, safety layer)
+
+- Venue lineup B9 — **ratified with the founder** (six venues; Polymarket
+  primary, Manifold week-one harness, Limitless/Drift BET/Azuro fast-follow,
+  Kalshi US complement). Per-venue adapter contracts pinned in
+  `docs/DEVELOPMENT_PLAN.md` §3 — that file is the development-time source of
+  truth; nothing from the lineup may be dropped during implementation.
+- Phase 3 scope — **locked and implemented** (2026-11-16): Manifold adapter
+  LIVE (30 markets synced, full paper pipeline traded), autopilot with
+  per-robot loop leases (parallel-tick refusal verified), global pause with
+  measured propagation on cycles AND manual orders, pre-trade staleness gate
+  with measured age in traces, soak runner (smoke PASS — full 72 h owed on
+  founder host). Acceptance evidence in `docs/DEVELOPMENT_PLAN.md` §4.
 
 ## Phase-2 checkpoint status (strategy lab, R-03 continued)
 

@@ -21,6 +21,9 @@ interface GammaMarket {
   closed?: boolean;
   active?: boolean;
   description?: string;
+  // A-04 event clustering (Phase 4): Gamma embeds the parent event(s) —
+  // markets under one event (NegRisk candidate sets, game cards) share a key.
+  events?: Array<{ slug?: string; title?: string }>;
 }
 
 function parseMaybeJson(v: unknown): unknown[] {
@@ -63,22 +66,36 @@ export class PolymarketAdapter implements VenueAdapter {
       const tokens = parseMaybeJson(m.clobTokenIds).map(String);
       const yesIdx = outcomes.findIndex((o) => o.toUpperCase() === "YES");
       const noIdx = outcomes.findIndex((o) => o.toUpperCase() === "NO");
-      const yesPrice = yesIdx >= 0 ? toCents(prices[yesIdx]) : null;
-      const noPrice = noIdx >= 0 ? toCents(prices[noIdx]) : null;
+      let yesPrice = yesIdx >= 0 ? toCents(prices[yesIdx]) : null;
+      let noPrice = noIdx >= 0 ? toCents(prices[noIdx]) : null;
+      let yesToken = tokens[yesIdx] ?? tokens[0];
+      let noToken = tokens[noIdx] ?? tokens[1];
+      if (yesPrice == null && noPrice == null && outcomes.length === 2 && prices.length === 2) {
+        // Team-named binary (sports game cards, Phase 4): "Chargers"/"Ravens"
+        // carry one price per outcome — map outcome 0 to the YES side and
+        // outcome 1 to NO so game-card markets (moneyline, spreads, totals
+        // under one event) become tradeable two-sided books and A-04
+        // cluster members instead of permanently-ambiguous dead inventory.
+        yesPrice = toCents(prices[0]);
+        noPrice = toCents(prices[1]);
+        yesToken = tokens[0];
+        noToken = tokens[1];
+      }
       const symbol = String(m.slug ?? m.id ?? "");
       if (!symbol || !m.question && !m.title) continue;
       out.push({
         venueSymbol: symbol,
         question: String(m.question ?? m.title ?? symbol),
         category: String(m.category ?? "unknown").toLowerCase(),
-        yesTokenId: tokens[yesIdx] ?? tokens[0],
-        noTokenId: tokens[noIdx] ?? tokens[1],
+        yesTokenId: yesToken,
+        noTokenId: noToken,
         yesPriceCents: yesPrice,
         noPriceCents: noPrice,
         liquidityCents: toCentsFromDollars(m.liquidityNum ?? m.liquidity),
         volumeCents: toCentsFromDollars(m.volumeNum ?? m.volume),
         closeDate: m.endDate ?? null,
         resolutionSource: m.description ? String(m.description).slice(0, 400) : null,
+        eventKey: m.events?.[0]?.slug ? `pm:event:${m.events[0].slug}` : null,
       });
       if (out.length >= limit) break;
     }

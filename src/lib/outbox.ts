@@ -12,7 +12,9 @@ export type OutboxEventType =
   | "RISK_PAUSE"
   | "LEDGER_APPENDED"
   | "RECONCILIATION_OPENED"
-  | "RECONCILIATION_RESOLVED";
+  | "RECONCILIATION_RESOLVED"
+  | "PLATFORM_PAUSED"
+  | "PLATFORM_RESUMED";
 
 export interface OutboxDraft {
   aggregateType: OutboxAggregate;
