@@ -56,3 +56,4 @@ next-env.d.ts
 /scripts/wireframes
 /.serena
 /.agentctx
+__pycache__/

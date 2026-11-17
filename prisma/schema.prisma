@@ -51,6 +51,11 @@ model Robot {
   status           String    @default("PAPER_ONLY")
   statusReason     String?
   paperMode        Boolean   @default(true) // skeleton: paper only; live blocked by Phase 7 gates
+  // Phase 7 (B10): PAPER | LIVE_PILOT. Flipping to LIVE_PILOT requires a
+  // recorded consent (C25), the pilot caps and a ready live gate — the flip
+  // is refused otherwise. LIVE_PILOT robots execute through the gated live
+  // path (src/lib/live/execute.ts), never the paper book.
+  mode             String    @default("PAPER")
   allocatedCents   Int       @default(0)
   maxPositionCents Int       @default(0)
   maxOpenPositions Int       @default(0)

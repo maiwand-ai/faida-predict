@@ -16,7 +16,9 @@
     "drill": "python3 scripts/demotion_drill.py",
     "smoke:phase5": "python3 scripts/smoke_phase5.py",
     "visual": "bun scripts/visual-regression.ts",
-    "smoke:phase6": "python3 scripts/smoke_phase6.py"
+    "smoke:phase6": "python3 scripts/smoke_phase6.py",
+    "drill:killswitch": "python3 scripts/kill_switch_drill.py",
+    "smoke:phase7": "python3 scripts/smoke_phase7.py"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -82,6 +84,7 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
+    "viem": "2",
     "z-ai-web-dev-sdk": "^0.0.18",
     "zod": "^4.0.2",
     "zustand": "^5.0.6"

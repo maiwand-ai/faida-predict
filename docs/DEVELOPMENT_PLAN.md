@@ -10,7 +10,7 @@
 > Before closing any phase, tick its acceptance criteria here and commit the
 > tick. Nothing gets dropped because it is written down here.
 
-Last revised: 2026-11-18 (Phase 6 closed — Robot Studio completion, usability walkthrough, Drift BET verdict: venue #4 deliberately not built, slot decision escalated to the founder; next: Phase 7).
+Last revised: 2026-11-18 (Phase 7 closed — gated live automation: B10 gate stack, S-08 custody rubric executed, C25 consent, small-capital pilot, Polymarket CLOB write path under DRY-RUN send armor, C19.1 kill-switch drill executed; live sends stay held until the founder arms on the founder host).
 
 ---
 
@@ -47,15 +47,18 @@ Full reasoning in `DECISIONS.md`. The binding summary:
 `src/lib/venues.ts` is the machine-readable registry; this table is the
 contract each adapter must satisfy. **Adapter states**: `LIVE` = market-data
 adapter implemented (robots may be created and trade paper on it);
-`PENDING` = on the roadmap, robot creation refused (422). No venue accepts
-real orders before Phase 7 — `placeOrder()` throws by contract everywhere.
+`PENDING` = on the roadmap, robot creation refused (422); `SUSPENDED` =
+verdict recorded, not landable (Drift BET, §4 Phase 6). Real orders exist
+only on the Phase 7 live path — every other `placeOrder()` still throws by
+contract, and the Polymarket write path itself is gated (DRY-RUN armor
+signs + audits but sends nothing until the founder arms it).
 
 | Order | Venue | Markets / money | API surface | Status | Binding integration notes |
 |-------|-------|-----------------|-------------|--------|---------------------------|
-| 1 | **Polymarket** | Polygon PoS, USDC, CLOB order book | Gamma (discovery) + CLOB REST & WebSocket | **LIVE** (market data) | Primary venue — where robots earn. Write path (EIP-712 L2 auth) only in Phase 7. Tick-size regimes and order-type hazards per S-05 catalogue. |
+| 1 | **Polymarket** | Polygon PoS, USDC, CLOB order book | Gamma (discovery) + CLOB REST & WebSocket | **LIVE** (market data + gated write path) | Primary venue — where robots earn. Write path (EIP-712 L2 auth) landed in Phase 7 under DRY-RUN send armor — signed, hashed, journaled, nothing transmitted while SAFE. Tick-size regimes and order-type hazards per S-05 catalogue. |
 | 2 | **Manifold** | Play money (Mana), free | Public REST `api.manifold.markets/v0` | **LIVE** from Phase 3 | Week-one harness. Binary markets only. Zero-risk proving ground: the whole pipeline (sync → decision → paper fill → ledger → trace) must run on Manifold before the edge gate exists. |
 | 3 | **Limitless** | Base network, USDC, order book | API/SDK | **LIVE** from Phase 4 (market data) | Closest Polymarket twin. **Structural thin-liquidity rules, not afterthoughts**: (a) refuse entry if touch depth < configured minimum; (b) edge computed **after** venue fees; (c) per-market position cap. Thin books make robots conservative, not broken. Conformance fixtures: `tests/fixtures/limitless` (`bun run conformance`). |
-| 4 | **Drift BET** | Solana, SDK-first | TypeScript SDK | PENDING (fast-follow) | Bot-friendly. Adapter module only — no core changes expected (S-05 contract tests decide readiness). |
+| 4 | **Drift BET** | Solana, SDK-first | TypeScript SDK | **SUSPENDED** (2026-11-18 verdict, §4 Phase 6) | Offline since the April 2026 ~$285M exploit; S-05 conformance cannot pass against a dead market. Compliance row SUSPENDED with dated evidence; robot creation refused 422. Slot #4 substitution awaits the founder's verdict (B9) — no lineup change is self-approved. |
 | 5 | **Azuro** | EVM, sports-leaning | SDK + subgraph odds | PENDING (fast-follow) | Sports events shape: shorter closes, different resolution sources — eligibility matrix and category handling must cover it. |
 | 6 | **Kalshi** | CFTC-regulated US DCM, USD | REST + RSA key auth | PENDING (fast-follow, last) | The US-persons complement where Polymarket is venue-restricted. Key-based auth (not wallet) — adapter must handle a second credential kind. |
 
@@ -124,8 +127,8 @@ venue plan, is this phase's scope:
   reason; every cycle and every order path checks it first; propagation is
   **measured** (time from pause decision to first refused tick), not
   asserted; CRITICAL notification via outbox; red banner in UI. Kill-switch
-  drill (C19.1) scheduled pre-Phase 7 — checklist lives in §6 of the drill
-  runbook to be written in 7.5.
+  drill (C19.1) executed pre-Phase 7 on 2026-11-18 (rehearsal DRILL PASS,
+  §4 Phase 7); operational cadence from 7.5.
   *Acceptance: pause mid-run stops new decisions; refused ticks carry the
   pause reason; measured propagation time logged; resume restores.* —
   **sandbox-verified 2026-11-16: cycles AND manual tickets refused with
@@ -344,7 +347,7 @@ clean, `scripts/demotion_drill.py` DRILL PASS, `scripts/smoke_phase5.py`
 SMOKE PASS (28 checks on live APIs), screenshot pass over Settings (registry
 + governance cards) and dashboard traces (§7.4).
 
-### Phase 6 — Robot Studio completion + venue #4 (Drift BET) — **DONE, commit pending push**
+### Phase 6 — Robot Studio completion + venue #4 (Drift BET) — **DONE (commit ca607cd), push pending founder PAT**
 
 Robot templates P-03, trace UI depth (A-08 front-end), visual regression,
 three-user usability check (template → first backtest in one guided
@@ -418,13 +421,94 @@ cross-suite assertions),
 pass over Studio template gallery, strategy knobs, expanded dashboard trace
 and venue workspace (§7.4).
 
-### Phase 7 — Gated live automation (first real money)
+### Phase 7 — Gated live automation (first real money) — **DONE, push pending founder PAT**
 
 B1 custody rubric executed and recorded in DECISIONS.md (S-08 evidence);
 EIP-712 signing; Polymarket CLOB write path; Phase 7 gates (B10): edge gate
 + A-05 backtest + paper session + recorded consent C25; pause propagation
 and revocation-to-stop measured (≤60 s target); geographic transitions
 tested. Small-capital pilot only.
+
+- **P7.1 — Custody (B1/S-08).** `src/lib/live/custody.ts`: the signer key is
+  env-injected per process (`POLYMARKET_SIGNER_KEY`) and structurally
+  unstoreable (`keyStored: false`; the `Wallet.signingModel` SELF_CUSTODY
+  schema invariant); wallet registration is address-only with a
+  mismatched-signer refusal; every error path redacts through `redactKey`.
+  `scripts/live_selftest.ts` proves the signing chain offline (S1–S6:
+  address derivation, wallet match, EIP-712 struct, tick-conformant 6-decimal
+  amounts, payload hash, signature verify).
+  *Acceptance: keys unstoreable + signing chain proven.* — **sandbox-verified
+  2026-11-18 (smoke P7-2/P7-3; SELFTEST PASS).**
+- **P7.2 — Recorded consent (C25).** `src/lib/live/consent.ts` + `/api/consent`:
+  typed-phrase authorization ("I AUTHORIZE LIVE TRADING") with wallet
+  address + caps acknowledgment bound into a consent hash; wrong phrase 403;
+  revocation closes every gate on the next read; `CONSENT_RECORDED` outbox
+  event persists (S-02).
+  *Acceptance: consent records with hash binding; revoke stops the live
+  robot ≤60 s naming the gate in the trace.* — **sandbox-verified 2026-11-18
+  (smoke P7-4/P7-10).**
+- **P7.3 — Small-capital pilot + B3 sign-off row.** `src/lib/live/pilot.ts`:
+  hard structural ceilings — $20 per order, $50 total open live notional,
+  Polymarket-only whitelist — the founder-facing API can tighten but never
+  loosen; pilot enable is refused 422 without recorded consent; the B3
+  counsel sign-off records as a row (rehearsal in sandbox, reset on exit —
+  real counsel sign-off owed before the live pilot).
+  *Acceptance: refusals before consent; caps clamp to ceilings; venue
+  whitelist enforced.* — **sandbox-verified 2026-11-18 (smoke
+  P7-5/P7-12/P7-13).**
+- **P7.4 — B10 gate stack.** `src/lib/live/gates.ts` + `edgeGate.ts`: the
+  evidence half (MODEL_CALIBRATED, PROVENANCE_COMPLETENESS, CLEAN_EVIDENCE,
+  BACKTEST_EVIDENCE, PAPER_SESSION, RECORDED_CONSENT) + the execution half
+  (ROBOT_MODE, VENUE_LIVE_WRITE, custody, credentials, pilot caps, B3
+  sign-off, geo). Every check names what is missing (D-04); the LIVE_PILOT
+  flip is refused 422 with the blocking list until the evidence exists, and
+  the gate re-runs on every read so a consent revoke, geo flip or demotion
+  closes the path immediately.
+  *Acceptance: flip refused → evidence → flip succeeds, gate ready in the
+  SAFE posture.* — **sandbox-verified 2026-11-18 (smoke P7-7/P7-8).**
+- **P7.5 — CLOB client + the execution path.** `src/lib/live/clobClient.ts`
+  (public book fetch with the B5 freshness clock, tick-conformant amount
+  encoding, EIP-712 order struct over the domain table keyed by book shape,
+  L2 HMAC auth headers, send boundary; clients identify themselves with a
+  real UA after the sandbox 403 finding) and `src/lib/live/execute.ts` —
+  the only way a real order leaves the platform: pause (C19) → gate → geo
+  → pilot caps → LIVE ledger balance → CLOB book (5 s freshness, present
+  touch, +2% slippage sanity, min size) → sign (EIP-712, self-custody) →
+  **DRY_RUN armor** (`POLYMARKET_LIVE_WRITE` unset ⇒ signed + audited + NOT
+  sent) → send with ACK-lost → RECONCILING only (S-01/S-04). The signed
+  payload sha256 and the domain + amounts are journaled either way.
+  *Acceptance: DRY-RUN end-to-end on the live CLOB book — signed, hashed,
+  journaled, nothing sent.* — **sandbox-verified 2026-11-18 (smoke P7-9:
+  live-book probe + signed order + `LIVE_ORDER_SIGNED_NOT_SENT`).**
+- **P7.6 — Kill-switch drill (C19.1).** `scripts/kill_switch_drill.py` — the
+  scheduled operational drill the carry-forward register owes before Phase
+  7: pause propagation across cycles and manual orders with measured
+  seconds; becomes an operational cadence from 7.5.
+  *Acceptance: DRILL PASS.* — **sandbox-verified 2026-11-18 (smoke P7-1).**
+- **P7.7 — Live control surface.** `/api/live` (custody/consent/pilot/B3/
+  gate/arm-switch state + ENABLE_PILOT, SET_CAPS, REGISTER_WALLET,
+  SET_ROBOT_MODE, B3_SIGNOFF), `/api/live/orders` (manual live order through
+  the same path) and the Settings `LiveTradingCard`: arm-switch badge
+  (SAFE/ARMED), gate statuses, consent record/revoke, wallet register, caps,
+  robot mode flips — refusals shown verbatim (D-04). Engine integration:
+  LIVE_PILOT robots route through the live path in `cycle.ts` with
+  consent/geo stops measured in the cycle summaries; paper engine and
+  reconciliation stay mode-aware.
+  *Acceptance: the flip and every refusal are operable from the UI alone.* —
+  **sandbox-verified 2026-11-18 (smoke P7-7..P7-12 hit the same APIs the
+  card calls).**
+
+**Non-goals for Phase 7 (kept):** no real funds move in the sandbox (fixture
+key #0, zero funds, arm switch SAFE — the smoke ends the platform paper-only);
+no ARMED send without founder authorization + real B3 counsel sign-off on
+the founder host; billing (Phase 8); Azuro/Kalshi adapters. Verification
+evidence: `bunx tsc --noEmit` clean, `bun run lint` clean,
+`scripts/kill_switch_drill.py` DRILL PASS, `scripts/live_selftest.ts`
+SELFTEST PASS (S1–S6), `scripts/smoke_phase7.py` SMOKE PASS (P7-1..P7-13,
+isolation-run), smoke_phase4 + smoke_phase5 regression re-runs PASS, visual
+regression green after the documented Settings re-baseline (the live-trading
+card joined the clipped region). S-08 custody rubric verdict recorded in
+`DECISIONS.md`.
 
 ### Phase 7.5 — Hardening + closed beta (R-02, locked)
 
@@ -452,14 +536,14 @@ These are scheduled spec obligations that no phase may silently drop:
 | Item | Obligation | When |
 |------|-----------|------|
 | S-05 conformance catalogue | Every new venue: catalog row + [VERIFY] check + contract tests + fee schedule | With each venue adapter (P3.1, 4, 6, 8, 9) |
-| C19.1 kill-switch drill | Scheduled operational drill, not just a feature | Before Phase 7 and periodically after (7.5) |
-| S-08 custody rubric | Rubric results recorded in DECISIONS.md before live signing | Any time before Phase 7 |
-| B3 [VERIFY] rows | Counsel sign-off on geo/restriction entries | Before Phase 7 pilot |
-| B5 operational targets | Freshness 5 s (live), decision latency 750 ms p95 [VERIFY], 500 concurrent robots, availability 99.5% | Measured in 7 / 7.5 |
+| C19.1 kill-switch drill | Scheduled operational drill, not just a feature | **Executed 2026-11-18 (rehearsal DRILL PASS, §4 Phase 7)**; periodically from 7.5 |
+| S-08 custody rubric | Rubric results recorded in DECISIONS.md before live signing | **Recorded 2026-11-18** (rubric verdict + S1–S6 self-test in DECISIONS.md) |
+| B3 [VERIFY] rows | Counsel sign-off on geo/restriction entries | Rehearsal sign-off only (smoke P7-13, resets on exit) — **real counsel sign-off owed before the live pilot** |
+| B5 operational targets | Freshness 5 s (live), decision latency 750 ms p95 [VERIFY], 500 concurrent robots, availability 99.5% | Live book budget landed + measured in P7-9; latency p95 + load measured in 7.5 |
 | A-04 clustering | Related-market exposure stacking | **Landed in Phase 4** (`eventKey` stacking in `src/lib/risk.ts`; re-check for every new venue adapter) |
 | D-03 honesty badges | SYNTHETIC vs LIVE labeling everywhere evidence is shown | Standing rule, every phase |
 | P-01 organizations | Data model early, feature later | Model when billing lands (Phase 8) |
-| R-01 B5 defaults | Founder numbers recorded in DECISIONS.md | Confirmed via B5; revisit before Phase 7 |
+| R-01 B5 defaults | Founder numbers recorded in DECISIONS.md | Confirmed via B5; revisit at the live pilot (7.5) |
 | Kalshi credential kind | RSA key auth ≠ wallet signing — adapter + settings must support it | Phase 9 |
 | Push discipline | Local commits are not delivered until the founder provides a fresh fine-grained PAT | Every handoff |
 
@@ -469,7 +553,9 @@ These are scheduled spec obligations that no phase may silently drop:
 2. UNKNOWN orders resolve only via reconciliation evidence (S-01/S-04).
 3. Platform never stores wallet private keys (B1).
 4. Sanctioned jurisdictions can never be allowed (C4.5).
-5. Live order placement throws until Phase 7 gates + explicit authorization (B10).
+5. Live order placement refuses until the Phase 7 gates pass + explicit
+   authorization (B10); the DRY-RUN send armor keeps transmission off until
+   the founder arms it.
 6. Every order records the strategy version that produced it (C5).
 7. Backtests are evidence, never promises: adverse slippage, fees, honest labels (A-05/D-03).
 8. Every robot, market, order, position and trace names its venue (B11).

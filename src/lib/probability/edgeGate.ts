@@ -2,10 +2,12 @@
 // starts CONSUMING real evidence instead of promises: calibration of the
 // active model (A-01), provenance completeness (A-02), evidence cleanliness
 // (A-06), backtest evidence (A-05), paper session length, and the C25 consent
-// that only Phase 7 can record. The gate NEVER grants live trading here —
-// `ready` stays false by contract until Phase 7 wires the execution gates.
+// (real since Phase 7). The edge gate alone still does NOT grant live
+// trading — the Phase-7 execution gates (src/lib/live/gates.ts) stack the
+// custody/credentials/pilot/B3 checks on top before any send is possible.
 import { db } from "@/lib/db";
 import { getBaselineDef, getModelKnobs, BASELINE_KEY } from "./baseline";
+import { getConsent } from "@/lib/live/consent";
 import type { CalibrationSnapshot } from "./registry";
 
 export interface EdgeGateCheck {
@@ -83,12 +85,20 @@ export async function edgeGateReport(robotId: string): Promise<EdgeGateReport | 
   // 5. paper session length: enough observed decisions to judge behavior.
   checks.push({ check: "PAPER_SESSION", passed: traceTotal >= 20, detail: `${traceTotal} decision traces recorded (≥ 20 required)` });
 
-  // 6. consent (C25): recorded consent only exists after the Phase 7 flow.
-  checks.push({ check: "RECORDED_CONSENT_C25", passed: false, detail: "no recorded consent — C25 flow lands in Phase 7; live trading stays disabled by contract (B10)" });
+  // 6. consent (C25): real since Phase 7 — a recorded, unrevoked consent row
+  //    on PlatformControl.LIVE_CONSENT is the only acceptable evidence.
+  const consent = await getConsent();
+  checks.push({
+    check: "RECORDED_CONSENT_C25",
+    passed: consent.consented && !consent.revokedAt,
+    detail: consent.consented
+      ? `consent recorded ${consent.recordedAt} (hash ${consent.consentHash?.slice(0, 12)}…), wallet ${consent.walletAddress}`
+      : "no recorded consent — record it in Settings → Live trading (typed confirmation required); live trading stays disabled by contract (B10)",
+  });
 
   return {
     robotId,
-    ready: false,
+    ready: checks.every((c) => c.passed),
     checks,
     generatedAt: new Date().toISOString(),
   };

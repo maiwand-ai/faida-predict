@@ -83,7 +83,7 @@ export class ManifoldAdapter implements VenueAdapter {
     return { state: "NOT_FOUND" };
   }
 
-  async placeOrder(): Promise<never> {
+  async placeOrder(_req: import("./types").LiveOrderRequest): Promise<import("./types").LiveOrderOutcome> {
     // Hard block by design (B10): live execution — even play money — is out
     // of scope until the Phase 7 gates and explicit authorization.
     throw new Error("LIVE_TRADING_DISABLED: Phase 7 gates not passed; paper mode only");

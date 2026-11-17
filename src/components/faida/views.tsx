@@ -593,7 +593,7 @@ export function SettingsView(props: {
         <div className={`mb-2 text-[13px] font-semibold`}>Custody — decision B1: SELF-CUSTODY</div>
         <div className={`text-[12px] ${c.text2}`}>
           Your wallet signs every order (EIP-712). The platform stores the address only — it never holds, moves or custody keys.
-          Signing integration arrives with the Phase 7 live-trading work; until then all execution is paper.
+          Since Phase 7 the signing path is live (self-custody, env-injected per process, redacted everywhere) but every real send stays behind the B10 gates below.
         </div>
         <div className={`mt-2 flex flex-wrap items-center gap-2 text-[12px]`}>
           <span className={c.text3}>Wallet:</span>
@@ -601,6 +601,9 @@ export function SettingsView(props: {
           <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${c.paper} bg-[#D9B25C]/10`}>{dash.wallet?.signingModel}</span>
         </div>
       </div>
+
+      {/* live trading control (Phase 7: B10 gates, C25 consent, pilot) */}
+      <LiveTradingCard />
 
       {/* risk */}
       <div className={`${card} p-4`}>
@@ -1123,6 +1126,136 @@ export function NotifyCard() {
         </div>
       )}
       {s && !s.resendConfigured && <div className={`mt-2 text-[10.5px] ${c.text2}`}>{s.note}</div>}
+    </div>
+  );
+}
+
+// ── Live trading control — Phase 7 (B10 gates, C25 consent, pilot caps) ──────
+// Self-contained: fetches /api/live, exposes the founder actions
+// (register wallet, consent record/revoke, pilot enable/caps, robot mode
+// flip, B3 sign-off). Every refusal is shown verbatim — the gate's refusals
+// are evidence (D-04).
+interface LiveCheck { check: string; passed: boolean; detail: string }
+interface LiveGateRow {
+  robotId: string; robotName: string; mode: string; status: string;
+  edge: { ready: boolean; checks: LiveCheck[] } | null;
+  exec: LiveCheck[]; ready: boolean; dryRun: boolean;
+}
+interface LiveState {
+  custody: { signerPresent: boolean; address: string | null; fingerprint: string | null; signingModel: string; keyStored: boolean };
+  consent: { consented: boolean; phraseEcho: string; recordedAt: string | null; revokedAt: string | null; walletAddress: string | null; consentHash: string | null; note: string | null };
+  pilot: { enabled: boolean; maxOrderCents: number; maxTotalNotionalCents: number; venues: string[]; enabledAt: string | null; note: string | null };
+  ceilings: { maxOrderCents: number; maxTotalNotionalCents: number; venues: string[] };
+  b3: { signedOff: boolean; rows: string; by: string | null; at: string | null };
+  gates: LiveGateRow[];
+  armSwitch: "SAFE" | "ARMED";
+}
+
+export function LiveTradingCard() {
+  const [s, setS] = useState<LiveState | null>(null);
+  const [confirmText, setConfirmText] = useState("");
+  const [walletDraft, setWalletDraft] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const load = () => fetch("/api/live").then((r) => safeJson<LiveState>(r)).then((j) => setS(j)).catch(() => undefined);
+  useEffect(() => { load(); }, []);
+
+  const act = async (body: Record<string, unknown>, method = "POST", url = "/api/live") => {
+    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: method === "DELETE" ? undefined : JSON.stringify(body) });
+    const j = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    setMsg(res.ok ? "recorded" : `refused: ${String(j.error ?? res.status)}${Array.isArray(j.blocking) ? ` — ${(j.blocking as Array<{ check: string }>).map((b) => b.check).join(", ")}` : ""}`);
+    await load();
+  };
+
+  return (
+    <div className={`${card} p-4`}>
+      <div className="mb-1 flex items-center justify-between">
+        <div className={`text-[13px] font-semibold`}>Live trading — gated automation (Phase 7, B10)</div>
+        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${s?.armSwitch === "ARMED" ? `${c.loss} bg-[#F0525F]/10` : `${c.gain} bg-[#2FC08E]/10`}`}>
+          SEND {s?.armSwitch ?? "…"}
+        </span>
+      </div>
+      <div className={`mb-3 text-[11.5px] ${c.text3}`}>
+        First real money passes four gate families: edge evidence (calibration, provenance, clean evidence, backtest, paper session, consent C25), execution (custody, credentials, pilot caps, B3 sign-off, geo), the small-capital pilot caps, and the send switch (env-only: orders are signed + audited but never transmitted while SAFE).
+      </div>
+      {s && (
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4">
+            <Stat label="Signer key" val={s.custody.signerPresent ? `injected …${s.custody.fingerprint}` : "none (DRY-RUN only)"} tone={s.custody.signerPresent ? "gain" : undefined} />
+            <Stat label="Consent (C25)" val={s.consent.consented ? "RECORDED" : "absent"} tone={s.consent.consented ? "gain" : undefined} />
+            <Stat label="Pilot" val={s.pilot.enabled ? "ENABLED" : "disabled"} tone={s.pilot.enabled ? "gain" : undefined} />
+            <Stat label="Counsel (B3)" val={s.b3.signedOff ? `signed off (${s.b3.by})` : "owed"} tone={s.b3.signedOff ? "gain" : undefined} />
+          </div>
+          <div className={`text-[10.5px] ${c.text2}`}>
+            Custody: address-only wallet (B1 — the platform never stores keys; the signer key is env-injected per process and redacted everywhere). Consent hash {s.consent.consentHash ? `${s.consent.consentHash.slice(0, 16)}…` : "—"}{s.consent.revokedAt ? ` · REVOKED ${s.consent.revokedAt}` : ""}. Pilot caps: ≤{s.pilot.maxOrderCents}¢/order, ≤{s.pilot.maxTotalNotionalCents}¢ total (ceilings {s.ceilings.maxOrderCents}¢ / {s.ceilings.maxTotalNotionalCents}¢), venues {s.pilot.venues.join("/")}.
+          </div>
+
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            <div className="flex gap-2">
+              <Input placeholder="0x… wallet address (registered address-only)" value={walletDraft} onChange={(e) => setWalletDraft(e.target.value)} className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[12px] ${c.text}`} />
+              <Button size="sm" variant="outline" className={`border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} disabled={!/^0x[a-fA-F0-9]{40}$/.test(walletDraft)}
+                onClick={() => act({ action: "REGISTER_WALLET", address: walletDraft }).then(() => setWalletDraft(""))}>
+                Register wallet
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Input placeholder={`type "${s.consent.phraseEcho}"`} value={confirmText} onChange={(e) => setConfirmText(e.target.value)} className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[12px] ${c.text}`} />
+              {s.consent.consented ? (
+                <Button size="sm" variant="outline" className={`border-[#F0525F]/50 bg-[#F0525F]/10 ${c.loss} text-[11px] hover:bg-[#F0525F]/20`} onClick={() => act({}, "DELETE", "/api/consent")}>
+                  Revoke consent
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" className={`border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} disabled={confirmText !== s.consent.phraseEcho}
+                  onClick={() => act({ confirm: confirmText, walletAddress: walletDraft || s.custody.address, capsAcknowledged: true }, "POST", "/api/consent").then(() => setConfirmText(""))}>
+                  Record consent
+                </Button>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" className={`border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} disabled={s.pilot.enabled || !s.consent.consented} onClick={() => act({ action: "ENABLE_PILOT" })}>
+              Enable pilot
+            </Button>
+            <Button size="sm" variant="outline" className={`border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} disabled={!s.pilot.enabled} onClick={() => act({ action: "DISABLE_PILOT" })}>
+              Disable pilot
+            </Button>
+          </div>
+          {msg && <div className={`text-[10.5px] ${msg.startsWith("refused") ? c.loss : c.gain}`}>{msg}</div>}
+
+          <div className={`mt-1 text-[12px] font-semibold ${c.text}`}>Per-robot live gate (Polymarket robots)</div>
+          <div className="fd-scroll flex max-h-[260px] flex-col gap-2 overflow-y-auto">
+            {s.gates.map((g) => {
+              const blocking = [...(g.edge?.checks ?? []).filter((x) => !x.passed), ...g.exec.filter((x) => !x.passed)];
+              return (
+                <div key={g.robotId} className={`rounded-lg border p-2.5 ${c.border}`}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-[12px] font-semibold ${c.text}`}>{g.robotName}</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${g.mode === "LIVE_PILOT" ? `${c.loss} bg-[#F0525F]/10` : `${c.paper} bg-[#D9B25C]/10`}`}>{g.mode}</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${g.ready ? `${c.gain} bg-[#2FC08E]/10` : `${c.text3} bg-[#1B2540]`}`}>{g.ready ? "GATE READY" : `GATE CLOSED (${blocking.length})`}</span>
+                    {g.dryRun && g.ready && <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.paper} bg-[#D9B25C]/10`}>DRY-RUN (send SAFE)</span>}
+                  </div>
+                  {blocking.length > 0 && (
+                    <div className="mt-1.5 flex flex-col gap-0.5">
+                      {blocking.map((x) => (
+                        <div key={x.check} className={`text-[10px] ${c.text3}`}><span className={c.loss}>{x.check}</span> — {x.detail}</div>
+                      ))}
+                    </div>
+                  )}
+                  {blocking.length === 0 && g.mode !== "LIVE_PILOT" && (
+                    <Button size="sm" variant="outline" className={`mt-1.5 border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[10.5px] hover:bg-[#1B2540]`} onClick={() => act({ action: "SET_ROBOT_MODE", robotId: g.robotId, mode: "LIVE_PILOT" })}>
+                      Flip to LIVE_PILOT
+                    </Button>
+                  )}
+                  {g.mode === "LIVE_PILOT" && (
+                    <Button size="sm" variant="outline" className={`mt-1.5 border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[10.5px] hover:bg-[#1B2540]`} onClick={() => act({ action: "SET_ROBOT_MODE", robotId: g.robotId, mode: "PAPER" })}>
+                      Back to paper
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,14 +1,47 @@
-# FAIDA Predict — Phase 6 (Robot Studio completion · templates · trace depth · Drift verdict)
+# FAIDA Predict — Phase 7 (Gated live automation · B10 gates · C25 consent · DRY-RUN send armor)
 
 Autonomous prediction-market trading platform — paper-mode core with the full
 trust architecture from the specification review brief. **All execution is
-paper; live trading is disabled by contract until the Phase 7 gates pass.**
+paper by default: the Phase 7 live path signs and audits every order but
+transmits nothing while the arm switch is SAFE — a real send needs the B10
+gates green, a recorded consent, the small-capital pilot and the founder's
+explicit arm.**
 
 Planning source of truth: `docs/DEVELOPMENT_PLAN.md` (venue contracts, phase
 ledger, carry-forward register). Decisions: `DECISIONS.md`.
 
 ## What is working
 
+- **B10 gate stack (Phase 7)** — the live gate runs an evidence half (model
+  calibrated, provenance completeness, evidence clean, backtest evidence,
+  paper session ≥20 traces, recorded consent) plus an execution half (robot
+  mode, venue live write, custody, credentials, pilot caps, B3 counsel
+  sign-off, geo). The LIVE_PILOT flip is refused 422 with the blocking list
+  until evidence exists, and the gate re-runs on every read — a consent
+  revoke, geo flip or model demotion closes the path immediately (measured
+  revoke-to-stop < 60 s).
+- **Custody B1 / S-08 (Phase 7)** — self-custody EIP-712 signing: the signer
+  key is env-injected per process and structurally unstoreable, wallets are
+  registered address-only with mismatched-signer refusal, error paths
+  redact, and `bun scripts/live_selftest.ts` proves the chain offline
+  (S1–S6 SELFTEST PASS). Rubric recorded in DECISIONS.md.
+- **Recorded consent C25 (Phase 7)** — typed-phrase authorization with
+  wallet address + caps acknowledgment bound into a consent hash; wrong
+  phrase 403; revocation stops every live robot on the next read.
+- **Small-capital pilot (Phase 7)** — hard structural ceilings ($20 per
+  order, $50 total open live notional, Polymarket-only whitelist) the API
+  can tighten but never loosen; enabling without recorded consent refuses.
+- **Polymarket CLOB write path (Phase 7)** — `src/lib/live/clobClient.ts` +
+  `src/lib/live/execute.ts`: book checks (5 s freshness, touch present,
+  +2% slippage sanity, min size) → sign → **DRY_RUN armor** — signed,
+  hashed and journaled (`LIVE_ORDER_SIGNED_NOT_SENT`) but never transmitted
+  while SAFE; ACK-lost lands in RECONCILING only (S-01/S-04).
+- **Kill-switch drill C19.1 (Phase 7)** — `bun run drill:killswitch`: the
+  scheduled operational drill with measured pause propagation (DRILL PASS
+  2026-11-18); operational cadence from 7.5.
+- **Live control surface (Phase 7)** — Settings `LiveTradingCard`: arm-switch
+  badge (SAFE/ARMED), gate statuses, consent record/revoke, wallet register,
+  pilot caps, robot mode flips — refusals shown verbatim (D-04).
 - **Robot templates (P-03, Phase 6)** — four launch-family templates with full
   payloads (capital, risk stops, C5 knobs, venue, guided path) served via
   `GET /api/robot-templates`; the Studio gallery + review term sheet prove

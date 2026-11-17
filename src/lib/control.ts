@@ -97,7 +97,7 @@ export async function pausePlatform(reason: string, actor = "founder"): Promise<
         body: `All robot cycles and new orders are refused until resume. Reason: ${state.reason}`,
       },
     });
-    enqueueOutbox(db, [
+    await enqueueOutbox(db, [
       {
         aggregateType: "ROBOT",
         aggregateId: "PLATFORM",

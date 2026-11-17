@@ -21,6 +21,47 @@ truth for choices that must not drift; code reads them via config, not folklore.
 | A-01 | Model governance | Unproven models never drive decisions: a candidate estimates nothing until the founder promotes it on calibration evidence (B8); an ACTIVE model that drifts worse than baseline by >5% over its recent window is demoted automatically and the baseline re-activates. Every promote/demote writes a MODEL_GOVERNANCE notification + MODEL outbox event. Drills must pass before a phase that touches models closes | RATIFIED | `ProbabilityModel` table + `src/lib/probability/registry.ts`; demotion drill `scripts/demotion_drill.py` |
 | A-06 | Evidence integrity | Market text is untrusted: every forecast input passes prompt-injection screening before any AI prompt, and flagged evidence fails closed to the baseline with the FLAGGED verdict recorded in the trace provenance. Every estimate carries an evidence hash binding it to its exact inputs | RATIFIED | `src/lib/probability/screening.ts`; traces carry `provenance` (A-02) since Phase 5 |
 
+## Phase-7 checkpoint status (gated live automation — first real-money path)
+
+- S-08 custody rubric — **executed and recorded (2026-11-18, before any live
+  signing)**. Verdict: SELF-CUSTODY confirmed (B1) — the signer key is
+  env-injected per process (`POLYMARKET_SIGNER_KEY`) and structurally
+  unstoreable (`keyStored: false`; the `Wallet.signingModel` SELF_CUSTODY
+  schema invariant), wallets are registered address-only with a
+  mismatched-signer refusal, every error path redacts through `redactKey`,
+  and the signing chain is proven offline by `scripts/live_selftest.ts`
+  (S1–S6 SELFTEST PASS: address derivation, wallet match, EIP-712 struct,
+  tick-conformant amounts, payload hash, signature verify). On the founder
+  host the same variables carry real credentials, injected per process,
+  never stored.
+- C19.1 kill-switch drill — **executed as a rehearsal (2026-11-18):
+  DRILL PASS** — pause propagation measured across cycles and manual orders;
+  becomes an operational cadence from Phase 7.5.
+- Phase 7 scope — **locked, implemented and closed** (2026-11-18): B10 gate
+  stack (evidence half + execution half, every refusal names what is
+  missing), recorded consent C25 (typed phrase + hash binding +
+  revoke-to-stop measured under 60 s), small-capital pilot with hard
+  ceilings ($20/order, $50 total open live notional, Polymarket-only), the
+  Polymarket CLOB write path (EIP-712 L2 auth; book checks: 5 s freshness,
+  touch present, +2% slippage sanity, min size), and the **DRY-RUN send
+  armor as the default posture** — orders are signed, hashed and journaled
+  (`LIVE_ORDER_SIGNED_NOT_SENT`) but never transmitted while the arm switch
+  is SAFE; a lost venue ack lands in RECONCILING only (S-01/S-04). Settings
+  gains the live-trading control card (arm switch, gate statuses, consent,
+  pilot caps, robot mode flips). Acceptance evidence:
+  `scripts/smoke_phase7.py` SMOKE PASS (P7-1..P7-13, isolation-run),
+  kill-switch drill + signing self-test PASS, tsc/lint clean,
+  smoke_phase4/phase5 regression re-runs PASS — full per-item ledger in
+  `docs/DEVELOPMENT_PLAN.md` §4 (Phase 7).
+- Live sends — **still held**. The arm switch stays SAFE; a real send
+  requires, on the founder host: recorded consent + pilot enable, real
+  per-process credentials, the real B3 counsel sign-off ([VERIFY] rows; only
+  a rehearsal row exists today), and the founder's explicit arm
+  (`POLYMARKET_LIVE_WRITE=1`). No self-arming.
+- B3 counsel sign-off — rehearsal recorded by the smoke and reset on exit;
+  **real counsel sign-off owed before the live pilot** (carry-forward
+  register).
+
 ## Phase-6 checkpoint status (Robot Studio completion; Drift BET verdict)
 
 - **Drift BET [VERIFY] — venue #4 is NOT landable (recorded 2026-11-18,

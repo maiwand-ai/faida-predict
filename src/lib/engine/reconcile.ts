@@ -79,7 +79,7 @@ export async function reconcilePendingOrders(): Promise<ReconcileResult[]> {
           resolvedAt: new Date(),
         },
       });
-      enqueueOutbox(tx, [
+      await enqueueOutbox(tx, [
         {
           aggregateType: "RECONCILIATION",
           aggregateId: fresh.id,
@@ -137,7 +137,7 @@ export async function simulateLostSubmission(marketId: string): Promise<string> 
     await tx.reconciliationEntry.create({
       data: { orderId: order.id, venueOrderId: order.venueOrderId, kind: "UNKNOWN_STATE", detail: REASONS.VENUE_ACK_LOST },
     });
-    enqueueOutbox(tx, [
+    await enqueueOutbox(tx, [
       {
         aggregateType: "RECONCILIATION",
         aggregateId: order.id,

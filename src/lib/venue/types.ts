@@ -34,15 +34,47 @@ export interface VenueBookSnapshot {
 
 export type OrderStateGuess = "FILLED" | "OPEN" | "CANCELLED" | "NOT_FOUND";
 
+// Phase 7 (B10): the live order request as the venue-blind engine hands it to
+// the adapter. Execution goes through the gated live path (src/lib/live/).
+export interface LiveOrderRequest {
+  userId: string;
+  robotId: string;
+  marketId: string;
+  side: "BUY_YES" | "BUY_NO";
+  priceCents: number;
+  sizeCents: number;
+  nonce: string;
+  trigger?: "SCHEDULE_TICK" | "MARKET_EVENT" | "MANUAL";
+}
+
+export interface LiveOrderResult {
+  ok: true;
+  orderId: string;
+  state: string;
+  dryRun: boolean;
+  venueOrderId: string | null;
+  signedPayloadHash: string;
+}
+
+export interface LiveOrderRejection {
+  ok: false;
+  stage: "GATE" | "PILOT" | "BOOK" | "ELIGIBILITY" | "PLATFORM" | "SIGNING" | "SEND";
+  reason: string;
+  details?: unknown;
+}
+
+export type LiveOrderOutcome = LiveOrderResult | LiveOrderRejection;
+
 export interface VenueAdapter {
   readonly venue: string;
   // Pull tradable markets (market data is public; no keys required).
   fetchMarkets(limit: number): Promise<VenueMarket[]>;
   // Best-effort read of venue state for one order (S-04 reconciliation input).
   queryOrderState(venueOrderId: string): Promise<{ state: OrderStateGuess; filledCents?: number } | null>;
-  // Live order placement arrives in Phase 7 with wallet signing; the skeleton
-  // implements the paper venue only. This method throws by contract.
-  placeOrder(): Promise<never>;
+  // Live order placement — Phase 7 (B10). POLYMARKET delegates to the gated
+  // live path (consent + gates + pilot caps + self-custody signing + send
+  // boundary). Every other venue throws: no live write exists.
+  placeOrder(req: LiveOrderRequest): Promise<LiveOrderOutcome>;
 }
 
 // Compliance catalog row per venue (S-05). [VERIFY] items are counsel work.

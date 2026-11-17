@@ -62,7 +62,7 @@ export async function createVersion(robotId: string, rawConfig: unknown) {
     data: { robotId, version: nextVersion, config: JSON.stringify(config) },
   });
   await db.$transaction(async (tx) => {
-    enqueueOutbox(tx, [
+    await enqueueOutbox(tx, [
       {
         aggregateType: "ROBOT",
         aggregateId: robotId,
@@ -86,7 +86,7 @@ export async function activateVersion(robotId: string, versionId: string) {
     data: { activeVersion: sv.version, statusReason: `active strategy v${sv.version} (C5 pointer move — status unchanged)` },
   });
   await db.$transaction(async (tx) => {
-    enqueueOutbox(tx, [
+    await enqueueOutbox(tx, [
       {
         aggregateType: "ROBOT",
         aggregateId: robotId,

@@ -239,7 +239,7 @@ export async function placePaperOrder(input: PlacePaperOrderInput): Promise<Plac
     await append("FILL", -input.sizeCents, `${input.side} ${input.sizeCents}¢ @ ${input.priceCents}¢ on ${market.question.slice(0, 60)}`, order.id);
     if (feeCents > 0) await append("FEE", -feeCents, `${market.venue} taker fee ${entryBps}bps`, order.id);
 
-    enqueueOutbox(tx, drafts);
+    await enqueueOutbox(tx, drafts);
     return order;
   });
 

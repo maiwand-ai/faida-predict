@@ -184,7 +184,15 @@ check("unbooked market refuses closed (fail-closed)", unbooked?.yesTouchDepthCen
 check("queryOrderState → NOT_FOUND (paper venue)", (await adapter.queryOrderState("whatever"))?.state === "NOT_FOUND");
 let threw = "";
 try {
-  await adapter.placeOrder();
+  await adapter.placeOrder({
+    userId: "conformance",
+    robotId: "conformance",
+    marketId: "conformance",
+    side: "BUY_YES",
+    priceCents: 50,
+    sizeCents: 500,
+    nonce: "conformance",
+  });
 } catch (e) {
   threw = String(e instanceof Error ? e.message : e);
 }

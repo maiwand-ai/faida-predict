@@ -16,7 +16,16 @@ export type OutboxEventType =
   | "PLATFORM_PAUSED"
   | "PLATFORM_RESUMED"
   | "MODEL_PROMOTED"
-  | "MODEL_DEMOTED";
+  | "MODEL_DEMOTED"
+  // Phase 7 — gated live automation
+  | "CONSENT_RECORDED"
+  | "CONSENT_REVOKED"
+  | "LIVE_PILOT_UPDATED"
+  | "ROBOT_MODE_LIVE_PILOT"
+  | "LIVE_ORDER_SIGNED_NOT_SENT"
+  | "LIVE_ORDER_ACCEPTED"
+  | "LIVE_ORDER_REJECTED"
+  | "LIVE_ORDER_ACK_LOST";
 
 export interface OutboxDraft {
   aggregateType: OutboxAggregate;
@@ -27,9 +36,13 @@ export interface OutboxDraft {
 
 type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0];
 
-export function enqueueOutbox(tx: Tx, drafts: OutboxDraft[]): void {
+export async function enqueueOutbox(tx: Tx, drafts: OutboxDraft[]): Promise<void> {
   for (const d of drafts) {
-    void tx.outboxEvent.create({
+    // Awaited — Phase 7 fixed a real bug here: fire-and-forget (`void`) writes
+    // were dropped when called with the plain client outside a transaction
+    // (pause/consent events silently vanished). Awaited writes inside
+    // $transaction callbacks keep the same-transaction guarantee (S-02).
+    await tx.outboxEvent.create({
       data: {
         aggregateType: d.aggregateType,
         aggregateId: d.aggregateId,

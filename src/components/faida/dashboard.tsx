@@ -127,7 +127,7 @@ export function DashboardView(props: {
             OUTBOX {dash.outboxPending} PENDING
           </span>
         )}
-        <span className={`ml-auto rounded px-2 py-1 text-[10px] font-bold tracking-wide ${c.paper} bg-[#D9B25C]/10`}>PAPER LEDGER — LIVE MONEY GATED (PHASE 7)</span>
+        <span className={`ml-auto rounded px-2 py-1 text-[10px] font-bold tracking-wide ${c.paper} bg-[#D9B25C]/10`}>PAPER LEDGER — LIVE SENDS GATED (ARM SAFE)</span>
       </div>
 
       {/* C19 kill-switch banner — the one state that overrides everything */}

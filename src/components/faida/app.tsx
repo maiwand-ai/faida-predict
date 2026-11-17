@@ -183,7 +183,7 @@ export default function FaidaApp() {
                 <span className={`text-[14px] font-bold tracking-wide ${c.text}`}>FAIDA</span>
                 <span className={`text-[9px] font-bold tracking-[0.2em] ${c.bright}`}>PREDICT</span>
               </div>
-              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 6</div>
+              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 7</div>
             </div>
           </div>
           <nav className="flex flex-col gap-1">
@@ -225,7 +225,7 @@ export default function FaidaApp() {
                 <span className={c.bright}>●</span> Location verified: {dash?.user.country ?? "NL"} (matrix)
               </span>
               <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] border-[#D9B25C]/40 bg-[#D9B25C]/10 ${c.paper} font-semibold`}>
-                ◇ PAPER — live trading gated (Phase 7)
+                ◇ PAPER — sends gated (gates green + consent + arm SAFE)
               </span>
               <div className={`h-7 w-7 rounded-full ${c.elevated} border ${c.borderStrong}`} />
             </div>
@@ -314,7 +314,7 @@ export default function FaidaApp() {
             )}
           </main>
           <footer className={`border-t ${c.border} px-6 py-3 text-center text-[11px] ${c.text3}`}>
-            FAIDA Predict — Phase 6 (Robot Studio completion · P-03 templates · A-08 trace depth · usability walkthrough · Drift BET verdict). All figures paper-labeled per D-03/D-05. Live trading requires Phase 7 gates + explicit authorization.
+            FAIDA Predict — Phase 7 (Gated live automation · B10 gates · C25 consent · small-capital pilot · DRY-RUN send armor). All figures paper-labeled per D-03/D-05. Live sends stay behind the gates + recorded consent + the SAFE arm switch.
           </footer>
         </div>
       </div>

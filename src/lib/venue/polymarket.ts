@@ -109,10 +109,14 @@ export class PolymarketAdapter implements VenueAdapter {
     return { state: "NOT_FOUND" };
   }
 
-  async placeOrder(): Promise<never> {
-    // Hard block, by design: live execution requires Phase 7 gates + explicit
-    // user authorization + signed wallet integration. The skeleton is honest.
-    throw new Error("LIVE_TRADING_DISABLED: Phase 7 gates not passed; paper mode only");
+  // Phase 7 (B10): live orders delegate to the gated live path — pause →
+  // consent → live gate (edge + exec) → pilot caps → book freshness/tick/depth
+  // → self-custody EIP-712 signing → send boundary with DRY_RUN armor. The
+  // gate refuses honestly at every unmet layer. Dynamic import keeps the
+  // module graph acyclic (the live path needs no adapter registry).
+  async placeOrder(req: import("./types").LiveOrderRequest): Promise<import("./types").LiveOrderOutcome> {
+    const { placeLiveOrder } = await import("@/lib/live/execute");
+    return placeLiveOrder(req);
   }
 }
 

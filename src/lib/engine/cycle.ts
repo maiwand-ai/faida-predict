@@ -16,6 +16,7 @@ import { db } from "@/lib/db";
 import { parityGapCents } from "@/lib/money";
 import { feeDragPts } from "@/lib/venue/rules";
 import { placePaperOrder } from "./paper";
+import { placeLiveOrder } from "@/lib/live/execute";
 import { preTradeRiskChecks } from "@/lib/risk";
 import { estimateForMarket } from "@/lib/probability/estimate";
 import { parseConfig, DEFAULT_CONFIG, type StrategyConfig } from "@/lib/strategy";
@@ -149,8 +150,10 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
     const netEdgePts = grossEdgePts - feeDrag;
 
     // 2) risk checks (recorded even when no trade happens — that's where trust is built)
+    //    LIVE_PILOT robots read the LIVE ledger (mode LIVE), paper robots the paper book.
+    const livePilot = robot.mode === "LIVE_PILOT";
     const balance = await db.ledgerEntry
-      .findMany({ where: { userId: robot.userId, mode: "PAPER" }, orderBy: { createdAt: "desc" }, take: 1 })
+      .findMany({ where: { userId: robot.userId, mode: livePilot ? "LIVE" : "PAPER" }, orderBy: { createdAt: "desc" }, take: 1 })
       .then((r) => r[0]?.balanceAfterCents ?? 0);
     const sizeCents = Math.min(robot.maxPositionCents, Math.max(500, Math.floor(robot.allocatedCents / 10)));
     const riskChecks = [staleCheck, ...(await preTradeRiskChecks({
@@ -206,9 +209,11 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
       },
     });
 
-    // 5) execute paper order when trading
+    // 5) execute the order when trading — paper robots through the paper book,
+    //    LIVE_PILOT robots through the gated live path (consent + gates + pilot
+    //    caps + B5 book freshness + self-custody signing + send boundary).
     if (decision === "TRADE") {
-      const res = await placePaperOrder({
+      const commonOrder = {
         userId: robot.userId,
         robotId: robot.id,
         marketId: market.id,
@@ -216,12 +221,25 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
         priceCents: side === "BUY_YES" ? (market.yesPriceCents ?? 50) : (market.noPriceCents ?? 50),
         sizeCents,
         nonce: `cycle_${trace.id}`,
-        trigger: "SCHEDULE_TICK",
-      });
-      if (!res.ok) {
-        reason = `trade attempt rejected at ${res.stage}: ${res.reason}`;
-        await db.decisionTrace.update({ where: { id: trace.id }, data: { decision: "NO_TRADE", reason } });
-        decision = "NO_TRADE";
+        trigger: "SCHEDULE_TICK" as const,
+      };
+      if (livePilot) {
+        const live = await placeLiveOrder(commonOrder);
+        if (!live.ok) {
+          reason = `live attempt rejected at ${live.stage}: ${live.reason}`;
+          await db.decisionTrace.update({ where: { id: trace.id }, data: { decision: "NO_TRADE", reason } });
+          decision = "NO_TRADE";
+        } else if (live.dryRun) {
+          reason = `${reason} — LIVE DRY-RUN: order signed (payload ${live.signedPayloadHash.slice(0, 12)}…) and audited, NOT sent (arm switch off)`;
+          await db.decisionTrace.update({ where: { id: trace.id }, data: { reason } });
+        }
+      } else {
+        const res = await placePaperOrder(commonOrder);
+        if (!res.ok) {
+          reason = `trade attempt rejected at ${res.stage}: ${res.reason}`;
+          await db.decisionTrace.update({ where: { id: trace.id }, data: { decision: "NO_TRADE", reason } });
+          decision = "NO_TRADE";
+        }
       }
     }
 

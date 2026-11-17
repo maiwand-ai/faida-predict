@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     },
   });
   await db.$transaction(async (tx) => {
-    enqueueOutbox(tx, [
+    await enqueueOutbox(tx, [
       {
         aggregateType: "ROBOT",
         aggregateId: robot.id,
@@ -129,7 +129,7 @@ export async function PATCH(req: Request) {
     data: { status: body.status, statusReason: body.status === "PAUSED_BY_USER" ? "paused by user" : null },
   });
   await db.$transaction(async (tx) => {
-    enqueueOutbox(tx, [
+    await enqueueOutbox(tx, [
       {
         aggregateType: "ROBOT",
         aggregateId: robot.id,
