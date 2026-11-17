@@ -1,0 +1,122 @@
+{
+  "bids": [
+    {
+      "price": 0.176,
+      "size": 34000000,
+      "side": "BUY"
+    },
+    {
+      "price": 0.172,
+      "size": 500000000,
+      "side": "BUY"
+    },
+    {
+      "price": 0.166,
+      "size": 87000000,
+      "side": "BUY"
+    },
+    {
+      "price": 0.158,
+      "size": 40000000,
+      "side": "BUY"
+    },
+    {
+      "price": 0.148,
+      "size": 100000000,
+      "side": "BUY"
+    },
+    {
+      "price": 0.031,
+      "size": 200000000,
+      "side": "BUY"
+    },
+    {
+      "price": 0.021,
+      "size": 47619000,
+      "side": "BUY"
+    },
+    {
+      "price": 0.011,
+      "size": 300000000,
+      "side": "BUY"
+    },
+    {
+      "price": 0.01,
+      "size": 400000000,
+      "side": "BUY"
+    },
+    {
+      "price": 0.005,
+      "size": 500000000,
+      "side": "BUY"
+    },
+    {
+      "price": 0.001,
+      "size": 30000000,
+      "side": "BUY"
+    }
+  ],
+  "asks": [
+    {
+      "price": 0.215,
+      "size": 7000000,
+      "side": "SELL"
+    },
+    {
+      "price": 0.225,
+      "size": 11000000,
+      "side": "SELL"
+    },
+    {
+      "price": 0.229,
+      "size": 500000000,
+      "side": "SELL"
+    },
+    {
+      "price": 0.245,
+      "size": 25000000,
+      "side": "SELL"
+    },
+    {
+      "price": 0.422,
+      "size": 1730000,
+      "side": "SELL"
+    },
+    {
+      "price": 0.73,
+      "size": 111111000,
+      "side": "SELL"
+    },
+    {
+      "price": 0.91,
+      "size": 100000000,
+      "side": "SELL"
+    },
+    {
+      "price": 0.969,
+      "size": 200000000,
+      "side": "SELL"
+    },
+    {
+      "price": 0.989,
+      "size": 300000000,
+      "side": "SELL"
+    },
+    {
+      "price": 0.995,
+      "size": 500000000,
+      "side": "SELL"
+    },
+    {
+      "price": 0.999,
+      "size": 30000000,
+      "side": "SELL"
+    }
+  ],
+  "tokenId": "42937147713142747506102441206273421668029579078075270864243634059079492267213",
+  "adjustedMidpoint": 0.2005,
+  "midpoint": 0.1955,
+  "maxSpread": "0.035",
+  "minSize": "100000000",
+  "lastTradePrice": 0.204
+}

@@ -47,7 +47,10 @@ next-env.d.ts
 /examples
 /mini-services
 /tool-results
-/tests
+# /tests is scratch space — EXCEPT the S-05 conformance fixtures, which are
+# recorded evidence and MUST be committed (standing rule §3.4).
+/tests/*
+!/tests/fixtures
 /skills
 /scripts/report
 /scripts/wireframes

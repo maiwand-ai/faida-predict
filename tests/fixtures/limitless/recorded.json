@@ -1,0 +1,18 @@
+{
+  "recordedAt": "2026-11-17T10:42:09.801Z",
+  "source": "api.limitless.exchange (public REST, no key)",
+  "endpoints": [
+    "/markets/active?page=1&limit=25&sortBy=high_value",
+    "/markets/active?page=2&limit=25&sortBy=high_value",
+    "/markets/{slug}/orderbook (liquid, thin)"
+  ],
+  "liquidSlug": "btc-up-or-down-daily-p-1794837912662",
+  "liquidQuestion": "BTC Up or Down Daily",
+  "liquidYesTouchCents": 26600,
+  "thinSlug": "btc-up-or-down-hourly-p-1794899107068",
+  "thinQuestion": "BTC Up or Down Hourly",
+  "thinYesTouchCents": 151,
+  "minTouchDepthCents": 5000,
+  "rowFilters": "status FUNDED, not expired/hidden, two-sided price in (0.005, 0.995)",
+  "note": "Fixtures feed scripts/conformance-limitless.ts (bun run conformance). Raw API responses are kept verbatim."
+}

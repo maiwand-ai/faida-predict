@@ -5,7 +5,7 @@
 //  4. Trading ticket on a Limitless market
 import { chromium } from "playwright";
 
-const shots: Array<{ click: string | null; file: string; wait?: number }> = [
+const shots: Array<{ click: string | null; file: string | null; wait?: number }> = [
   { click: null, file: "/tmp/render/p4-dashboard.png" },
   { click: "Open Limitless workspace", file: "/tmp/render/p4-limitless-workspace.png" },
   { click: "Back to dashboard", file: null, wait: 800 },

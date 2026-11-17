@@ -172,7 +172,7 @@ export default function FaidaApp() {
                 <span className={`text-[14px] font-bold tracking-wide ${c.text}`}>FAIDA</span>
                 <span className={`text-[9px] font-bold tracking-[0.2em] ${c.bright}`}>PREDICT</span>
               </div>
-              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 3</div>
+              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 4</div>
             </div>
           </div>
           <nav className="flex flex-col gap-1">
@@ -295,7 +295,7 @@ export default function FaidaApp() {
             )}
           </main>
           <footer className={`border-t ${c.border} px-6 py-3 text-center text-[11px] ${c.text3}`}>
-            FAIDA Predict — Phase 3 (autonomy · Manifold harness · safety layer). All figures paper-labeled per D-03/D-05. Live trading requires Phase 7 gates + explicit authorization.
+            FAIDA Predict — Phase 4 (venue #3 Limitless · thin-liquidity structural rules · A-04 exposure clustering). All figures paper-labeled per D-03/D-05. Live trading requires Phase 7 gates + explicit authorization.
           </footer>
         </div>
       </div>

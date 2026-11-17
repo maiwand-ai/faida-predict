@@ -1,0 +1,3990 @@
+{
+  "data": [
+    {
+      "id": 413256,
+      "automationType": "manual",
+      "conditionId": "0x16d9f11acc259226da7d2f83c31390a5a386a6ce6b18a29fbb01a055e3d85374",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to \"Yes\" if Donald Trump, Vladimir Putin, and Xi Jinping are photographed or videotaped together, in the same frame, between this market's creation and December 31, 2026, 11:59 PM ET. Otherwise, this market will resolve to \"No\".</p><p><br></p><p>For this market to resolve to \"Yes,\" the images or video must be taken and released within this market's timeframe. The images or video must be authentic, not the result of artificial intelligence or video editing.</p><p><br></p><p>The resolution source for this market will be the images or video of Donald Trump, Vladimir Putin, and Xi Jinping together.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "Trump, Putin, and Xi seen together before 2027?",
+      "proxyTitle": null,
+      "expirationDate": "Jan 1, 2027",
+      "expirationTimestamp": 1798779540000,
+      "createdAt": "2026-09-28T16:03:51.075Z",
+      "startAt": null,
+      "updatedAt": "2026-10-15T11:37:54.443Z",
+      "categories": [
+        "Politics"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [],
+      "volume": "245190640",
+      "volumeFormatted": "245.190640",
+      "tokens": {
+        "yes": "91692133056070150143587750257838108514138121867676926960397430781103411664824",
+        "no": "41009982258161357088522299138610653234281358216388776276511538338927256145352"
+      },
+      "prices": [
+        0.992,
+        0.008
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.999,
+            0.015
+          ],
+          "limit": [
+            0.985,
+            0.001
+          ]
+        },
+        "sell": {
+          "market": [
+            0.985,
+            0.001
+          ],
+          "limit": [
+            0.999,
+            0.015
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "trump-putin-and-xi-seen-together-before-2027-1790611431074",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null
+      },
+      "marketType": "single",
+      "priorityIndex": 1,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "politics"
+          ]
+        },
+        {
+          "propertyKeySlug": "politics-events",
+          "value": [
+            "geopolitics"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "isBannered": false,
+        "externalSlug": "trump-putin-and-xi-seen-together-before-2027",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "shouldMarketMake": false,
+        "externalRulesWatch": {
+          "rulesHash": "77ebbb45179455ec36b5dbe8061837dc76bab543e2b136b37b07316fe1e0d091",
+          "clarificationIds": []
+        },
+        "descriptionEditedManually": true
+      },
+      "trends": {
+        "hourly": {
+          "value": 1,
+          "rank": 1986
+        }
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "0",
+        "takerDelayMs": 0,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/markets-logo/413256/d823a2fa-742d-40ff-8fd2-a35475df3e00.png",
+      "logo": "https://cdn.limitless.exchange/markets-logo/413256/d823a2fa-742d-40ff-8fd2-a35475df3e00.png"
+    },
+    {
+      "id": 467148,
+      "automationType": "lumy",
+      "conditionId": "0x714ea89b424fe8b04052f6ea0575554990ca02e6c989315f0ded091f2a3146f9",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to \"Up\" if the <a href=\"https://data.chain.link/streams/btc-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink BTC/USD 60-second TWAP</a> on November 17, 2026, at 10:45 UTC is greater than or equal to the Price to Beat captured from the same TWAP on November 17, 2026, at 10:40 UTC. Otherwise, this market will resolve to \"Down\".</p><p><br></p><p>The <a href=\"https://data.chain.link/streams/btc-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink BTC/USD 60-second TWAP</a> is used for both the Price to Beat and resolution. Other exchanges, spot markets, and oracles will not be used.</p><p><br></p><p>The Price to Beat captured from the <a href=\"https://data.chain.link/streams/btc-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink BTC/USD 60-second TWAP</a> on November 17, 2026, at 10:40 UTC was $64203.663046751700000000.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "BTC Up or Down - 5 Min",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794912300000,
+      "createdAt": "2026-11-17T10:35:01.197Z",
+      "startAt": "2026-11-17T10:40:00.000Z",
+      "updatedAt": "2026-11-17T10:40:01.684Z",
+      "categories": [
+        "Minutely",
+        "5 min"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy",
+        "Recurring",
+        "Minutely",
+        "Minutes 5"
+      ],
+      "volume": "1642000",
+      "volumeFormatted": "1.642000",
+      "tokens": {
+        "yes": "115690597326893331387832477655368009343541432208854589155222321199998044216253",
+        "no": "25048419228008262677174896011993762014433205898984225052177108619114867720214"
+      },
+      "prices": [
+        0.344,
+        0.656
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.414,
+            0.726
+          ],
+          "limit": [
+            0.274,
+            0.586
+          ]
+        },
+        "sell": {
+          "market": [
+            0.274,
+            0.586
+          ],
+          "limit": [
+            0.414,
+            0.726
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "btc-up-or-down-5-min-1794912000",
+      "stableSlug": "btc-5min-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 10,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "5-min"
+          ]
+        },
+        {
+          "propertyKeySlug": "incentive",
+          "value": [
+            "rebates"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "btc"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "c": 3,
+        "fee": true,
+        "hidden": false,
+        "minSize": 50000000,
+        "maxSpread": 0.065,
+        "isBannered": false,
+        "pythLazerId": null,
+        "externalSlug": "btc-updown-5m-1794912000",
+        "rewardsEpoch": 0,
+        "takerDelayMs": 250,
+        "marketVariant": "clob",
+        "oracleVersion": 1,
+        "isPolyArbitrage": true,
+        "makerRebateMult": 0.3,
+        "minutesDeadline": 5,
+        "rewardsSchedule": null,
+        "externalProvider": "polymarket",
+        "frequencySubType": "minutes_5",
+        "pythLazerChannel": null,
+        "shouldMarketMake": true,
+        "chainlinkDataStream": {
+          "pair": "BTC/USD",
+          "feedId": "0x0002ee6757e8822c00d273bc340fc24c9cafe123a4ff2ea1dbdb31944bc7d95f",
+          "enabled": true,
+          "streamUrl": "https://data.chain.link/streams/btc-usd-twap-60s-streams",
+          "apiBaseUrl": "https://api.dataengine.chain.link",
+          "streamType": "twap",
+          "feedAddress": null,
+          "priceDecimals": 18,
+          "toleranceSeconds": 5,
+          "twapWindowSeconds": 60
+        },
+        "openPriceCapturedAt": "2026-11-17T10:40:00.000Z",
+        "openPriceSelectedAt": "2026-11-17T10:40:00.000Z",
+        "pythProHistorySymbol": null,
+        "pythToleranceSeconds": null,
+        "pythToleranceDirection": null,
+        "openPrice": "64203.663046751700000000"
+      },
+      "settings": {
+        "minSize": "50000000",
+        "maxSpread": 0.065,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "0.3",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/130/387a1354-5f1e-4fa0-ab44-3bba1fdc6c2c.png",
+      "logo": "https://cdn.limitless.exchange/price-oracles/130/387a1354-5f1e-4fa0-ab44-3bba1fdc6c2c.png",
+      "priceOracleMetadata": {
+        "ticker": "BTC",
+        "assetType": "CRYPTO",
+        "pythAddress": "0x0002ee6757e8822c00d273bc340fc24c9cafe123a4ff2ea1dbdb31944bc7d95f",
+        "chartSource": "chainlink",
+        "chainlinkFeedId": "0x0002ee6757e8822c00d273bc340fc24c9cafe123a4ff2ea1dbdb31944bc7d95f",
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": "BTC/USD",
+        "chainlinkStreamUrl": "https://data.chain.link/streams/btc-usd-twap-60s-streams",
+        "symbol": "Crypto.BTC/USD.TWAP60",
+        "name": "BTC TWAP 60s (Chainlink)",
+        "logo": "https://cdn.limitless.exchange/price-oracles/130/387a1354-5f1e-4fa0-ab44-3bba1fdc6c2c.png"
+      }
+    },
+    {
+      "id": 467124,
+      "automationType": "lumy",
+      "conditionId": "0xdc8e729b488f1c48279467425e92c19cd4dbea570e136af7769ff305a7b031fc",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to \"Up\" if the <a href=\"https://data.chain.link/streams/btc-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink BTC/USD 60-second TWAP</a> on November 17, 2026, at 10:45 UTC is greater than or equal to the Price to Beat captured from the same TWAP on November 17, 2026, at 10:30 UTC. Otherwise, this market will resolve to \"Down\".</p><p><br></p><p>The <a href=\"https://data.chain.link/streams/btc-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink BTC/USD 60-second TWAP</a> is used for both the Price to Beat and resolution. Other exchanges, spot markets, and oracles will not be used.</p><p><br></p><p>The Price to Beat captured from the <a href=\"https://data.chain.link/streams/btc-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink BTC/USD 60-second TWAP</a> on November 17, 2026, at 10:30 UTC was $64168.940307642600000000.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "BTC Up or Down - 15 Min",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794912300000,
+      "createdAt": "2026-11-17T10:00:21.296Z",
+      "startAt": "2026-11-17T10:30:00.000Z",
+      "updatedAt": "2026-11-17T10:36:12.993Z",
+      "categories": [
+        "Crypto",
+        "Bitcoin",
+        "15 min"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy",
+        "Recurring",
+        "Minutely",
+        "Minutes 15",
+        "challenge_team_crypto",
+        "challenge_crypto_finance",
+        "challenge_team_finance",
+        "Pareto"
+      ],
+      "volume": "1000000",
+      "volumeFormatted": "1.000000",
+      "tokens": {
+        "yes": "2396076789060729263969618160702661513592431254681229002382038198387758782804",
+        "no": "24110964098548685667699012554580052436341455140430109705637435228951562312328"
+      },
+      "prices": [
+        0.747,
+        0.253
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.773,
+            0.279
+          ],
+          "limit": [
+            0.721,
+            0.227
+          ]
+        },
+        "sell": {
+          "market": [
+            0.721,
+            0.227
+          ],
+          "limit": [
+            0.773,
+            0.279
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "btc-up-or-down-15-min-1794911400",
+      "stableSlug": "btc-15min-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 10,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "15-min"
+          ]
+        },
+        {
+          "propertyKeySlug": "incentive",
+          "value": [
+            "rebates",
+            "lp-reward"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "btc"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "c": 3,
+        "fee": true,
+        "hidden": false,
+        "minSize": 50000000,
+        "maxSpread": 0.035,
+        "isBannered": false,
+        "pythLazerId": null,
+        "externalSlug": "btc-updown-15m-1794911400",
+        "rewardsEpoch": 0,
+        "takerDelayMs": 500,
+        "oracleVersion": 1,
+        "isPolyArbitrage": true,
+        "makerRebateMult": 0.3,
+        "minutesDeadline": 15,
+        "rewardsSchedule": null,
+        "externalProvider": "polymarket",
+        "frequencySubType": "minutes_15",
+        "pythLazerChannel": null,
+        "shouldMarketMake": true,
+        "externalRulesWatch": {
+          "rulesHash": "485ceb1dabc4aa12fb42c76184563b7378f01e5de9ded73df049c0d191cd5ad1",
+          "clarificationIds": []
+        },
+        "chainlinkDataStream": {
+          "pair": "BTC/USD",
+          "feedId": "0x0002ee6757e8822c00d273bc340fc24c9cafe123a4ff2ea1dbdb31944bc7d95f",
+          "enabled": true,
+          "streamUrl": "https://data.chain.link/streams/btc-usd-twap-60s-streams",
+          "apiBaseUrl": "https://api.dataengine.chain.link",
+          "streamType": "twap",
+          "feedAddress": null,
+          "priceDecimals": 18,
+          "toleranceSeconds": 5,
+          "twapWindowSeconds": 60
+        },
+        "openPriceCapturedAt": "2026-11-17T10:30:00.000Z",
+        "openPriceSelectedAt": "2026-11-17T10:30:00.000Z",
+        "pythProHistorySymbol": null,
+        "pythToleranceSeconds": null,
+        "pythToleranceDirection": null,
+        "openPrice": "64168.940307642600000000"
+      },
+      "settings": {
+        "minSize": "50000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "0.3",
+        "takerDelayMs": 500,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/130/387a1354-5f1e-4fa0-ab44-3bba1fdc6c2c.png",
+      "logo": "https://cdn.limitless.exchange/price-oracles/130/387a1354-5f1e-4fa0-ab44-3bba1fdc6c2c.png",
+      "priceOracleMetadata": {
+        "ticker": "BTC",
+        "assetType": "CRYPTO",
+        "pythAddress": "0x0002ee6757e8822c00d273bc340fc24c9cafe123a4ff2ea1dbdb31944bc7d95f",
+        "chartSource": "chainlink",
+        "chainlinkFeedId": "0x0002ee6757e8822c00d273bc340fc24c9cafe123a4ff2ea1dbdb31944bc7d95f",
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": "BTC/USD",
+        "chainlinkStreamUrl": "https://data.chain.link/streams/btc-usd-twap-60s-streams",
+        "symbol": "Crypto.BTC/USD.TWAP60",
+        "name": "BTC TWAP 60s (Chainlink)",
+        "logo": "https://cdn.limitless.exchange/price-oracles/130/387a1354-5f1e-4fa0-ab44-3bba1fdc6c2c.png"
+      }
+    },
+    {
+      "id": 466181,
+      "automationType": "lumy",
+      "conditionId": "0x95b0bc6c45bb7a936339da8ac64becfb9d84470b20ccc90c3247c7e74ede8d62",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for SOL/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is lower than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for SOL/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is higher than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>If the final &quot;Close&quot; price for both of these candles is exactly equal on Binance, this market will resolve 50-50.</p><p><br></p><p>The resolution source for this market is Binance, specifically the SOL/USDT &quot;Close&quot; prices currently available at <a href=\"https://www.binance.com/en/trade/SOL_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/SOL_USDT</a> with &quot;1m&quot; and &quot;Candles&quot; selected on the top bar.</p><p><br></p><p>Please note that this market is about the price according to Binance SOL/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "Solana Up or Down Daily",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794934800000,
+      "createdAt": "2026-11-16T17:01:01.396Z",
+      "startAt": "2026-11-16T17:00:00.000Z",
+      "updatedAt": "2026-11-16T17:06:12.487Z",
+      "categories": [
+        "Crypto",
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy",
+        "Pareto"
+      ],
+      "volume": "1000000",
+      "volumeFormatted": "1.000000",
+      "tokens": {
+        "yes": "670611361576372232670173459206024686216503593029582362487308005000428605914",
+        "no": "32631184963726934618843867422772016628354616047308174014820220529939174748987"
+      },
+      "prices": [
+        0.7595,
+        0.2405
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.786,
+            0.267
+          ],
+          "limit": [
+            0.733,
+            0.214
+          ]
+        },
+        "sell": {
+          "market": [
+            0.733,
+            0.214
+          ],
+          "limit": [
+            0.786,
+            0.267
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "solana-up-or-down-daily-p-1794837915310",
+      "stableSlug": "sol-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "sol"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "SOLUSDT",
+          "windowOpenAt": "2026-11-16T17:00:00.000Z"
+        },
+        "openPrice": "71.52",
+        "isBannered": false,
+        "externalSlug": "solana-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "56535c97c756b4002ebbe9b00d8be56e9caccc126e07275020e54e7d6fb6ff0d",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10086,
+        "openPriceCapturedAt": "2026-11-16T17:00:00.000Z"
+      },
+      "trends": {
+        "hourly": {
+          "value": 1,
+          "rank": 89
+        }
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/59/b63917ab-c5b2-43ac-9898-695f56c065f8.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/59/b63917ab-c5b2-43ac-9898-695f56c065f8.svg",
+      "priceOracleMetadata": {
+        "ticker": "SOLUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "SOL",
+        "name": "SOL"
+      }
+    },
+    {
+      "id": 466881,
+      "automationType": "lumy",
+      "conditionId": "0xcc730c85279a68131d78de28067a3b89edf08d5a85eb6a8ae1961c927fe45add",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the close price is greater than or equal to the open price for the SOL/USDT 1 hour candle that begins on the time and date specified in the title. Otherwise, this market will resolve to &quot;Down&quot;.</p><p><br></p><p>The resolution source for this market is information from Binance, specifically the SOL/USDT pair (<a href=\"https://www.binance.com/en/trade/SOL_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/SOL_USDT</a>). The close « C » and open « O » displayed at the top of the graph for the relevant &quot;1H&quot; candle will be used once the data for that candle is finalized.</p><p><br></p><p>Please note that this market is about the price according to Binance SOL/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "Solana Up or Down Hourly",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794913200000,
+      "createdAt": "2026-11-17T10:00:04.710Z",
+      "startAt": "2026-11-17T10:00:00.000Z",
+      "updatedAt": "2026-11-17T10:06:12.753Z",
+      "categories": [
+        "Crypto",
+        "Hourly"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy",
+        "Pareto"
+      ],
+      "volume": "140000",
+      "volumeFormatted": "0.140000",
+      "tokens": {
+        "yes": "114166354187844610521675460467045285117811927746145095336532643341074605267832",
+        "no": "25199089285606098105898103003402904245989082007611878124855889973597806075160"
+      },
+      "prices": [
+        0.1045,
+        0.8955
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.128,
+            0.919
+          ],
+          "limit": [
+            0.081,
+            0.872
+          ]
+        },
+        "sell": {
+          "market": [
+            0.081,
+            0.872
+          ],
+          "limit": [
+            0.128,
+            0.919
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "solana-up-or-down-hourly-p-1794899117906",
+      "stableSlug": "sol-hourly-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "hourly"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "sol"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "hourly",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "SOLUSDT",
+          "windowOpenAt": "2026-11-17T10:00:00.000Z"
+        },
+        "openPrice": "72.73",
+        "isBannered": false,
+        "externalSlug": "solana-up-or-down-november-17-2026-5am-et",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "19aaf4a153a5fa1be38eaff1eccb137c19dbeb99885dcdcaeb75d72974081d32",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10122,
+        "openPriceCapturedAt": "2026-11-17T10:00:00.000Z"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 500,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/59/b63917ab-c5b2-43ac-9898-695f56c065f8.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/59/b63917ab-c5b2-43ac-9898-695f56c065f8.svg",
+      "priceOracleMetadata": {
+        "ticker": "SOLUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "SOL",
+        "name": "SOL"
+      }
+    },
+    {
+      "id": 466879,
+      "automationType": "lumy",
+      "conditionId": "0xc43bc27384c42543bd94e87fd8f3bcc022b860f715ba8d7b518f1fd150c92946",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the close price is greater than or equal to the open price for the BTC/USDT 1 hour candle that begins on the time and date specified in the title. Otherwise, this market will resolve to &quot;Down&quot;.</p><p><br></p><p>The resolution source for this market is information from Binance, specifically the BTC/USDT pair (<a href=\"https://www.binance.com/en/trade/BTC_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/BTC_USDT</a>). The close « C » and open « O » displayed at the top of the graph for the relevant &quot;1H&quot; candle will be used once the data for that candle is finalized.</p><p><br></p><p>Please note that this market is about the price according to Binance BTC/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "BTC Up or Down Hourly",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794913200000,
+      "createdAt": "2026-11-17T10:00:03.274Z",
+      "startAt": "2026-11-17T10:00:00.000Z",
+      "updatedAt": "2026-11-17T10:06:12.738Z",
+      "categories": [
+        "Crypto",
+        "Hourly"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy",
+        "Pareto"
+      ],
+      "volume": "140000",
+      "volumeFormatted": "0.140000",
+      "tokens": {
+        "yes": "42937147713142747506102441206273421668029579078075270864243634059079492267213",
+        "no": "68255750664065583113927220674228870503536809078207023197262259358800366197128"
+      },
+      "prices": [
+        0.2025,
+        0.7975
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.22,
+            0.815
+          ],
+          "limit": [
+            0.185,
+            0.78
+          ]
+        },
+        "sell": {
+          "market": [
+            0.185,
+            0.78
+          ],
+          "limit": [
+            0.22,
+            0.815
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "btc-up-or-down-hourly-p-1794899107068",
+      "stableSlug": "btc-hourly-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "hourly"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "btc"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "hourly",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "BTCUSDT",
+          "windowOpenAt": "2026-11-17T10:00:00.000Z"
+        },
+        "openPrice": "64365.48",
+        "isBannered": false,
+        "externalSlug": "bitcoin-up-or-down-november-17-2026-5am-et",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "f12af1f9136f0a8ef4a0afebfb494b99bc896b80d07fe508a2d42e8e2c7c0f73",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10114,
+        "openPriceCapturedAt": "2026-11-17T10:00:00.000Z",
+        "orderbookSources": {
+          "predict": {
+            "status": "matched",
+            "stats": {
+              "volumeTotalUsd": 6669.37,
+              "volume24hUsd": 6669.37
+            }
+          }
+        }
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 500,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/57/1546e81a-9e31-4292-b36c-b54e9443e4b1.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/57/1546e81a-9e31-4292-b36c-b54e9443e4b1.svg",
+      "priceOracleMetadata": {
+        "ticker": "BTCUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "BTC",
+        "name": "BTC"
+      }
+    },
+    {
+      "id": 466882,
+      "automationType": "lumy",
+      "conditionId": "0xa4169431f339fb807610e6056092b0667c916bccf6da2d980188f1d219f93f4b",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the close price is greater than or equal to the open price for the XRP/USDT 1 hour candle that begins on the time and date specified in the title. Otherwise, this market will resolve to &quot;Down&quot;.</p><p><br></p><p>The resolution source for this market is information from Binance, specifically the XRP/USDT pair (<a href=\"https://www.binance.com/en/trade/XRP_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/XRP_USDT</a>). The close « C » and open « O » displayed at the top of the graph for the relevant &quot;1H&quot; candle will be used once the data for that candle is finalized.</p><p><br></p><p>Please note that this market is about the price according to Binance XRP/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "XRP Up or Down Hourly",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794913200000,
+      "createdAt": "2026-11-17T10:00:10.253Z",
+      "startAt": "2026-11-17T10:00:00.000Z",
+      "updatedAt": "2026-11-17T10:06:12.757Z",
+      "categories": [
+        "Crypto",
+        "Hourly"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy"
+      ],
+      "volume": "80000",
+      "volumeFormatted": "0.080000",
+      "tokens": {
+        "yes": "23469583662251372340164317903789647145951629875617527807344590906035477125890",
+        "no": "109616180141659239398545180883947541166802436915867575652297775562984240407131"
+      },
+      "prices": [
+        0.224,
+        0.776
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.245,
+            0.797
+          ],
+          "limit": [
+            0.203,
+            0.755
+          ]
+        },
+        "sell": {
+          "market": [
+            0.203,
+            0.755
+          ],
+          "limit": [
+            0.245,
+            0.797
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "xrp-up-or-down-hourly-p-1794899120265",
+      "stableSlug": "xrp-hourly-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "hourly"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "xrp"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "hourly",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "XRPUSDT",
+          "windowOpenAt": "2026-11-17T10:00:00.000Z"
+        },
+        "openPrice": "0.9601",
+        "isBannered": false,
+        "externalSlug": "xrp-up-or-down-november-17-2026-5am-et",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "41b2f708ca8e0f1b644ef45d38bfadabd6fe9874461af720c350bbbe845152c9",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10123,
+        "openPriceCapturedAt": "2026-11-17T10:00:00.000Z"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 500,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/62/39da33be-6d34-4d5b-8af3-c609c9502aa1.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/62/39da33be-6d34-4d5b-8af3-c609c9502aa1.svg",
+      "priceOracleMetadata": {
+        "ticker": "XRPUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "XRP",
+        "name": "XRP"
+      }
+    },
+    {
+      "id": 466880,
+      "automationType": "lumy",
+      "conditionId": "0x005631a5e61f8486d72878e79ac0cbc2a5fb94a6995b156e5f29c1c8c77502d9",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the close price is greater than or equal to the open price for the ETH/USDT 1 hour candle that begins on the time and date specified in the title. Otherwise, this market will resolve to &quot;Down&quot;.</p><p><br></p><p>The resolution source for this market is information from Binance, specifically the ETH/USDT pair (<a href=\"https://www.binance.com/en/trade/ETH_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/ETH_USDT</a>). The close « C » and open « O » displayed at the top of the graph for the relevant &quot;1H&quot; candle will be used once the data for that candle is finalized.</p><p><br></p><p>Please note that this market is about the price according to Binance ETH/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "ETH Up or Down Hourly",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794913200000,
+      "createdAt": "2026-11-17T10:00:06.556Z",
+      "startAt": "2026-11-17T10:00:00.000Z",
+      "updatedAt": "2026-11-17T10:06:12.747Z",
+      "categories": [
+        "Crypto",
+        "Hourly"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy",
+        "Pareto"
+      ],
+      "volume": "80000",
+      "volumeFormatted": "0.080000",
+      "tokens": {
+        "yes": "32837686278173774240840038986727512590886596397145321733400789456877509495453",
+        "no": "47313145670169245254481868139587462544599817355160343327062306446735778835182"
+      },
+      "prices": [
+        0.048,
+        0.952
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.095,
+            0.999
+          ],
+          "limit": [
+            0.001,
+            0.905
+          ]
+        },
+        "sell": {
+          "market": [
+            0.001,
+            0.905
+          ],
+          "limit": [
+            0.095,
+            0.999
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "eth-up-or-down-hourly-p-1794899112439",
+      "stableSlug": "eth-hourly-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "hourly"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "eth"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "hourly",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "ETHUSDT",
+          "windowOpenAt": "2026-11-17T10:00:00.000Z"
+        },
+        "openPrice": "1812.16",
+        "isBannered": false,
+        "externalSlug": "ethereum-up-or-down-november-17-2026-5am-et",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "2c62c0fad2cdec7d104f81309c20a6de883c8271f779a6ac57ab2b34d32dd36c",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10117,
+        "openPriceCapturedAt": "2026-11-17T10:00:00.000Z",
+        "orderbookSources": {
+          "predict": {
+            "status": "matched",
+            "stats": {
+              "volumeTotalUsd": 1865.06,
+              "volume24hUsd": 1865.06
+            }
+          }
+        }
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 500,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/58/d570277d-5f47-4206-a69d-44e7b4e8570d.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/58/d570277d-5f47-4206-a69d-44e7b4e8570d.svg",
+      "priceOracleMetadata": {
+        "ticker": "ETHUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "ETH",
+        "name": "ETH"
+      }
+    },
+    {
+      "id": 467125,
+      "automationType": "lumy",
+      "conditionId": "0xc26cbccafd00dfa95497a2092a3ee4cb0a5928582f21fdd68ce0d09d78366128",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to \"Up\" if the <a href=\"https://data.chain.link/streams/eth-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink ETH/USD 60-second TWAP</a> on November 17, 2026, at 10:45 UTC is greater than or equal to the Price to Beat captured from the same TWAP on November 17, 2026, at 10:30 UTC. Otherwise, this market will resolve to \"Down\".</p><p><br></p><p>The <a href=\"https://data.chain.link/streams/eth-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink ETH/USD 60-second TWAP</a> is used for both the Price to Beat and resolution. Other exchanges, spot markets, and oracles will not be used.</p><p><br></p><p>The Price to Beat captured from the <a href=\"https://data.chain.link/streams/eth-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink ETH/USD 60-second TWAP</a> on November 17, 2026, at 10:30 UTC was $1792.742097860520000000.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "ETH Up or Down - 15 Min",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794912300000,
+      "createdAt": "2026-11-17T10:00:26.617Z",
+      "startAt": "2026-11-17T10:30:00.000Z",
+      "updatedAt": "2026-11-17T10:36:12.998Z",
+      "categories": [
+        "Crypto",
+        "15 min",
+        "Ethereum"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy",
+        "Recurring",
+        "Minutely",
+        "Minutes 15",
+        "challenge_team_crypto",
+        "donut_token_challenge",
+        "challenge_crypto_finance",
+        "challenge_team_finance",
+        "Pareto"
+      ],
+      "volume": "20000",
+      "volumeFormatted": "0.020000",
+      "tokens": {
+        "yes": "101187554486100029061620001279885621991444711023409054125475804597768799458976",
+        "no": "17755537754166085635110002578705688203824940868962642344890996632261917539222"
+      },
+      "prices": [
+        0.499,
+        0.501
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.534,
+            0.536
+          ],
+          "limit": [
+            0.464,
+            0.466
+          ]
+        },
+        "sell": {
+          "market": [
+            0.464,
+            0.466
+          ],
+          "limit": [
+            0.534,
+            0.536
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "eth-up-or-down-15-min-1794911400",
+      "stableSlug": "eth-15min-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 10,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "15-min"
+          ]
+        },
+        {
+          "propertyKeySlug": "incentive",
+          "value": [
+            "rebates",
+            "lp-reward"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "eth"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "c": 3,
+        "fee": true,
+        "hidden": false,
+        "minSize": 50000000,
+        "maxSpread": 0.035,
+        "isBannered": false,
+        "pythLazerId": null,
+        "externalSlug": "eth-updown-15m-1794911400",
+        "rewardsEpoch": 0,
+        "takerDelayMs": 500,
+        "oracleVersion": 1,
+        "isPolyArbitrage": true,
+        "makerRebateMult": 0.3,
+        "minutesDeadline": 15,
+        "rewardsSchedule": null,
+        "externalProvider": "polymarket",
+        "frequencySubType": "minutes_15",
+        "pythLazerChannel": null,
+        "shouldMarketMake": true,
+        "externalRulesWatch": {
+          "rulesHash": "189561e0d8b49e0e5e14327991c6f6b124f1523ce8f58627d431aae9d155b39f",
+          "clarificationIds": []
+        },
+        "chainlinkDataStream": {
+          "pair": "ETH/USD",
+          "feedId": "0x0002fbf9f58ef89c93385770d289d7c10c01c250641daa811063e303ee095593",
+          "enabled": true,
+          "streamUrl": "https://data.chain.link/streams/eth-usd-twap-60s-streams",
+          "apiBaseUrl": "https://api.dataengine.chain.link",
+          "streamType": "twap",
+          "feedAddress": null,
+          "priceDecimals": 18,
+          "toleranceSeconds": 5,
+          "twapWindowSeconds": 60
+        },
+        "openPriceCapturedAt": "2026-11-17T10:30:00.000Z",
+        "openPriceSelectedAt": "2026-11-17T10:30:00.000Z",
+        "pythProHistorySymbol": null,
+        "pythToleranceSeconds": null,
+        "pythToleranceDirection": null,
+        "openPrice": "1792.742097860520000000"
+      },
+      "settings": {
+        "minSize": "50000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "0.3",
+        "takerDelayMs": 500,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/131/31e8d5aa-90b3-424c-899c-8dbaf3f5d289.png",
+      "logo": "https://cdn.limitless.exchange/price-oracles/131/31e8d5aa-90b3-424c-899c-8dbaf3f5d289.png",
+      "priceOracleMetadata": {
+        "ticker": "ETH",
+        "assetType": "CRYPTO",
+        "pythAddress": "0x0002fbf9f58ef89c93385770d289d7c10c01c250641daa811063e303ee095593",
+        "chartSource": "chainlink",
+        "chainlinkFeedId": "0x0002fbf9f58ef89c93385770d289d7c10c01c250641daa811063e303ee095593",
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": "ETH/USD",
+        "chainlinkStreamUrl": "https://data.chain.link/streams/eth-usd-twap-60s-streams",
+        "symbol": "Crypto.ETH/USD.TWAP60",
+        "name": "ETH TWAP 60s (Chainlink)",
+        "logo": "https://cdn.limitless.exchange/price-oracles/131/31e8d5aa-90b3-424c-899c-8dbaf3f5d289.png"
+      }
+    },
+    {
+      "id": 466884,
+      "automationType": "lumy",
+      "conditionId": "0xc340437d57a6915a155d86c6f1b040dc572daeec2b750031858e7bd694bca1f8",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the close price is greater than or equal to the open price for the BNB/USDT 1 hour candle that begins on the time and date specified in the title. Otherwise, this market will resolve to &quot;Down&quot;.</p><p><br></p><p>The resolution source for this market is information from Binance, specifically the BNB/USDT pair (<a href=\"https://www.binance.com/en/trade/BNB_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/BNB_USDT</a>). The close « C » and open « O » displayed at the top of the graph for the relevant &quot;1H&quot; candle will be used once the data for that candle is finalized.</p><p><br></p><p>Please note that this market is about the price according to Binance BNB/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "BNB Up or Down Hourly",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794913200000,
+      "createdAt": "2026-11-17T10:00:07.174Z",
+      "startAt": "2026-11-17T10:00:00.000Z",
+      "updatedAt": "2026-11-17T10:06:12.766Z",
+      "categories": [
+        "Crypto",
+        "Hourly"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy"
+      ],
+      "volume": "20000",
+      "volumeFormatted": "0.020000",
+      "tokens": {
+        "yes": "45198783500518335116748777047493352136283823623940194412654548826202809026806",
+        "no": "5382118957395504823507057630331678961968685253554663113562754894313498325308"
+      },
+      "prices": [
+        0.0305,
+        0.9695
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.06,
+            0.999
+          ],
+          "limit": [
+            0.001,
+            0.94
+          ]
+        },
+        "sell": {
+          "market": [
+            0.001,
+            0.94
+          ],
+          "limit": [
+            0.06,
+            0.999
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "bnb-up-or-down-hourly-p-1794899123549",
+      "stableSlug": "bnb-hourly-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "hourly"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "hourly",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "BNBUSDT",
+          "windowOpenAt": "2026-11-17T10:00:00.000Z"
+        },
+        "openPrice": "590.74",
+        "isBannered": false,
+        "externalSlug": "bnb-up-or-down-november-17-2026-5am-et",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "ab60cc3e5b228a2881faffcaeeb22aba6735d6ff519ee704a2b82f37309bf5a4",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 11291,
+        "openPriceCapturedAt": "2026-11-17T10:00:00.000Z",
+        "orderbookSources": {
+          "predict": {
+            "status": "matched",
+            "stats": {
+              "volumeTotalUsd": 170.09,
+              "volume24hUsd": 170.09
+            }
+          }
+        }
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 500,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/61/5e1ab167-0806-4db4-a742-6819ea67654b.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/61/5e1ab167-0806-4db4-a742-6819ea67654b.svg",
+      "priceOracleMetadata": {
+        "ticker": "BNBUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "BNB",
+        "name": "BNB"
+      }
+    },
+    {
+      "id": 466883,
+      "automationType": "lumy",
+      "conditionId": "0xc905bfc91379e8b742ca92f79e07a8718462ed7de32d081eb6209dc8bb7b33e9",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the close price is greater than or equal to the open price for the DOGE/USDT 1 hour candle that begins on the time and date specified in the title. Otherwise, this market will resolve to &quot;Down&quot;.</p><p><br></p><p>The resolution source for this market is information from Binance, specifically the DOGE/USDT pair (<a href=\"https://www.binance.com/en/trade/DOGE_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/DOGE_USDT</a>). The close « C » and open « O » displayed at the top of the graph for the relevant &quot;1H&quot; candle will be used once the data for that candle is finalized.</p><p><br></p><p>Please note that this market is about the price according to Binance DOGE/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "DOGE Up or Down Hourly",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794913200000,
+      "createdAt": "2026-11-17T10:00:05.641Z",
+      "startAt": "2026-11-17T10:00:00.000Z",
+      "updatedAt": "2026-11-17T10:06:12.762Z",
+      "categories": [
+        "Crypto",
+        "Hourly"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy"
+      ],
+      "volume": "20000",
+      "volumeFormatted": "0.020000",
+      "tokens": {
+        "yes": "52220210851802870078438379119886456870251543583598588967104055198502143347634",
+        "no": "54971851962490986828341093662532050694109362203899546086521572891401969916565"
+      },
+      "prices": [
+        0.139,
+        0.861
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.162,
+            0.884
+          ],
+          "limit": [
+            0.116,
+            0.838
+          ]
+        },
+        "sell": {
+          "market": [
+            0.116,
+            0.838
+          ],
+          "limit": [
+            0.162,
+            0.884
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "doge-up-or-down-hourly-p-1794899121962",
+      "stableSlug": "doge-hourly-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "hourly"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "doge"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "hourly",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "DOGEUSDT",
+          "windowOpenAt": "2026-11-17T10:00:00.000Z"
+        },
+        "openPrice": "0.05878",
+        "isBannered": false,
+        "externalSlug": "dogecoin-up-or-down-november-17-2026-5am-et",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "ff90ca24ca737ae7ee18fc18838957faacb74a77fdf0befdd1c5e16ab7dce166",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 11287,
+        "openPriceCapturedAt": "2026-11-17T10:00:00.000Z"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 500,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/60/2fd1b992-ea43-4b87-9002-0aa637218112.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/60/2fd1b992-ea43-4b87-9002-0aa637218112.svg",
+      "priceOracleMetadata": {
+        "ticker": "DOGEUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "DOGE",
+        "name": "DOGE"
+      }
+    },
+    {
+      "id": 467149,
+      "automationType": "lumy",
+      "conditionId": "0xd178de010cf84779e9573db1e9fdcd69504286f698bf440379efa8446c93f11c",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to \"Up\" if the <a href=\"https://data.chain.link/streams/eth-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink ETH/USD 60-second TWAP</a> on November 17, 2026, at 10:45 UTC is greater than or equal to the Price to Beat captured from the same TWAP on November 17, 2026, at 10:40 UTC. Otherwise, this market will resolve to \"Down\".</p><p><br></p><p>The <a href=\"https://data.chain.link/streams/eth-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink ETH/USD 60-second TWAP</a> is used for both the Price to Beat and resolution. Other exchanges, spot markets, and oracles will not be used.</p><p><br></p><p>The Price to Beat captured from the <a href=\"https://data.chain.link/streams/eth-usd-twap-60s-streams\" target=\"_blank\" rel=\"noopener noreferrer\">Chainlink ETH/USD 60-second TWAP</a> on November 17, 2026, at 10:40 UTC was $1792.882837632540000000.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "ETH Up or Down - 5 Min",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794912300000,
+      "createdAt": "2026-11-17T10:35:02.454Z",
+      "startAt": "2026-11-17T10:40:00.000Z",
+      "updatedAt": "2026-11-17T10:40:01.570Z",
+      "categories": [
+        "Minutely",
+        "5 min"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy",
+        "Recurring",
+        "Minutely",
+        "Minutes 5"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "64910787090991483580287590504126752988032598739659339969825468399499467862695",
+        "no": "31273627610531967103467952907329432397353054398719069360670844731583718793894"
+      },
+      "prices": [
+        0.446,
+        0.554
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.497,
+            0.605
+          ],
+          "limit": [
+            0.395,
+            0.503
+          ]
+        },
+        "sell": {
+          "market": [
+            0.395,
+            0.503
+          ],
+          "limit": [
+            0.497,
+            0.605
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "eth-up-or-down-5-min-1794912000",
+      "stableSlug": "eth-5min-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 10,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "5-min"
+          ]
+        },
+        {
+          "propertyKeySlug": "incentive",
+          "value": [
+            "rebates"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "eth"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "c": 3,
+        "fee": true,
+        "hidden": false,
+        "minSize": 50000000,
+        "maxSpread": 0.065,
+        "isBannered": false,
+        "pythLazerId": null,
+        "externalSlug": "eth-updown-5m-1794912000",
+        "rewardsEpoch": 0,
+        "takerDelayMs": 250,
+        "marketVariant": "clob",
+        "oracleVersion": 1,
+        "isPolyArbitrage": true,
+        "makerRebateMult": 0.3,
+        "minutesDeadline": 5,
+        "rewardsSchedule": null,
+        "externalProvider": "polymarket",
+        "frequencySubType": "minutes_5",
+        "pythLazerChannel": null,
+        "shouldMarketMake": true,
+        "chainlinkDataStream": {
+          "pair": "ETH/USD",
+          "feedId": "0x0002fbf9f58ef89c93385770d289d7c10c01c250641daa811063e303ee095593",
+          "enabled": true,
+          "streamUrl": "https://data.chain.link/streams/eth-usd-twap-60s-streams",
+          "apiBaseUrl": "https://api.dataengine.chain.link",
+          "streamType": "twap",
+          "feedAddress": null,
+          "priceDecimals": 18,
+          "toleranceSeconds": 5,
+          "twapWindowSeconds": 60
+        },
+        "openPriceCapturedAt": "2026-11-17T10:40:00.000Z",
+        "openPriceSelectedAt": "2026-11-17T10:40:00.000Z",
+        "pythProHistorySymbol": null,
+        "pythToleranceSeconds": null,
+        "pythToleranceDirection": null,
+        "openPrice": "1792.882837632540000000"
+      },
+      "settings": {
+        "minSize": "50000000",
+        "maxSpread": 0.065,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "0.3",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/131/31e8d5aa-90b3-424c-899c-8dbaf3f5d289.png",
+      "logo": "https://cdn.limitless.exchange/price-oracles/131/31e8d5aa-90b3-424c-899c-8dbaf3f5d289.png",
+      "priceOracleMetadata": {
+        "ticker": "ETH",
+        "assetType": "CRYPTO",
+        "pythAddress": "0x0002fbf9f58ef89c93385770d289d7c10c01c250641daa811063e303ee095593",
+        "chartSource": "chainlink",
+        "chainlinkFeedId": "0x0002fbf9f58ef89c93385770d289d7c10c01c250641daa811063e303ee095593",
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": "ETH/USD",
+        "chainlinkStreamUrl": "https://data.chain.link/streams/eth-usd-twap-60s-streams",
+        "symbol": "Crypto.ETH/USD.TWAP60",
+        "name": "ETH TWAP 60s (Chainlink)",
+        "logo": "https://cdn.limitless.exchange/price-oracles/131/31e8d5aa-90b3-424c-899c-8dbaf3f5d289.png"
+      }
+    },
+    {
+      "id": 466361,
+      "automationType": "lumy",
+      "conditionId": "0x4ff9bba8192c5ddaa708ac55d8928df2cc1507b65ac7b5b76fe6bc4691928700",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the Close price for Amazon.com, Inc. (AMZN) on November 17, 2026 is higher than the Close price for Amazon.com, Inc. (AMZN) on the most recent prior trading day.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the Close price for Amazon.com, Inc. (AMZN) on November 17, 2026 is lower than the Close price for Amazon.com, Inc. (AMZN) on the most recent prior trading day.</p><p><br></p><p>E.g., ordinarily, a market on Monday would refer to the previous Friday for its most recent closing price, unless that Friday were a market holiday, in which case it would refer to Thursday, or the next most recent trading day.</p><p><br></p><p>If the two specified closing prices are exactly equal, this market will resolve 50-50. Closing prices will be used exactly as published by Pyth, without rounding.</p><p><br></p><p>If Amazon.com, Inc. (AMZN) does not trade at all during the regular session, the market will resolve 50-50.</p><p><br></p><p>For a standard full trading session, the closing price refers to the Pyth &quot;Close&quot; value of the 1-minute candle corresponding to the final minute of regular trading hours on the primary exchange.</p><p><br></p><p>If either of the relevant days has no valid Pyth Close value for the 1-minute candle corresponding to the end of regular trading hours on the primary exchange, the market will use the last valid Pyth price achieved during the regular trading hours of the primary exchange as the effective closing price. If no valid Pyth price exists for that trading day due to a system outage, data failure, or other technical disruption, the official closing price published by the primary exchange on which the listed security trades will be used to determine the closing price for that day.</p><p><br></p><p>Only prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered.</p><p><br></p><p>In the event of a stock split, reverse stock split, or similar corporate action affecting the listed security during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.</p><p><br></p><p>The resolution source for this market will be Pyth, specifically the &quot;Close&quot; values for the relevant 1-minute candle available at <a href=\"https://pythdata.app/explore/Equity.US.AMZN%2FUSD\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.AMZN%2FUSD</a>. Historical 1-minute candles may be accessed by appending a Unix timestamp (seconds) to the Pyth chart URL using the &quot;t=&quot; parameter. Any timestamp within the listed market time frame may be used to view the relevant candle data (e.g., <a href=\"https://pythdata.app/explore/Equity.US.AMZN%2FUSD?t=1773432000\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.AMZN%2FUSD?t=1773432000</a>).</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "AMZN Daily Up Down",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794949200000,
+      "createdAt": "2026-11-16T21:00:12.616Z",
+      "startAt": "2026-11-16T21:00:00.000Z",
+      "updatedAt": "2026-11-16T21:06:12.531Z",
+      "categories": [
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Daily",
+        "Lumy",
+        "Recurring"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "16373243466848474192266863225927913844288086511455805383271139456908270414735",
+        "no": "22218991130491816838079701120397765029663418738989073695405462456880880084926"
+      },
+      "prices": [
+        0.445,
+        0.555
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.5,
+            0.61
+          ],
+          "limit": [
+            0.39,
+            0.5
+          ]
+        },
+        "sell": {
+          "market": [
+            0.39,
+            0.5
+          ],
+          "limit": [
+            0.5,
+            0.61
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "amzn-daily-up-down-p-1794852367993",
+      "stableSlug": "amzn-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "finance"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "finance-events",
+          "value": [
+            "stocks"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "source": "pyth-pro",
+          "symbol": "Equity.US.AMZN/USD",
+          "windowOpenAt": "2026-11-16T21:00:00.000Z"
+        },
+        "openPrice": "257.76727",
+        "isBannered": false,
+        "pythLazerId": 954,
+        "externalSlug": "amzn-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "pythLazerChannel": "fixed_rate@1000ms",
+        "externalRulesWatch": {
+          "rulesHash": "2311acd72ac766db2a38ee4f7520374d33e6e7b49d5579dbb459b9c7077984d4",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10378,
+        "openPriceCapturedAt": "2026-11-16T21:00:00.000Z",
+        "pythProHistorySymbol": "Equity.US.AMZN/USD"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/38/d669bef9-fb93-4d03-8eb3-2a737ec70075.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/38/d669bef9-fb93-4d03-8eb3-2a737ec70075.svg",
+      "priceOracleMetadata": {
+        "ticker": "AMZN",
+        "assetType": "EQUITY",
+        "pythAddress": null,
+        "chartSource": "pyth-pro",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "Equity.US.AMZN/USD",
+        "name": "AMZN"
+      }
+    },
+    {
+      "id": 466360,
+      "automationType": "lumy",
+      "conditionId": "0x207781459cccb01403c70a29447e14d3219a3ecb37a4411c8514cd6ee4a3c115",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the Close price for SpaceX (SPCX) on November 17, 2026 is higher than the Close price for SpaceX (SPCX) on the most recent prior trading day.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the Close price for SpaceX (SPCX) on November 17, 2026 is lower than the Close price for SpaceX (SPCX) on the most recent prior trading day.</p><p><br></p><p>E.g., ordinarily, a market on Monday would refer to the previous Friday for its most recent closing price, unless that Friday were a market holiday, in which case it would refer to Thursday, or the next most recent trading day.</p><p><br></p><p>If the two specified closing prices are exactly equal, this market will resolve 50-50. Closing prices will be used exactly as published by Pyth, without rounding.</p><p><br></p><p>If SpaceX (SPCX) does not trade at all during the regular session, the market will resolve 50-50.</p><p><br></p><p>For a standard full trading session, the closing price refers to the Pyth &quot;Close&quot; value of the 1-minute candle corresponding to the final minute of regular trading hours on the primary exchange.</p><p><br></p><p>If either of the relevant days has no valid Pyth Close value for the 1-minute candle corresponding to the end of regular trading hours on the primary exchange, the market will use the last valid Pyth price achieved during the regular trading hours of the primary exchange as the effective closing price. If no valid Pyth price exists for that trading day due to a system outage, data failure, or other technical disruption, the official closing price published by the primary exchange on which the listed security trades will be used to determine the closing price for that day.</p><p><br></p><p>Only prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered.</p><p><br></p><p>In the event of a stock split, reverse stock split, or similar corporate action affecting the listed security during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.</p><p><br></p><p>The resolution source for this market will be Pyth, specifically the &quot;Close&quot; values for the relevant 1-minute candle available at <a href=\"https://pythdata.app/explore/Equity.US.SPCX%2FUSD\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.SPCX%2FUSD</a>. Historical 1-minute candles may be accessed by appending a Unix timestamp (seconds) to the Pyth chart URL using the &quot;t=&quot; parameter. Any timestamp within the listed market time frame may be used to view the relevant candle data (e.g., <a href=\"https://pythdata.app/explore/Equity.US.SPCX%2FUSD?t=1773432000\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.SPCX%2FUSD?t=1773432000</a>).</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "SPCX Daily Up or Down",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794949200000,
+      "createdAt": "2026-11-16T21:00:11.727Z",
+      "startAt": "2026-11-16T21:00:00.000Z",
+      "updatedAt": "2026-11-16T21:06:12.527Z",
+      "categories": [
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Daily",
+        "Lumy",
+        "Recurring"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "114272206298061911600298283959521221707382653650298161474359005228652571238767",
+        "no": "85798726502892729443036044467971525303218256561250056345948872019150876018600"
+      },
+      "prices": [
+        0.465,
+        0.535
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.515,
+            0.585
+          ],
+          "limit": [
+            0.415,
+            0.485
+          ]
+        },
+        "sell": {
+          "market": [
+            0.415,
+            0.485
+          ],
+          "limit": [
+            0.515,
+            0.585
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "spcx-daily-up-or-down-p-1794852362476",
+      "stableSlug": "spcx-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "finance"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "finance-events",
+          "value": [
+            "stocks"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "source": "pyth-pro",
+          "symbol": "Equity.US.SPCX/USD",
+          "windowOpenAt": "2026-11-16T21:00:00.000Z"
+        },
+        "openPrice": "137.38",
+        "isBannered": false,
+        "pythLazerId": 3314,
+        "externalSlug": "spcx-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "pythLazerChannel": "fixed_rate@1000ms",
+        "externalRulesWatch": {
+          "rulesHash": "c14b41c78bc8940a512ae5cfbfe1ea7d83d86238dd9730a3c7d6e03527544d8c",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 11979,
+        "openPriceCapturedAt": "2026-11-16T21:00:00.000Z",
+        "pythProHistorySymbol": "Equity.US.SPCX/USD"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/markets-logo/159188/3c829544-dc67-4abc-84ba-dd2afac09c4e.png",
+      "logo": "https://cdn.limitless.exchange/markets-logo/159188/3c829544-dc67-4abc-84ba-dd2afac09c4e.png",
+      "priceOracleMetadata": {
+        "ticker": "SPCX",
+        "assetType": "EQUITY",
+        "pythAddress": null,
+        "chartSource": "pyth-pro",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "Equity.US.SPCX/USD",
+        "name": "SPCX"
+      }
+    },
+    {
+      "id": 466359,
+      "automationType": "lumy",
+      "conditionId": "0x27529ca804c5865e845ddfb1474865879aa9626aa6e33693ae6701feef781f1c",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the Close price for Tesla, Inc. (TSLA) on November 17, 2026 is higher than the Close price for Tesla, Inc. (TSLA) on the most recent prior trading day.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the Close price for Tesla, Inc. (TSLA) on November 17, 2026 is lower than the Close price for Tesla, Inc. (TSLA) on the most recent prior trading day.</p><p><br></p><p>E.g., ordinarily, a market on Monday would refer to the previous Friday for its most recent closing price, unless that Friday were a market holiday, in which case it would refer to Thursday, or the next most recent trading day.</p><p><br></p><p>If the two specified closing prices are exactly equal, this market will resolve 50-50. Closing prices will be used exactly as published by Pyth, without rounding.</p><p><br></p><p>If Tesla, Inc. (TSLA) does not trade at all during the regular session, the market will resolve 50-50.</p><p><br></p><p>For a standard full trading session, the closing price refers to the Pyth &quot;Close&quot; value of the 1-minute candle corresponding to the final minute of regular trading hours on the primary exchange.</p><p><br></p><p>If either of the relevant days has no valid Pyth Close value for the 1-minute candle corresponding to the end of regular trading hours on the primary exchange, the market will use the last valid Pyth price achieved during the regular trading hours of the primary exchange as the effective closing price. If no valid Pyth price exists for that trading day due to a system outage, data failure, or other technical disruption, the official closing price published by the primary exchange on which the listed security trades will be used to determine the closing price for that day.</p><p><br></p><p>Only prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered.</p><p><br></p><p>In the event of a stock split, reverse stock split, or similar corporate action affecting the listed security during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.</p><p><br></p><p>The resolution source for this market will be Pyth, specifically the &quot;Close&quot; values for the relevant 1-minute candle available at <a href=\"https://pythdata.app/explore/Equity.US.TSLA%2FUSD\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.TSLA%2FUSD</a>. Historical 1-minute candles may be accessed by appending a Unix timestamp (seconds) to the Pyth chart URL using the &quot;t=&quot; parameter. Any timestamp within the listed market time frame may be used to view the relevant candle data (e.g., <a href=\"https://pythdata.app/explore/Equity.US.TSLA%2FUSD?t=1773432000\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.TSLA%2FUSD?t=1773432000</a>).</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "TSLA Daily Up Down",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794949200000,
+      "createdAt": "2026-11-16T21:00:01.405Z",
+      "startAt": "2026-11-16T21:00:00.000Z",
+      "updatedAt": "2026-11-16T21:06:12.522Z",
+      "categories": [
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Daily",
+        "Lumy",
+        "Recurring"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "93359405439087976756030942759910802299753777155680154917111757241729565271539",
+        "no": "75498319463971371140986348635721447435568156399884209148520565369566625338992"
+      },
+      "prices": [
+        0.3875,
+        0.6125
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.42,
+            0.645
+          ],
+          "limit": [
+            0.355,
+            0.58
+          ]
+        },
+        "sell": {
+          "market": [
+            0.355,
+            0.58
+          ],
+          "limit": [
+            0.42,
+            0.645
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "tsla-daily-up-down-p-1794852357157",
+      "stableSlug": "tsla-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "finance"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "finance-events",
+          "value": [
+            "stocks"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "tsla"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "source": "pyth-pro",
+          "symbol": "Equity.US.TSLA/USD",
+          "windowOpenAt": "2026-11-16T21:00:00.000Z"
+        },
+        "openPrice": "379.8505",
+        "isBannered": false,
+        "pythLazerId": 1435,
+        "externalSlug": "tsla-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "pythLazerChannel": "fixed_rate@1000ms",
+        "externalRulesWatch": {
+          "rulesHash": "cd07291157d2f62f4041bf3578d0a5526d17677fa71f3830758053e109b2dddb",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10375,
+        "openPriceCapturedAt": "2026-11-16T21:00:00.000Z",
+        "pythProHistorySymbol": "Equity.US.TSLA/USD"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/30/aa9c7304-e711-48e4-90aa-61243a433ec7.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/30/aa9c7304-e711-48e4-90aa-61243a433ec7.svg",
+      "priceOracleMetadata": {
+        "ticker": "TSLA",
+        "assetType": "EQUITY",
+        "pythAddress": null,
+        "chartSource": "pyth-pro",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "Equity.US.TSLA/USD",
+        "name": "TSLA"
+      }
+    },
+    {
+      "id": 466357,
+      "automationType": "lumy",
+      "conditionId": "0x9c5d4fcf42d2734ad256b9e129b50dd4db322b58d38320d8d31b364bdbb43bb9",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the Close price for Apple (AAPL) on November 17, 2026 is higher than the Close price for Apple (AAPL) on the most recent prior trading day.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the Close price for Apple (AAPL) on November 17, 2026 is lower than the Close price for Apple (AAPL) on the most recent prior trading day.</p><p><br></p><p>E.g., ordinarily, a market on Monday would refer to the previous Friday for its most recent closing price, unless that Friday were a market holiday, in which case it would refer to Thursday, or the next most recent trading day.</p><p><br></p><p>If the two specified closing prices are exactly equal, this market will resolve 50-50. Closing prices will be used exactly as published by Pyth, without rounding.</p><p><br></p><p>If Apple (AAPL) does not trade at all during the regular session, the market will resolve 50-50.</p><p><br></p><p>For a standard full trading session, the closing price refers to the Pyth &quot;Close&quot; value of the 1-minute candle corresponding to the final minute of regular trading hours on the primary exchange.</p><p><br></p><p>If either of the relevant days has no valid Pyth Close value for the 1-minute candle corresponding to the end of regular trading hours on the primary exchange, the market will use the last valid Pyth price achieved during the regular trading hours of the primary exchange as the effective closing price. If no valid Pyth price exists for that trading day due to a system outage, data failure, or other technical disruption, the official closing price published by the primary exchange on which the listed security trades will be used to determine the closing price for that day.</p><p><br></p><p>Only prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered.</p><p><br></p><p>In the event of a stock split, reverse stock split, or similar corporate action affecting the listed security during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.</p><p><br></p><p>The resolution source for this market will be Pyth, specifically the &quot;Close&quot; values for the relevant 1-minute candle available at <a href=\"https://pythdata.app/explore/Equity.US.AAPL%2FUSD\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.AAPL%2FUSD</a>. Historical 1-minute candles may be accessed by appending a Unix timestamp (seconds) to the Pyth chart URL using the &quot;t=&quot; parameter. Any timestamp within the listed market time frame may be used to view the relevant candle data (e.g., <a href=\"https://pythdata.app/explore/Equity.US.AAPL%2FUSD?t=1773432000\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.AAPL%2FUSD?t=1773432000</a>).</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "AAPL Daily Up Down",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794949200000,
+      "createdAt": "2026-11-16T21:00:04.833Z",
+      "startAt": "2026-11-16T21:00:00.000Z",
+      "updatedAt": "2026-11-16T21:06:12.519Z",
+      "categories": [
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Daily",
+        "Lumy",
+        "Recurring"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "56036601572951545282585727914448069623820993130685242152355548696024459722837",
+        "no": "86807074882090146681919695831274414550767654095465415945140257091620896487121"
+      },
+      "prices": [
+        0.52,
+        0.48
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.565,
+            0.525
+          ],
+          "limit": [
+            0.475,
+            0.435
+          ]
+        },
+        "sell": {
+          "market": [
+            0.475,
+            0.435
+          ],
+          "limit": [
+            0.565,
+            0.525
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "aapl-daily-up-down-p-1794852351030",
+      "stableSlug": "aapl-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "finance"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "finance-events",
+          "value": [
+            "stocks"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "aapl"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "source": "pyth-pro",
+          "symbol": "Equity.US.AAPL/USD",
+          "windowOpenAt": "2026-11-16T21:00:00.000Z"
+        },
+        "openPrice": "352.75743",
+        "isBannered": false,
+        "pythLazerId": 922,
+        "externalSlug": "aapl-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "pythLazerChannel": "fixed_rate@1000ms",
+        "externalRulesWatch": {
+          "rulesHash": "23224e3b6a95e763b7da9f0f4c075a21c3da65260e40bedd744451a263b5f3aa",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10380,
+        "openPriceCapturedAt": "2026-11-16T21:00:00.000Z",
+        "pythProHistorySymbol": "Equity.US.AAPL/USD"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/31/ee849338-840d-4517-8620-08d2a33d0146.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/31/ee849338-840d-4517-8620-08d2a33d0146.svg",
+      "priceOracleMetadata": {
+        "ticker": "AAPL",
+        "assetType": "EQUITY",
+        "pythAddress": null,
+        "chartSource": "pyth-pro",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "Equity.US.AAPL/USD",
+        "name": "AAPL"
+      }
+    },
+    {
+      "id": 466356,
+      "automationType": "lumy",
+      "conditionId": "0xe2ddb723a71f47955173475ca7c1a327a28058b672e15f64912c5374313f1c41",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the Close price for Microsoft Corporation (MSFT) on November 17, 2026 is higher than the Close price for Microsoft Corporation (MSFT) on the most recent prior trading day.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the Close price for Microsoft Corporation (MSFT) on November 17, 2026 is lower than the Close price for Microsoft Corporation (MSFT) on the most recent prior trading day.</p><p><br></p><p>E.g., ordinarily, a market on Monday would refer to the previous Friday for its most recent closing price, unless that Friday were a market holiday, in which case it would refer to Thursday, or the next most recent trading day.</p><p><br></p><p>If the two specified closing prices are exactly equal, this market will resolve 50-50. Closing prices will be used exactly as published by Pyth, without rounding.</p><p><br></p><p>If Microsoft Corporation (MSFT) does not trade at all during the regular session, the market will resolve 50-50.</p><p><br></p><p>For a standard full trading session, the closing price refers to the Pyth &quot;Close&quot; value of the 1-minute candle corresponding to the final minute of regular trading hours on the primary exchange.</p><p><br></p><p>If either of the relevant days has no valid Pyth Close value for the 1-minute candle corresponding to the end of regular trading hours on the primary exchange, the market will use the last valid Pyth price achieved during the regular trading hours of the primary exchange as the effective closing price. If no valid Pyth price exists for that trading day due to a system outage, data failure, or other technical disruption, the official closing price published by the primary exchange on which the listed security trades will be used to determine the closing price for that day.</p><p><br></p><p>Only prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered.</p><p><br></p><p>In the event of a stock split, reverse stock split, or similar corporate action affecting the listed security during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.</p><p><br></p><p>The resolution source for this market will be Pyth, specifically the &quot;Close&quot; values for the relevant 1-minute candle available at <a href=\"https://pythdata.app/explore/Equity.US.MSFT%2FUSD\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.MSFT%2FUSD</a>. Historical 1-minute candles may be accessed by appending a Unix timestamp (seconds) to the Pyth chart URL using the &quot;t=&quot; parameter. Any timestamp within the listed market time frame may be used to view the relevant candle data (e.g., <a href=\"https://pythdata.app/explore/Equity.US.MSFT%2FUSD?t=1773432000\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.MSFT%2FUSD?t=1773432000</a>).</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "MSFT Daily Up Down",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794949200000,
+      "createdAt": "2026-11-16T21:00:02.372Z",
+      "startAt": "2026-11-16T21:00:00.000Z",
+      "updatedAt": "2026-11-16T21:06:12.515Z",
+      "categories": [
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Daily",
+        "Lumy",
+        "Recurring"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "54804397588710424139621109826910217962462990946603302358895287091757533272340",
+        "no": "3922973592771266628122045828461100951247774166619530407154283292187444553612"
+      },
+      "prices": [
+        0.465,
+        0.535
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.52,
+            0.59
+          ],
+          "limit": [
+            0.41,
+            0.48
+          ]
+        },
+        "sell": {
+          "market": [
+            0.41,
+            0.48
+          ],
+          "limit": [
+            0.52,
+            0.59
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "msft-daily-up-down-p-1794852345400",
+      "stableSlug": "msft-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "finance"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "finance-events",
+          "value": [
+            "stocks"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "msft"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "source": "pyth-pro",
+          "symbol": "Equity.US.MSFT/USD",
+          "windowOpenAt": "2026-11-16T21:00:00.000Z"
+        },
+        "openPrice": "518.1195",
+        "isBannered": false,
+        "pythLazerId": 1292,
+        "externalSlug": "msft-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "pythLazerChannel": "fixed_rate@1000ms",
+        "externalRulesWatch": {
+          "rulesHash": "89bf785b7beddda10b3a743115951aebee1fb18a2f71853d094462d14f7a093d",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10379,
+        "openPriceCapturedAt": "2026-11-16T21:00:00.000Z",
+        "pythProHistorySymbol": "Equity.US.MSFT/USD"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "0.3",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/37/3b01d3bf-a2d3-4098-b44a-9e918f92fa66.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/37/3b01d3bf-a2d3-4098-b44a-9e918f92fa66.svg",
+      "priceOracleMetadata": {
+        "ticker": "MSFT",
+        "assetType": "EQUITY",
+        "pythAddress": null,
+        "chartSource": "pyth-pro",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "Equity.US.MSFT/USD",
+        "name": "MSFT"
+      }
+    },
+    {
+      "id": 466355,
+      "automationType": "lumy",
+      "conditionId": "0x8b3d6e76448cd2a50ecaa6b22221294668503e7728baab6fd7f74408ddd11563",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the Close price for Palantir Technologies Inc. (PLTR) on November 17, 2026 is higher than the Close price for Palantir Technologies Inc. (PLTR) on the most recent prior trading day.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the Close price for Palantir Technologies Inc. (PLTR) on November 17, 2026 is lower than the Close price for Palantir Technologies Inc. (PLTR) on the most recent prior trading day.</p><p><br></p><p>E.g., ordinarily, a market on Monday would refer to the previous Friday for its most recent closing price, unless that Friday were a market holiday, in which case it would refer to Thursday, or the next most recent trading day.</p><p><br></p><p>If the two specified closing prices are exactly equal, this market will resolve 50-50. Closing prices will be used exactly as published by Pyth, without rounding.</p><p><br></p><p>If Palantir Technologies Inc. (PLTR) does not trade at all during the regular session, the market will resolve 50-50.</p><p><br></p><p>For a standard full trading session, the closing price refers to the Pyth &quot;Close&quot; value of the 1-minute candle corresponding to the final minute of regular trading hours on the primary exchange.</p><p><br></p><p>If either of the relevant days has no valid Pyth Close value for the 1-minute candle corresponding to the end of regular trading hours on the primary exchange, the market will use the last valid Pyth price achieved during the regular trading hours of the primary exchange as the effective closing price. If no valid Pyth price exists for that trading day due to a system outage, data failure, or other technical disruption, the official closing price published by the primary exchange on which the listed security trades will be used to determine the closing price for that day.</p><p><br></p><p>Only prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered.</p><p><br></p><p>In the event of a stock split, reverse stock split, or similar corporate action affecting the listed security during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.</p><p><br></p><p>The resolution source for this market will be Pyth, specifically the &quot;Close&quot; values for the relevant 1-minute candle available at <a href=\"https://pythdata.app/explore/Equity.US.PLTR%2FUSD\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.PLTR%2FUSD</a>. Historical 1-minute candles may be accessed by appending a Unix timestamp (seconds) to the Pyth chart URL using the &quot;t=&quot; parameter. Any timestamp within the listed market time frame may be used to view the relevant candle data (e.g., <a href=\"https://pythdata.app/explore/Equity.US.PLTR%2FUSD?t=1773432000\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.PLTR%2FUSD?t=1773432000</a>).</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "PLTR Daily Up or Down",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794949200000,
+      "createdAt": "2026-11-16T21:00:06.681Z",
+      "startAt": "2026-11-16T21:00:00.000Z",
+      "updatedAt": "2026-11-16T21:06:12.511Z",
+      "categories": [
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Daily",
+        "Lumy",
+        "Recurring"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "41017150339753521634708411887685844189125898657104163623588030243849316011556",
+        "no": "39606927010411738384550948641670621187092489358965597849412586594924448557990"
+      },
+      "prices": [
+        0.4125,
+        0.5875
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.47,
+            0.645
+          ],
+          "limit": [
+            0.355,
+            0.53
+          ]
+        },
+        "sell": {
+          "market": [
+            0.355,
+            0.53
+          ],
+          "limit": [
+            0.47,
+            0.645
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "pltr-daily-up-or-down-p-1794852335654",
+      "stableSlug": "pltr-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "finance"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "finance-events",
+          "value": [
+            "stocks"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "pltr"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "source": "pyth-pro",
+          "symbol": "Equity.US.PLTR/USD",
+          "windowOpenAt": "2026-11-16T21:00:00.000Z"
+        },
+        "openPrice": "160.40245",
+        "isBannered": false,
+        "pythLazerId": 1346,
+        "externalSlug": "pltr-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "pythLazerChannel": "fixed_rate@1000ms",
+        "externalRulesWatch": {
+          "rulesHash": "6d8991f6a5deed6d6e32195a88c98ca9e2b56412f40abdf274cf0272a9f69873",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10391,
+        "openPriceCapturedAt": "2026-11-16T21:00:00.000Z",
+        "pythProHistorySymbol": "Equity.US.PLTR/USD"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "0.3",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/39/4b134ce7-b200-46c0-9c56-b71e270e6f9f.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/39/4b134ce7-b200-46c0-9c56-b71e270e6f9f.svg",
+      "priceOracleMetadata": {
+        "ticker": "PLTR",
+        "assetType": "EQUITY",
+        "pythAddress": null,
+        "chartSource": "pyth-pro",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "Equity.US.PLTR/USD",
+        "name": "PLTR"
+      }
+    },
+    {
+      "id": 466354,
+      "automationType": "lumy",
+      "conditionId": "0x0a876fb8e900d01b1f6d105f52c24d22f6de1b656e8ad26b51d18b6408fdba46",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the Close price for Netflix, Inc. (NFLX) on November 17, 2026 is higher than the Close price for Netflix, Inc. (NFLX) on the most recent prior trading day.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the Close price for Netflix, Inc. (NFLX) on November 17, 2026 is lower than the Close price for Netflix, Inc. (NFLX) on the most recent prior trading day.</p><p><br></p><p>E.g., ordinarily, a market on Monday would refer to the previous Friday for its most recent closing price, unless that Friday were a market holiday, in which case it would refer to Thursday, or the next most recent trading day.</p><p><br></p><p>If the two specified closing prices are exactly equal, this market will resolve 50-50. Closing prices will be used exactly as published by Pyth, without rounding.</p><p><br></p><p>If Netflix, Inc. (NFLX) does not trade at all during the regular session, the market will resolve 50-50.</p><p><br></p><p>For a standard full trading session, the closing price refers to the Pyth &quot;Close&quot; value of the 1-minute candle corresponding to the final minute of regular trading hours on the primary exchange.</p><p><br></p><p>If either of the relevant days has no valid Pyth Close value for the 1-minute candle corresponding to the end of regular trading hours on the primary exchange, the market will use the last valid Pyth price achieved during the regular trading hours of the primary exchange as the effective closing price. If no valid Pyth price exists for that trading day due to a system outage, data failure, or other technical disruption, the official closing price published by the primary exchange on which the listed security trades will be used to determine the closing price for that day.</p><p><br></p><p>Only prices achieved during the regular trading hours of the primary exchange on which the listed security trades (typically 9:30 AM – 4:00 PM ET) will be considered.</p><p><br></p><p>In the event of a stock split, reverse stock split, or similar corporate action affecting the listed security during the listed time frame, this market will resolve based on split-adjusted prices as displayed on Pyth.</p><p><br></p><p>The resolution source for this market will be Pyth, specifically the &quot;Close&quot; values for the relevant 1-minute candle available at <a href=\"https://pythdata.app/explore/Equity.US.NFLX%2FUSD\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.NFLX%2FUSD</a>. Historical 1-minute candles may be accessed by appending a Unix timestamp (seconds) to the Pyth chart URL using the &quot;t=&quot; parameter. Any timestamp within the listed market time frame may be used to view the relevant candle data (e.g., <a href=\"https://pythdata.app/explore/Equity.US.NFLX%2FUSD?t=1773432000\" target=\"_blank\" rel=\"noopener noreferrer\">https://pythdata.app/explore/Equity.US.NFLX%2FUSD?t=1773432000</a>).</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "NFLX Daily Up or Down",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794949200000,
+      "createdAt": "2026-11-16T21:00:03.309Z",
+      "startAt": "2026-11-16T21:00:00.000Z",
+      "updatedAt": "2026-11-16T21:06:12.507Z",
+      "categories": [
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Daily",
+        "Lumy",
+        "Recurring"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "81477217052450833686538507653098728613485191946373216796323098991304554186238",
+        "no": "6726170767388265193189944704993864970169406714239376785592973492711414777790"
+      },
+      "prices": [
+        0.5125,
+        0.4875
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.56,
+            0.535
+          ],
+          "limit": [
+            0.465,
+            0.44
+          ]
+        },
+        "sell": {
+          "market": [
+            0.465,
+            0.44
+          ],
+          "limit": [
+            0.56,
+            0.535
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "nflx-daily-up-or-down-p-1794852334502",
+      "stableSlug": "nflx-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "finance"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "finance-events",
+          "value": [
+            "stocks"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "nflx"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "source": "pyth-pro",
+          "symbol": "Equity.US.NFLX/USD",
+          "windowOpenAt": "2026-11-16T21:00:00.000Z"
+        },
+        "openPrice": "60.75504",
+        "isBannered": false,
+        "pythLazerId": 1304,
+        "externalSlug": "nflx-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "pythLazerChannel": "fixed_rate@1000ms",
+        "externalRulesWatch": {
+          "rulesHash": "d7e80898386148bfdf47828dcc4167e4e45aba8bd266bd865dc489ce9801098e",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10390,
+        "openPriceCapturedAt": "2026-11-16T21:00:00.000Z",
+        "pythProHistorySymbol": "Equity.US.NFLX/USD"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "0.3",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/109/a04f54e3-8a03-470f-92f9-886ddc84f319.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/109/a04f54e3-8a03-470f-92f9-886ddc84f319.svg",
+      "priceOracleMetadata": {
+        "ticker": "NFLX",
+        "assetType": "EQUITY",
+        "pythAddress": null,
+        "chartSource": "pyth-pro",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "Equity.US.NFLX/USD",
+        "name": "NFLX"
+      }
+    },
+    {
+      "id": 466186,
+      "automationType": "lumy",
+      "conditionId": "0x38435308f49f420f18d587b1f846d9ff8c001f1328da1adb19921b2d9d92da7b",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for BNB/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is lower than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for BNB/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is higher than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>If the final &quot;Close&quot; price for both of these candles is exactly equal on Binance, this market will resolve 50-50.</p><p><br></p><p>The resolution source for this market is Binance, specifically the BNB/USDT &quot;Close&quot; prices currently available at <a href=\"https://www.binance.com/en/trade/BNB_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/BNB_USDT</a> with &quot;1m&quot; and &quot;Candles&quot; selected on the top bar.</p><p><br></p><p>Please note that this market is about the price according to Binance BNB/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "BNB Up or Down Daily",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794934800000,
+      "createdAt": "2026-11-16T17:01:00.773Z",
+      "startAt": "2026-11-16T17:00:00.000Z",
+      "updatedAt": "2026-11-16T17:06:12.512Z",
+      "categories": [
+        "Crypto",
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "95472048513186776601973870776793399799137649645773048764577048648334175805595",
+        "no": "110872583354370494998365310304558386494508625245856368374658988647154070471344"
+      },
+      "prices": [
+        0.3515,
+        0.6485
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.365,
+            0.662
+          ],
+          "limit": [
+            0.338,
+            0.635
+          ]
+        },
+        "sell": {
+          "market": [
+            0.338,
+            0.635
+          ],
+          "limit": [
+            0.365,
+            0.662
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "bnb-up-or-down-daily-p-1794837926104",
+      "stableSlug": "bnb-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "BNBUSDT",
+          "windowOpenAt": "2026-11-16T17:00:00.000Z"
+        },
+        "openPrice": "591.48",
+        "isBannered": false,
+        "externalSlug": "bnb-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "4a7b155e62b155895038a9058655c20fedac180b34da281ccba56249cbe8adb6",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10421,
+        "openPriceCapturedAt": "2026-11-16T17:00:00.000Z",
+        "orderbookSources": {
+          "predict": {
+            "status": "matched",
+            "stats": {
+              "volumeTotalUsd": 1573.11,
+              "volume24hUsd": 1573.11
+            }
+          }
+        }
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/61/5e1ab167-0806-4db4-a742-6819ea67654b.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/61/5e1ab167-0806-4db4-a742-6819ea67654b.svg",
+      "priceOracleMetadata": {
+        "ticker": "BNBUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "BNB",
+        "name": "BNB"
+      }
+    },
+    {
+      "id": 466185,
+      "automationType": "lumy",
+      "conditionId": "0xb29f4b134b25848bbf718221d2a48ec8dac0a7e3c631d95e81bed0076d116ae9",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for XRP/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is lower than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for XRP/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is higher than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>If the final &quot;Close&quot; price for both of these candles is exactly equal on Binance, this market will resolve 50-50.</p><p><br></p><p>The resolution source for this market is Binance, specifically the XRP/USDT &quot;Close&quot; prices currently available at <a href=\"https://www.binance.com/en/trade/XRP_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/XRP_USDT</a> with &quot;1m&quot; and &quot;Candles&quot; selected on the top bar.</p><p><br></p><p>Please note that this market is about the price according to Binance XRP/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "XRP Up or Down Daily",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794934800000,
+      "createdAt": "2026-11-16T17:01:02.316Z",
+      "startAt": "2026-11-16T17:00:00.000Z",
+      "updatedAt": "2026-11-16T17:06:12.507Z",
+      "categories": [
+        "Crypto",
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "21953070447897684632819234620743764287104866921585603329512847872795875227096",
+        "no": "88332471811850845642721972268102449887599674211423042768924236044951905574206"
+      },
+      "prices": [
+        0.434,
+        0.566
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.468,
+            0.6
+          ],
+          "limit": [
+            0.4,
+            0.532
+          ]
+        },
+        "sell": {
+          "market": [
+            0.4,
+            0.532
+          ],
+          "limit": [
+            0.468,
+            0.6
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "xrp-up-or-down-daily-p-1794837924864",
+      "stableSlug": "xrp-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "xrp"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "XRPUSDT",
+          "windowOpenAt": "2026-11-16T17:00:00.000Z"
+        },
+        "openPrice": "0.9621",
+        "isBannered": false,
+        "externalSlug": "xrp-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "55e438a8dce7fd29e48fa610f15388b25e66f4fcdcfd07c94280076474b9dfb8",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10100,
+        "openPriceCapturedAt": "2026-11-16T17:00:00.000Z"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/62/39da33be-6d34-4d5b-8af3-c609c9502aa1.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/62/39da33be-6d34-4d5b-8af3-c609c9502aa1.svg",
+      "priceOracleMetadata": {
+        "ticker": "XRPUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "XRP",
+        "name": "XRP"
+      }
+    },
+    {
+      "id": 466184,
+      "automationType": "lumy",
+      "conditionId": "0x6c1125edcd0111b5e88e362049af9083e6c80280a424ddf5e2ccde14534fe75f",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for DOGE/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is lower than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for DOGE/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is higher than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>If the final &quot;Close&quot; price for both of these candles is exactly equal on Binance, this market will resolve 50-50.</p><p><br></p><p>The resolution source for this market is Binance, specifically the DOGE/USDT &quot;Close&quot; prices currently available at <a href=\"https://www.binance.com/en/trade/DOGE_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/DOGE_USDT</a> with &quot;1m&quot; and &quot;Candles&quot; selected on the top bar.</p><p><br></p><p>Please note that this market is about the price according to Binance DOGE/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "Dogecoin Up or Down Daily",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794934800000,
+      "createdAt": "2026-11-16T17:01:02.016Z",
+      "startAt": "2026-11-16T17:00:00.000Z",
+      "updatedAt": "2026-11-16T17:06:12.501Z",
+      "categories": [
+        "Crypto",
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "68179405112903581490661337830152494983291627616088078683166556563802976105041",
+        "no": "109731480585404298380652501064043171004593744074275567996932244591516496014204"
+      },
+      "prices": [
+        0.1605,
+        0.8395
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.183,
+            0.862
+          ],
+          "limit": [
+            0.138,
+            0.817
+          ]
+        },
+        "sell": {
+          "market": [
+            0.138,
+            0.817
+          ],
+          "limit": [
+            0.183,
+            0.862
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "dogecoin-up-or-down-daily-p-1794837919485",
+      "stableSlug": "doge-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "doge"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "DOGEUSDT",
+          "windowOpenAt": "2026-11-16T17:00:00.000Z"
+        },
+        "openPrice": "0.05975",
+        "isBannered": false,
+        "externalSlug": "dogecoin-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "accbc7ed4d12937370b3f9d9c79900a087f52018fd2913df7258badf9483c52d",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 10142,
+        "openPriceCapturedAt": "2026-11-16T17:00:00.000Z"
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/60/2fd1b992-ea43-4b87-9002-0aa637218112.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/60/2fd1b992-ea43-4b87-9002-0aa637218112.svg",
+      "priceOracleMetadata": {
+        "ticker": "DOGEUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "DOGE",
+        "name": "DOGE"
+      }
+    },
+    {
+      "id": 466180,
+      "automationType": "lumy",
+      "conditionId": "0xcabb0010bbb24e51ded7a34987ed2ebbd151c662e19fb46c48e2e05a0de6c69c",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for ETH/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is lower than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for ETH/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is higher than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>If the final &quot;Close&quot; price for both of these candles is exactly equal on Binance, this market will resolve 50-50.</p><p><br></p><p>The resolution source for this market is Binance, specifically the ETH/USDT &quot;Close&quot; prices currently available at <a href=\"https://www.binance.com/en/trade/ETH_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/ETH_USDT</a> with &quot;1m&quot; and &quot;Candles&quot; selected on the top bar.</p><p><br></p><p>Please note that this market is about the price according to Binance ETH/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "ETH Up or Down Daily",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794934800000,
+      "createdAt": "2026-11-16T17:01:00.470Z",
+      "startAt": "2026-11-16T17:00:00.000Z",
+      "updatedAt": "2026-11-16T17:06:12.483Z",
+      "categories": [
+        "Crypto",
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy",
+        "Pareto"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "79905219124085843724367184942012679863144537066443737732472756101095707845615",
+        "no": "44581956694488270984900928617726430640006078851552830642343303546001701603007"
+      },
+      "prices": [
+        0.1725,
+        0.8275
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.185,
+            0.84
+          ],
+          "limit": [
+            0.16,
+            0.815
+          ]
+        },
+        "sell": {
+          "market": [
+            0.16,
+            0.815
+          ],
+          "limit": [
+            0.185,
+            0.84
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "eth-up-or-down-daily-p-1794837913937",
+      "stableSlug": "eth-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "eth"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "ETHUSDT",
+          "windowOpenAt": "2026-11-16T17:00:00.000Z"
+        },
+        "openPrice": "1829.42",
+        "isBannered": false,
+        "externalSlug": "ethereum-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "3da1a6ce391bb37f7e42cb7d7b730203521d3f5a946e6618123ecd90510315e0",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 40,
+        "openPriceCapturedAt": "2026-11-16T17:00:00.000Z",
+        "orderbookSources": {
+          "predict": {
+            "status": "matched",
+            "stats": {
+              "volumeTotalUsd": 7263.35,
+              "volume24hUsd": 7263.35
+            }
+          }
+        }
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/58/d570277d-5f47-4206-a69d-44e7b4e8570d.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/58/d570277d-5f47-4206-a69d-44e7b4e8570d.svg",
+      "priceOracleMetadata": {
+        "ticker": "ETHUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "ETH",
+        "name": "ETH"
+      }
+    },
+    {
+      "id": 466179,
+      "automationType": "lumy",
+      "conditionId": "0xfddb95c15571ae1c7dcbe1839065cfc9dcbbc0bf08746df98257c1ca43003444",
+      "negRiskRequestId": null,
+      "description": "<p>This market will resolve to &quot;Up&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for BTC/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is lower than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>This market will resolve to &quot;Down&quot; if the &quot;Close&quot; price for the Binance 1 minute candle for BTC/USDT Nov 16 &#39;26 12:00 in the ET timezone (noon) is higher than the final &quot;Close&quot; price for the Nov 17 &#39;26 12:00 ET candle.</p><p><br></p><p>If the final &quot;Close&quot; price for both of these candles is exactly equal on Binance, this market will resolve 50-50.</p><p><br></p><p>The resolution source for this market is Binance, specifically the BTC/USDT &quot;Close&quot; prices currently available at <a href=\"https://www.binance.com/en/trade/BTC_USDT\" target=\"_blank\" rel=\"noopener noreferrer\">https://www.binance.com/en/trade/BTC_USDT</a> with &quot;1m&quot; and &quot;Candles&quot; selected on the top bar.</p><p><br></p><p>Please note that this market is about the price according to Binance BTC/USDT, not according to other exchanges or trading pairs.</p>",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "BTC Up or Down Daily",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794934800000,
+      "createdAt": "2026-11-16T17:01:01.052Z",
+      "startAt": "2026-11-16T17:00:00.000Z",
+      "updatedAt": "2026-11-16T17:06:12.476Z",
+      "categories": [
+        "Crypto",
+        "Daily"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy",
+        "Pareto"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "51488024007068870905107454704570051757772671366463939748623568670890846289871",
+        "no": "38872894136745614275052468149377963057212021287268681379140250394184043419275"
+      },
+      "prices": [
+        0.245,
+        0.755
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.266,
+            0.776
+          ],
+          "limit": [
+            0.224,
+            0.734
+          ]
+        },
+        "sell": {
+          "market": [
+            0.224,
+            0.734
+          ],
+          "limit": [
+            0.266,
+            0.776
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "btc-up-or-down-daily-p-1794837912662",
+      "stableSlug": "btc-daily-price",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "crypto"
+          ]
+        },
+        {
+          "propertyKeySlug": "duration",
+          "value": [
+            "daily"
+          ]
+        },
+        {
+          "propertyKeySlug": "ticker",
+          "value": [
+            "btc"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "chart": {
+          "candle": "daily",
+          "market": "spot",
+          "source": "binance",
+          "symbol": "BTCUSDT",
+          "windowOpenAt": "2026-11-16T17:00:00.000Z"
+        },
+        "openPrice": "64939.35",
+        "isBannered": false,
+        "externalSlug": "bitcoin-up-or-down-on-november-17-2026",
+        "isPolyArbitrage": true,
+        "externalProvider": "polymarket",
+        "externalRulesWatch": {
+          "rulesHash": "63b5b402837a2d926526b2c41fd1dfe9d1383e6659b7b3cb9594b38f8ba20911",
+          "clarificationIds": []
+        },
+        "polymarketSeriesId": 41,
+        "openPriceCapturedAt": "2026-11-16T17:00:00.000Z",
+        "orderbookSources": {
+          "predict": {
+            "status": "matched",
+            "stats": {
+              "volumeTotalUsd": 45480.47,
+              "volume24hUsd": 45473.41
+            }
+          }
+        }
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "1",
+        "takerDelayMs": 250,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/price-oracles/57/1546e81a-9e31-4292-b36c-b54e9443e4b1.svg",
+      "logo": "https://cdn.limitless.exchange/price-oracles/57/1546e81a-9e31-4292-b36c-b54e9443e4b1.svg",
+      "priceOracleMetadata": {
+        "ticker": "BTCUSDT",
+        "assetType": "CRYPTO",
+        "pythAddress": null,
+        "chartSource": "binance",
+        "chainlinkFeedId": null,
+        "chainlinkFeedAddress": null,
+        "chainlinkPair": null,
+        "chainlinkStreamUrl": null,
+        "symbol": "BTC",
+        "name": "BTC"
+      }
+    },
+    {
+      "id": 466066,
+      "automationType": "sports",
+      "conditionId": "0x785c8fc312da06737a1fc950b68b300eed35ad9b1e0c6dcc47c1718828ceb8b5",
+      "negRiskRequestId": null,
+      "description": "This market refers to the tennis match between Luka Mikrut and Michael Agwi in the ATP Helsinki Challenger, originally scheduled for November 16, 2026 at 12:30 UTC.\nThis market will resolve to 'Luka Mikrut' if Luka Mikrut advances against Michael Agwi.\nThis market will resolve to 'Michael Agwi' if Michael Agwi advances against Luka Mikrut.\nIf the match is canceled (not played at all), ends in a tie, or a winner has not been determined by November 30, 2026, 23:59 UTC (14 days after the scheduled start), this market will resolve to 50-50.\nIf the match begins but is not completed, and one player advances due to the opponent's retirement, default, or disqualification, this market will resolve to the player who advances.\nIf the match ends in a walkover (player withdraws before the start and the other advances automatically), this market will resolve to 50-50.",
+      "groupId": null,
+      "collateralToken": {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "title": "Luka Mikrut vs Michael Agwi",
+      "proxyTitle": null,
+      "expirationDate": "Nov 17, 2026",
+      "expirationTimestamp": 1794918600000,
+      "createdAt": "2026-11-16T11:54:19.482Z",
+      "startAt": null,
+      "updatedAt": "2026-11-16T15:15:04.884Z",
+      "categories": [
+        "Sports"
+      ],
+      "status": "FUNDED",
+      "expired": false,
+      "hidden": false,
+      "creator": {
+        "name": "Limitless",
+        "username": "Limitless",
+        "imageURI": "https://limitless.exchange/assets/images/logo.svg",
+        "link": "https://x.com/trylimitless",
+        "address": "0x60e61631d9a585797cDee9f79FafDecf3bd7F64D"
+      },
+      "tags": [
+        "Lumy",
+        "Pareto"
+      ],
+      "volume": "0",
+      "volumeFormatted": "0.000000",
+      "tokens": {
+        "yes": "5528686408591648598151623516753144504604012263448862414020725953838269667895",
+        "no": "110288459292670056573740831497674941290024610345394889619936790916984268325181"
+      },
+      "prices": [
+        0.5,
+        0.5
+      ],
+      "tradePrices": {
+        "buy": {
+          "market": [
+            0.999,
+            0.999
+          ],
+          "limit": [
+            0.001,
+            0.001
+          ]
+        },
+        "sell": {
+          "market": [
+            0.001,
+            0.001
+          ],
+          "limit": [
+            0.999,
+            0.999
+          ]
+        }
+      },
+      "isOther": false,
+      "isRewardable": true,
+      "slug": "luka-mikrut-vs-michael-agwi-1794830059482",
+      "hrSlug": "luka-mikrut-vs-michael-agwi-2026-11-16",
+      "tradeType": "clob",
+      "venue": {
+        "exchange": "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5",
+        "adapter": null,
+        "feeModule": "0x7B6ffe5bA8B5ec7afB0AaBaE629D12dA5bC62565",
+        "feeModuleType": "COLLATERAL"
+      },
+      "marketType": "single",
+      "priorityIndex": 0,
+      "properties": [
+        {
+          "propertyKeySlug": "domain",
+          "value": [
+            "sport"
+          ]
+        },
+        {
+          "propertyKeySlug": "sport-type",
+          "value": [
+            "tennis"
+          ]
+        },
+        {
+          "propertyKeySlug": "tennis-league",
+          "value": [
+            "atp-helsinki-challenger"
+          ]
+        },
+        {
+          "propertyKeySlug": "tennis-tab",
+          "value": [
+            "matches"
+          ]
+        }
+      ],
+      "winningOutcomeIndex": null,
+      "metadata": {
+        "fee": true,
+        "round": "Helsinki - Final",
+        "bestOf": 3,
+        "eventId": "1396658",
+        "awayTeam": "Michael Agwi",
+        "homeTeam": "Luka Mikrut",
+        "awayScore": 0,
+        "homeScore": 2,
+        "setScores": [
+          {
+            "away": 2,
+            "home": 6
+          },
+          {
+            "away": 2,
+            "home": 6
+          }
+        ],
+        "sportType": "tennis",
+        "roundShort": "final",
+        "seriesSlug": "atp-challenger",
+        "player1Name": "Luka Mikrut",
+        "player2Name": "Michael Agwi",
+        "externalSlug": "atp-mikrut-agwi-2026-11-16",
+        "leagueNameFull": "ATP Helsinki Challenger",
+        "player1Country": "Croatia",
+        "tournamentName": "ATP Helsinki Challenger",
+        "daysBeforeMatch": 3,
+        "player1PhotoUrl": "https://api.api-tennis.com/logo-tennis/938_l-mikrut.jpg",
+        "binaryMarketType": "moneyline",
+        "finishObservedAt": "2026-11-16T14:06:00.310Z",
+        "player1ShortName": "L. Mikrut",
+        "player2ShortName": "M. Agwi",
+        "limiOracleCheckId": "623067f0-ae26-4801-9e1a-23dd7c10bd61",
+        "externalRulesWatch": {
+          "rulesHash": "6bfd41518e95b16a6aad0e1cd745e3619937eedec6262c5bf51abc4fd3374040",
+          "clarificationIds": []
+        },
+        "startMatchTimestampInUTC": 1794832200,
+        "resolutionSafetyGuardBlock": {
+          "required": true,
+          "flaggedAt": "2026-11-16T15:15:04.884Z",
+          "flaggedBy": "source-consensus",
+          "lastReason": "Oracle non-conclusive (oracle-failed) as substitute for api_tennis=unavailable(player-key-mismatch); polymarket=YES",
+          "attemptCount": 1
+        }
+      },
+      "settings": {
+        "minSize": "100000000",
+        "maxSpread": 0.035,
+        "dailyReward": "0",
+        "effectiveDailyReward": "0",
+        "currentRewardsMultiplier": 1,
+        "rewardsEpoch": "0",
+        "c": "3",
+        "rebateRate": "0",
+        "takerDelayMs": 1500,
+        "creatorFeePct": 0
+      },
+      "imageUrl": "https://cdn.limitless.exchange/property-options/icons/963352a1-de23-48cd-9452-27e18b638bc2/30a24b82-21af-4e5b-ba4b-640e9bfa2d80.png",
+      "logo": "https://cdn.limitless.exchange/property-options/icons/963352a1-de23-48cd-9452-27e18b638bc2/30a24b82-21af-4e5b-ba4b-640e9bfa2d80.png"
+    }
+  ],
+  "totalMarketsCount": 478
+}

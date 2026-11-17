@@ -1,4 +1,4 @@
-# FAIDA Predict — Phase 3 (autonomy, Manifold harness, safety layer)
+# FAIDA Predict — Phase 4 (venue #3 Limitless · thin-liquidity rules · exposure intelligence)
 
 Autonomous prediction-market trading platform — paper-mode core with the full
 trust architecture from the specification review brief. **All execution is
@@ -29,7 +29,7 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
   slippage, fee schedule, 5%-of-liquidity guard; SYNTHETIC vs LIVE honesty
   badge (D-03).
 - **Venue lineup (B9/B11)** — six-venue registry in `src/lib/venues.ts`
-  (Polymarket primary · Manifold harness · Limitless / Drift BET / Azuro /
+  (Polymarket primary · Manifold harness · Limitless live · Drift BET / Azuro /
   Kalshi fast-follows); robots are scoped to exactly one venue; every market,
   order, robot card, trace and ticket names its venue; wizard step 1 is a
   venue picker that only allows live adapters.
@@ -38,6 +38,29 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
 - **Manifold adapter (LIVE market data, Phase 3)** — play-money harness via
   public REST; binary markets only; the full pipeline (sync → decision →
   paper fill → ledger → trace) runs on it with zero financial risk.
+- **Limitless adapter (LIVE market data, Phase 4)** — Base-network CLOB via
+  public REST (`/markets/active` + `/markets/{slug}/orderbook`, books
+  best-effort, fail-closed on gaps); touch depth (USDC notional at the
+  touch) and per-side taker fee bps are captured **at sync** and stored on
+  the market; A-04 event keys from groupId/eventId.
+- **Structural thin-liquidity rules (Phase 4, S-05/B9)** — `src/lib/venue/rules.ts`
+  declares the venue's entry rules as config; the shared risk engine applies
+  them to robots AND manual tickets: (a) min-touch-depth refusal with the
+  measured depth stated in the refusal and fail-closed when no book was
+  captured; (b) edge computed **after** venue taker fees (documented
+  regimes: AMM flat 0.40%, CLOB COLLATERAL 5%×(1−p), legacy buy curve
+  3.00%→0.40%) and the fee charged on paper fills; (c) per-market position
+  cap, user-wide across all robots.
+- **Event clustering A-04 (Phase 4)** — markets sharing an `eventKey` have
+  their open exposure **summed** in the per-event exposure check; the
+  refusal states the stacked sum and the markets in the cluster. Dashboard
+  positions carry CLUSTER chips; the portfolio-risk card shows cluster
+  exposure.
+- **S-05 conformance (Phase 4)** — `bun run conformance` replays the
+  Limitless adapter against recorded fixtures (`tests/fixtures/limitless`,
+  provenance in `recorded.json`): mapping, parity, depth derivation, fee
+  regimes, fee drag, rules arming, refuse/allow verdicts, live-write block.
+  Re-record with `bun scripts/record-fixtures-limitless.ts`.
 - **Autopilot (P3.2)** — interval-driven cycles + reconciliation passes
   without manual clicks; state persisted, timer self-heals after restart;
   humans own start/stop (B8).
@@ -56,19 +79,25 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
   unresolved drift entries, UNKNOWN orders. Smoke variant passes; the full
   72-hour soak runs on the founder's host.
 - **Paper trading engine (P-02)** — append-only virtual ledger, positions
-  with average cost, fee schedule from config.
+  with average cost, fee schedule from config; venue taker fees charged on
+  fills so paper P/L matches a live taker.
 - **Risk engine (C10/B5)** — two-tier config (platform ceilings + user
-  limits, stricter-only), per-event exposure, mark-to-market daily loss stop.
+  limits, stricter-only), per-event exposure (A-04 cluster-stacked),
+  mark-to-market daily loss stop; venue structural rules (touch depth,
+  per-market cap) arm per venue.
 - **Eligibility matrix (C4.5)** — editable per-country allow/block with a hard
   sanction-list invariant; default-deny for unknown countries.
 - **AI gateway (A-06)** — provider-agnostic: GLM (keyless via SDK), OpenAI,
   Anthropic, any OpenAI-compatible base URL. Heuristic estimator fallback.
 - **Decision traces (A-08)** — every robot decision, trade or no-trade, with
-  model estimate, edge and all risk checks — config-driven per version.
-- **UI** — brand-blue shell: Overview (+ **platform control card**), Markets
-  (one section per venue with per-venue sync), Robot Studio (wizard +
-  **Strategy Lab**), Trading (ticket + orders + ledger + reconciliation
-  drill), Settings (risk, AI providers, dispatcher status, eligibility).
+  model estimate, fee-adjusted net edge and all risk checks — config-driven
+  per version.
+- **UI** — venue-first dashboard cockpit: KPI band, in-trade table, venue
+  grid (per-venue color identity, B12) → venue workspaces (robots, markets
+  with the TOUCH depth column, positions, orders, traces); Robot Studio
+  (wizard + **Strategy Lab**); Trading (ticket + orders + ledger +
+  reconciliation drill); Settings (risk, AI providers, dispatcher status,
+  eligibility).
 
 ## Run locally
 
@@ -76,27 +105,37 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
 bun install
 bun run db:push
 bun prisma/seed.ts
-bun run dev          # http://localhost:3000
+bun run conformance   # S-05 Limitless contract test against recorded fixtures
+bun run dev           # http://localhost:3000
 ```
 
 ## Try the trust machinery
 
-1. **Overview → Run robot cycle** — robots evaluate markets **on their own
-   venue** and trade or refuse with stated reasons (stale data, edge, risk).
-2. **Overview → Platform control** — press **Start autopilot** (pick 60/120/
+1. **Dashboard → Run robot cycle** — robots evaluate markets **on their own
+   venue** and trade or refuse with stated reasons (stale data, touch depth,
+   edge net of fees, risk).
+2. **Dashboard → Platform control** — press **Start autopilot** (pick 60/120/
    300 s) and watch cycles run without clicks; **Global pause** refuses
    everything (cycles and manual tickets) until **Resume**.
-3. **Markets → Sync Polymarket / Sync Manifold** — per-venue adapters pull
-   live markets and append price ticks to the A-05 recorder.
-4. **Trading → Simulate lost venue ack → UNKNOWN**, then **Run reconciliation
+3. **Markets → Sync Polymarket / Manifold / Limitless** — per-venue adapters
+   pull live markets, append price ticks, and (Limitless) capture touch depth
+   + taker fee bps for the structural gate.
+4. **Limitless → Create robot → Run robot cycle** — the thin crypto books
+   refuse entry with the measured depth stated ("LIMITLESS rule (a): YES
+   touch depth 677¢ vs minimum 5000¢") and liquid books trade with the
+   taker fee charged on the paper fill.
+5. **Trading → Simulate lost venue ack → UNKNOWN**, then **Run reconciliation
    pass** — the order resolves REJECTED with evidence, and the drift entry
    closes — never by hope.
-5. **Robot Studio → Strategy Lab** — save the sliders as an immutable v2,
+6. **A-04 drill** — place manual orders across two markets of one Polymarket
+   event (e.g. the Fed decision family): the per-event check stacks the
+   cluster and the breach refusal states the full sum.
+7. **Robot Studio → Strategy Lab** — save the sliders as an immutable v2,
    activate it, then **Run backtest**: stats, equity curve and the
    SYNTHETIC/LIVE honesty badge.
-6. **Soak** — `bun scripts/soak.ts --duration-min 72 --interval-sec 60`
+8. **Soak** — `bun scripts/soak.ts --duration-min 72 --interval-sec 60`
    against a running instance; the verdict lands in `soak-report.json`.
-7. **Settings** — flip an eligibility country (IR refuses); paste any LLM
+9. **Settings** — flip an eligibility country (IR refuses); paste any LLM
    key; tighten a risk limit; read the dispatcher card.
 
 ## API surface (all JSON)
@@ -141,3 +180,6 @@ runner).
 7. Backtests are evidence, never promises: fills pay adverse slippage and
    fees, synthetic history is labeled SYNTHETIC (D-03/A-05).
 8. Every robot, market, order, position and trace names its venue (B11).
+9. Thin liquidity is structural, never an afterthought: venue entry rules
+   live in `src/lib/venue/rules.ts` as config, the engine stays venue-blind,
+   missing books fail closed (S-05/B9).

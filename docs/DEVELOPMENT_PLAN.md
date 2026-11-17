@@ -10,7 +10,7 @@
 > Before closing any phase, tick its acceptance criteria here and commit the
 > tick. Nothing gets dropped because it is written down here.
 
-Last revised: 2026-11-16 (dashboard pass — venue-first cockpit; next: Phase 4).
+Last revised: 2026-11-17 (Phase 4 closed — Limitless live with structural thin-liquidity rules, A-04 clustering landed; next: Phase 5).
 
 ---
 
@@ -54,7 +54,7 @@ real orders before Phase 7 — `placeOrder()` throws by contract everywhere.
 |-------|-------|-----------------|-------------|--------|---------------------------|
 | 1 | **Polymarket** | Polygon PoS, USDC, CLOB order book | Gamma (discovery) + CLOB REST & WebSocket | **LIVE** (market data) | Primary venue — where robots earn. Write path (EIP-712 L2 auth) only in Phase 7. Tick-size regimes and order-type hazards per S-05 catalogue. |
 | 2 | **Manifold** | Play money (Mana), free | Public REST `api.manifold.markets/v0` | **LIVE** from Phase 3 | Week-one harness. Binary markets only. Zero-risk proving ground: the whole pipeline (sync → decision → paper fill → ledger → trace) must run on Manifold before the edge gate exists. |
-| 3 | **Limitless** | Base network, USDC, order book | API/SDK | PENDING (fast-follow) | Closest Polymarket twin. **Structural thin-liquidity rules, not afterthoughts**: (a) refuse entry if touch depth < configured minimum; (b) edge computed **after** venue fees; (c) per-market position cap. Thin books make robots conservative, not broken. |
+| 3 | **Limitless** | Base network, USDC, order book | API/SDK | **LIVE** from Phase 4 (market data) | Closest Polymarket twin. **Structural thin-liquidity rules, not afterthoughts**: (a) refuse entry if touch depth < configured minimum; (b) edge computed **after** venue fees; (c) per-market position cap. Thin books make robots conservative, not broken. Conformance fixtures: `tests/fixtures/limitless` (`bun run conformance`). |
 | 4 | **Drift BET** | Solana, SDK-first | TypeScript SDK | PENDING (fast-follow) | Bot-friendly. Adapter module only — no core changes expected (S-05 contract tests decide readiness). |
 | 5 | **Azuro** | EVM, sports-leaning | SDK + subgraph odds | PENDING (fast-follow) | Sports events shape: shorter closes, different resolution sources — eligibility matrix and category handling must cover it. |
 | 6 | **Kalshi** | CFTC-regulated US DCM, USD | REST + RSA key auth | PENDING (fast-follow, last) | The US-persons complement where Polymarket is venue-restricted. Key-based auth (not wallet) — adapter must handle a second credential kind. |
@@ -199,7 +199,7 @@ color) and the manual trade ticket (dialog strip + side buttons + place
 button). Role chips (PRIMARY/HARNESS/FAST-FOLLOW) went neutral gray so the
 venue hue carries the identity. No behavior changes — colors only.
 
-### Phase 4 — Venue #3 (Limitless) + exposure intelligence
+### Phase 4 — Venue #3 (Limitless) + exposure intelligence (DONE, commit pending push)
 
 Limitless adapter with the **structural thin-liquidity rules** from §3
 (min-depth refusal, edge-after-fees, per-market cap). Event clustering A-04
@@ -207,6 +207,68 @@ Limitless adapter with the **structural thin-liquidity rules** from §3
 checks). S-05 conformance fixtures for Limitless. *Acceptance: thin-book
 markets refuse entry with a stated depth reason; clustered positions sum in
 per-event exposure.*
+
+- **P4.1 — Limitless adapter → LIVE with structural data capture.** Public
+  REST sync (`/markets/active` pagination at the 25/page cap →
+  `/markets/{slug}/orderbook`, books best-effort, fail-closed on gaps);
+  per-side touch depth (USDC notional at best ask for YES, best-bid
+  complement for NO) and per-side taker fee bps captured **at sync** and
+  stored on the market; registry flips LIMITLESS to LIVE; compliance row
+  updated with the documented fee regimes. Robots on Limitless run the full
+  paper pipeline; thin books make robots conservative, not broken.
+  *Acceptance: ≥20 Limitless markets synced with structural data; Polymarket
+  and Manifold syncs unchanged.* — **sandbox-verified 2026-11-17: 30 markets
+  synced, all 30 with book depth + fee bps (`source: LIMITLESS_LIVE`);
+  Polymarket resync 30 markets, Manifold unchanged.**
+- **P4.2 — Structural thin-liquidity rules (S-05/B9 §3).** `src/lib/venue/rules.ts`
+  declares the venue's entry rules as config, the shared risk engine applies
+  them (engine stays venue-blind): (a) min-touch-depth refusal with the
+  measured depth stated in the refusal, fail-closed when no book was
+  captured — applies to robots AND manual tickets; (b) edge computed AFTER
+  venue taker fees (fee drag `p × bps` in probability points, stored bps per
+  side at sync, fee charged on paper fills so paper P/L matches a live
+  taker); (c) per-market position cap ($500, user-wide across all robots).
+  Founder-calibrated 2026-11-17 against measured books: minimum touch depth
+  $50, per-market cap $500.
+  *Acceptance: thin-book markets refuse entry with a stated depth reason.* —
+  **sandbox-verified 2026-11-17: manual ticket on a thin book (touch 677¢)
+  refused 422 `touch_depth — LIMITLESS rule (a): YES touch depth 677¢ vs
+  minimum 5000¢`; manual ticket on the liquid book (touch 9990¢) FILLED with
+  the venue taker fee charged on the fill; cycle refusal carries the same
+  stated rule.**
+- **P4.3 — S-05 conformance fixtures + contract test.**
+  `scripts/record-fixtures-limitless.ts` records the live API responses
+  (page 1 + 2 of `/markets/active?sortBy=high_value`, the orderbooks of one
+  liquid and one thin market) into `tests/fixtures/limitless` with a
+  provenance manifest; `bun run conformance` runs the adapter against the
+  recorded fixtures offline — mapping, parity, depth derivation, fee regimes
+  (documented anchors), fee drag, rules arming, refuse/allow verdicts, and
+  the hard live-write block. Fixtures are committed (gitignore now exempts
+  `/tests/fixtures` — the recording had silently been excluded).
+  *Acceptance: conformance runs green against a recorded fixture.* —
+  **sandbox-verified 2026-11-17: 33/33 PASS (liquid 26600¢ vs thin 151¢).**
+- **P4.4 — Event clustering A-04 (exposure intelligence).** Markets sharing
+  an `eventKey` (venue-prefixed: `pm:event:…`, `lx:group:…`, `lx:event:…`)
+  have their open exposure **summed** in the per-event exposure check, so
+  complementary positions on related markets can never hide apart; the
+  refusal states the stacked sum, the markets in the cluster and the cap.
+  Without a cluster key the check degrades to the single-market sum (Phase ≤3
+  behavior). Polymarket resync backfills `eventKey` from Gamma slugs;
+  dashboard positions carry CLUSTER chips and the portfolio-risk card shows
+  cluster exposure.
+  *Acceptance: clustered positions sum in per-event exposure.* —
+  **sandbox-verified 2026-11-17: Fed December-decision cluster
+  (`pm:event:fed-decision-in-december-2026…`): four orders across two
+  cluster markets filled 10000→20000¢ of the 20000¢ cap, the 5th refused
+  422 with `A-04 cluster …: 2 markets, open exposure 20000¢ + this order
+  5000¢ = 25000¢ ≤ 40% of allocation (20000¢)`.**
+
+**Non-goals for Phase 4 (kept):** live orders of any kind; billing;
+Drift/Azuro/Kalshi adapters; AI estimator upgrades (Phase 5); multi-user
+accounts (Phase 8). Verification evidence: `bunx tsc --noEmit` clean,
+`bun run lint` clean, `bun run conformance` 33/33 PASS,
+`scripts/smoke_phase4.py` PASS (all acceptance criteria on live APIs),
+screenshot pass over the four touched views (§7.4).
 
 ### Phase 5 — Probability & AI layer hardening
 
@@ -260,7 +322,7 @@ These are scheduled spec obligations that no phase may silently drop:
 | S-08 custody rubric | Rubric results recorded in DECISIONS.md before live signing | Any time before Phase 7 |
 | B3 [VERIFY] rows | Counsel sign-off on geo/restriction entries | Before Phase 7 pilot |
 | B5 operational targets | Freshness 5 s (live), decision latency 750 ms p95 [VERIFY], 500 concurrent robots, availability 99.5% | Measured in 7 / 7.5 |
-| A-04 clustering | Related-market exposure stacking | Phase 4 |
+| A-04 clustering | Related-market exposure stacking | **Landed in Phase 4** (`eventKey` stacking in `src/lib/risk.ts`; re-check for every new venue adapter) |
 | D-03 honesty badges | SYNTHETIC vs LIVE labeling everywhere evidence is shown | Standing rule, every phase |
 | P-01 organizations | Data model early, feature later | Model when billing lands (Phase 8) |
 | R-01 B5 defaults | Founder numbers recorded in DECISIONS.md | Confirmed via B5; revisit before Phase 7 |

@@ -18,6 +18,31 @@ truth for choices that must not drift; code reads them via config, not folklore.
 | B11 | Venue visibility & scoping | Every robot is scoped to exactly one venue; the UI states the venue on every market, order, robot card, trace and ticket. Venues without a live adapter are visible but marked "adapter pending" and refused at robot creation (422) | RATIFIED | `src/lib/venues.ts` registry; `Robot.venue` column; cycle engine selects markets by `robot.venue`; wizard step 1 = venue picker |
 | B12 | Venue color identity | Each venue carries a distinct accent color — Polymarket `#3E8EFF`, Manifold `#14D9C4`, Limitless `#F26BC8`, Drift BET `#C6F542`, Azuro `#B18CFF`, Kalshi `#FFB25C` — used on the dashboard venue cards, the venue workspace interior (header glow/strip, primary CTA, section dots), venue badges, market sections, the studio venue picker and the trade ticket. Pending venues render their hue muted toward slate until the adapter ships. Role chips are neutral gray so the venue hue carries identity. Colors are FAIDA-internal identity, not venue brand marks | RATIFIED | `VenueDef.hex` + `VENUE_COLOR`/`venueColor` in `src/lib/venues.ts`; `vc-*` utility layer in `src/app/globals.css` (CSS var `--vc` + color-mix); applied in dashboard.tsx, app.tsx, views.tsx. Requested by the founder before Phase 4 (2026-11-16) |
 
+## Phase-4 checkpoint status (venue #3 Limitless, exposure intelligence)
+
+- Phase 4 scope — **locked and implemented** (2026-11-17): Limitless adapter
+  LIVE (30 markets synced with per-side touch depth + taker fee bps captured
+  at sync; Polymarket/Manifold syncs unchanged), structural thin-liquidity
+  rules armed from `src/lib/venue/rules.ts` (min-touch-depth refusal with the
+  measured depth stated and fail-closed missing books, edge-after-fees with
+  the fee charged on paper fills, $500 per-market cap user-wide), A-04 event
+  clustering stacking related-market exposure in the per-event check.
+  Acceptance evidence in `docs/DEVELOPMENT_PLAN.md` §4 (thin book refused
+  422 with stated depth; liquid book filled with fee; Fed cluster stacked to
+  the exact 20000¢ cap before the 5th order was refused with the full sum).
+- S-05 conformance — **fixture-recorded and green**: `tests/fixtures/limitless`
+  committed with a provenance manifest (`recorded.json`); `bun run conformance`
+  replays the adapter offline — 33/33 PASS on 2026-11-17 (liquid book 26600¢
+  touch vs thin book 151¢). The recording script is committed next to the
+  fixtures; re-record after material fee-regime or API changes.
+- Founder-calibrated structural thresholds — **min touch depth $50
+  (5000¢), per-market position cap $500 (50000¢)**, recorded 2026-11-17 in
+  `src/lib/venue/rules.ts` and measured against live Limitless books (daily
+  BTC book trades, hourly BTC books refuse). Config, not code — recalibrate
+  by editing the rules module only.
+- Live trading — **still disabled by contract** (Phase 7 gates + explicit
+  authorization).
+
 ## Phase-3 checkpoint status (autonomy, Manifold harness, safety layer)
 
 - Venue lineup B9 — **ratified with the founder** (six venues; Polymarket
