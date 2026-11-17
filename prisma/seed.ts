@@ -229,16 +229,28 @@ async function main(): Promise<void> {
   // so backtests work immediately (live syncs and cycles append real ticks).
   // Deterministic walk (seeded RNG) around each market's current price —
   // clearly labeled SYNTHETIC, never passed off as live data (D-03).
-  const tickMarkets = await db.market.findMany({
-    where: {
-      ambiguityFlag: false,
-      resolvedAt: null,
-      yesPriceCents: { gte: 2, lte: 98 },
-      noPriceCents: { gte: 2, lte: 98 },
-    },
-    orderBy: { volumeCents: "desc" },
-    take: 3,
-  });
+  // Coverage is PER VENUE (top 2 by volume on every live venue): the guided
+  // Robot-Studio session (P-03) must be able to run a first backtest on a
+  // robot of ANY family, including the Manifold-scoped AI Scout — an
+  // all-venues top-3 list left play-money venues without history.
+  const tickVenues = ["POLYMARKET", "MANIFOLD", "LIMITLESS"];
+  const tickMarkets = (
+    await Promise.all(
+      tickVenues.map(async (venue) =>
+        db.market.findMany({
+          where: {
+            venue,
+            ambiguityFlag: false,
+            resolvedAt: null,
+            yesPriceCents: { gte: 2, lte: 98 },
+            noPriceCents: { gte: 2, lte: 98 },
+          },
+          orderBy: { volumeCents: "desc" },
+          take: 2,
+        }),
+      ),
+    )
+  ).flat();
   let seededTicks = 0;
   for (const m of tickMarkets) {
     const existing = await db.marketPriceTick.count({ where: { marketId: m.id } });

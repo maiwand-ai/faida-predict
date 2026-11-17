@@ -11,11 +11,12 @@
 // Every element names its venue (B11). The venue grid is driven by the
 // registry rollup (`venues` in /api/dashboard), never by scattered data.
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   type DashboardDTO,
   type MarketDTO,
+  type TraceDTO,
   type VenueStatDTO,
   FAMILY_LABEL,
 } from "./types";
@@ -277,19 +278,7 @@ export function DashboardView(props: {
         <div className="p-4 pb-2"><SectionTitle>Decision traces — every robot decision, trade or no-trade (A-08)</SectionTitle></div>
         <div className="flex flex-col px-4 pb-4">
           {dash.traces.slice(0, 5).map((t) => (
-            <div key={t.id} className={`border-b py-2.5 last:border-0 ${c.border}`}>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${t.decision === "TRADE" ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#151D30]`}`}>{t.decision}</span>
-                <ModelChip modelKey={t.modelKey} provenance={t.provenance} />
-                <span className={`text-[12px] font-semibold ${c.text}`}>{t.robot?.name}</span>
-                {t.market?.venue && <VenueBadge venue={t.market.venue} withLabel={false} />}
-                <span className={`text-[11px] ${c.text3}`}>on {t.market?.question.slice(0, 60)}</span>
-                {t.modelEstimatePct != null && (
-                  <span className={`ml-auto text-[11px] ${c.text2} ${mono}`}>est {t.modelEstimatePct}% · mkt {t.marketPriceCents}¢ · edge {t.edgeNetPct} pts</span>
-                )}
-              </div>
-              <div className={`mt-1 text-[11px] ${c.text2}`}>{t.reason}</div>
-            </div>
+            <TraceRow key={t.id} t={t} />
           ))}
           {dash.traces.length === 0 && <div className={`py-4 text-center text-[12px] ${c.text3}`}>No cycles run yet — press “Run robot cycle”.</div>}
         </div>
@@ -652,19 +641,7 @@ export function VenueWorkspace(props: {
           </div>
           <div className="fd-scroll max-h-[240px] overflow-y-auto">
             {vTraces.length > 0 ? (
-              vTraces.map((t) => (
-                <div key={t.id} className={`border-b px-4 py-2.5 last:border-0 ${c.border}`}>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${t.decision === "TRADE" ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#151D30]`}`}>{t.decision}</span>
-                    <ModelChip modelKey={t.modelKey} provenance={t.provenance} />
-                    <span className={`text-[12px] font-semibold ${c.text}`}>{t.robot?.name}</span>
-                    {t.modelEstimatePct != null && (
-                      <span className={`ml-auto text-[11px] ${c.text2} ${mono}`}>est {t.modelEstimatePct}% · mkt {t.marketPriceCents}¢ · edge {t.edgeNetPct} pts</span>
-                    )}
-                  </div>
-                  <div className={`mt-1 text-[11px] ${c.text2}`}>{t.reason}</div>
-                </div>
-              ))
+              vTraces.map((t) => <TraceRow key={t.id} t={t} />)
             ) : (
               <div className={`px-4 py-6 text-center text-[12px] ${c.text3}`}>No robot decisions recorded on {v.label} yet.</div>
             )}
@@ -673,6 +650,114 @@ export function VenueWorkspace(props: {
       </div>
     </div>
   );
+}
+
+// ── A-08 front-end depth: one expandable trace row, shared by the dashboard
+// traces list and every venue workspace. Collapsed = the glanceable verdict;
+// expanded = the full evidence: provenance envelope (A-02) and the pre-trade
+// risk checks with their pass/fail verdicts and details. "A forecast without
+// provenance is not evidence" — clicking any trace shows exactly that.
+function TraceRow({ t }: { t: TraceDTO }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`border-b py-2.5 last:border-0 ${c.border}`}>
+      <button onClick={() => setOpen((o) => !o)} className="flex w-full flex-wrap items-center gap-2 text-left" aria-expanded={open}>
+        <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${t.decision === "TRADE" ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#151D30]`}`}>{t.decision}</span>
+        <ModelChip modelKey={t.modelKey} provenance={t.provenance} />
+        <span className={`text-[12px] font-semibold ${c.text}`}>{t.robot?.name}</span>
+        {t.market?.venue && <VenueBadge venue={t.market.venue} withLabel={false} />}
+        <span className={`text-[11px] ${c.text3}`}>on {t.market?.question.slice(0, 60)}</span>
+        {t.modelEstimatePct != null && (
+          <span className={`ml-auto text-[11px] ${c.text2} ${mono}`}>est {t.modelEstimatePct}% · mkt {t.marketPriceCents}¢ · edge {t.edgeNetPct} pts</span>
+        )}
+        <span className={`text-[10px] ${open ? c.bright : c.text3}`}>{open ? "▾" : "▸"}</span>
+      </button>
+      <div className={`mt-1 text-[11px] ${c.text2}`}>{t.reason}</div>
+      {open && <TraceDetail t={t} />}
+    </div>
+  );
+}
+
+function TraceDetail({ t }: { t: TraceDTO }) {
+  const prov = parseProvenance(t.provenance);
+  const checks = parseRiskChecks(t.riskChecks);
+  const row = (k: string, v: React.ReactNode) => (
+    <div className="flex justify-between gap-3 py-1">
+      <span className={`shrink-0 text-[10.5px] ${c.text3}`}>{k}</span>
+      <span className={`text-right text-[10.5px] ${c.text2}`}>{v}</span>
+    </div>
+  );
+  return (
+    <div className="mt-2 rounded-lg border border-[#202B45] bg-[#0D1425] p-3">
+      <div className="grid grid-cols-1 gap-x-6 gap-y-1 md:grid-cols-2">
+        <div>
+          <div className={`mb-1 text-[10px] font-bold tracking-wider ${c.text3}`}>PROVENANCE ENVELOPE (A-02)</div>
+          {row("model", <span className={mono}>{t.modelKey ?? "—"}</span>)}
+          {prov?.kind && row("kind", prov.kind)}
+          {prov?.provider && row("provider / model", `${prov.provider}${prov.model ? " · " + prov.model : ""}`)}
+          {prov?.estimatorVersion && row("estimator version", <span className={mono}>{prov.estimatorVersion}</span>)}
+          {prov?.latencyMs != null && row("latency", `${prov.latencyMs} ms`)}
+          {prov?.cache && row("cache", prov.cache === "HIT" ? "HIT (cached, zero cost)" : prov.cache)}
+          {row("screening", <span className={prov?.screening === "FLAGGED" ? "text-[#F0525F]" : "text-[#2FC08E]"}>{prov?.screening ?? "—"}{prov?.screeningReasons?.length ? ` — ${prov.screeningReasons.join("; ")}` : ""}</span>)}
+          {prov?.fallbackFrom && row("fallback from", <span className="text-[#F0B252]">{prov.fallbackFrom}</span>)}
+          {prov?.costCents != null && row("AI cost", fmtCents(prov.costCents))}
+          {prov?.evidenceHash && row("evidence hash", <span className={mono} title={prov.evidenceHash}>{prov.evidenceHash.slice(0, 18)}…</span>)}
+        </div>
+        <div>
+          <div className={`mb-1 text-[10px] font-bold tracking-wider ${c.text3}`}>PRE-TRADE RISK CHECKS</div>
+          {checks.length === 0 && <div className={`text-[10.5px] ${c.text3}`}>no checks recorded on this trace</div>}
+          {checks.map((ck, i) => (
+            <div key={i} className="py-1">
+              <div className="flex items-center gap-2">
+                <span className={`rounded px-1 py-px text-[9px] font-bold ${ck.passed ? "text-[#2FC08E] bg-[#2FC08E]/10" : "text-[#F0525F] bg-[#F0525F]/10"}`}>{ck.passed ? "PASS" : "FAIL"}</span>
+                <span className={`text-[10.5px] font-semibold ${c.text}`}>{ck.check}</span>
+              </div>
+              <div className={`ml-1 border-l pl-2 text-[10px] ${c.text3}`} style={{ borderColor: ck.passed ? "#1D4A3C" : "#4A1D25" }}>{ck.detail}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className={`mt-2 flex flex-wrap gap-x-4 gap-y-1 border-t pt-2 text-[10px] ${c.border} ${c.text3}`}>
+        <span>trace <span className={mono}>{t.id.slice(0, 10)}…</span></span>
+        <span>trigger <b className={c.text2}>{t.trigger ?? "—"}</b></span>
+        <span>strategy <span className={mono}>{t.strategyVersionId ? t.strategyVersionId.slice(0, 10) + "…" : "—"}</span> (C5)</span>
+        <span>decided {new Date(t.createdAt).toLocaleTimeString()}</span>
+      </div>
+    </div>
+  );
+}
+
+function parseProvenance(p?: string | null): ProvenanceShape | null {
+  if (!p) return null;
+  try {
+    return JSON.parse(p) as ProvenanceShape;
+  } catch {
+    return null;
+  }
+}
+
+interface ProvenanceShape {
+  kind?: string;
+  provider?: string;
+  model?: string;
+  latencyMs?: number;
+  cache?: string;
+  screening?: string;
+  screeningReasons?: string[];
+  estimatorVersion?: string;
+  fallbackFrom?: string;
+  evidenceHash?: string;
+  costCents?: number;
+}
+
+function parseRiskChecks(rc?: string | null): Array<{ check: string; passed: boolean; detail: string }> {
+  if (!rc) return [];
+  try {
+    const arr = JSON.parse(rc) as Array<{ check: string; passed: boolean; detail: string }>;
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
 }
 
 function MiniStat({ label, value, sub, tone = "text" }: { label: string; value: string; sub: string; tone?: "text" | "gain" | "loss" }) {

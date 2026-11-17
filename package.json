@@ -14,7 +14,9 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "drill": "python3 scripts/demotion_drill.py",
-    "smoke:phase5": "python3 scripts/smoke_phase5.py"
+    "smoke:phase5": "python3 scripts/smoke_phase5.py",
+    "visual": "bun scripts/visual-regression.ts",
+    "smoke:phase6": "python3 scripts/smoke_phase6.py"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -92,6 +94,7 @@
     "eslint": "^9",
     "eslint-config-next": "^16.1.1",
     "playwright": "^1.65.1",
+    "pngjs": "^7.0.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
     "typescript": "^5"

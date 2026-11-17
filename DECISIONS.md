@@ -21,6 +21,36 @@ truth for choices that must not drift; code reads them via config, not folklore.
 | A-01 | Model governance | Unproven models never drive decisions: a candidate estimates nothing until the founder promotes it on calibration evidence (B8); an ACTIVE model that drifts worse than baseline by >5% over its recent window is demoted automatically and the baseline re-activates. Every promote/demote writes a MODEL_GOVERNANCE notification + MODEL outbox event. Drills must pass before a phase that touches models closes | RATIFIED | `ProbabilityModel` table + `src/lib/probability/registry.ts`; demotion drill `scripts/demotion_drill.py` |
 | A-06 | Evidence integrity | Market text is untrusted: every forecast input passes prompt-injection screening before any AI prompt, and flagged evidence fails closed to the baseline with the FLAGGED verdict recorded in the trace provenance. Every estimate carries an evidence hash binding it to its exact inputs | RATIFIED | `src/lib/probability/screening.ts`; traces carry `provenance` (A-02) since Phase 5 |
 
+## Phase-6 checkpoint status (Robot Studio completion; Drift BET verdict)
+
+- **Drift BET [VERIFY] — venue #4 is NOT landable (recorded 2026-11-18,
+  before any adapter work per S-05 §3.2).** Drift Protocol suffered a ~$285M
+  exploit on 2026-04-01 (TRM Labs: Lazarus Group social-engineering of multisig
+  signers + zero-timelock Security Council migration). drift.trade incident
+  updates through 2026-10-01 cover user recovery and a protocol reboot
+  contingent on two independent audits (Ottersec, Asymmetric) — no BET
+  relaunch announced. `drift.bet` and `bet.drift.trade` were unreachable on
+  2026-11-18; third-party trackers list Drift BET offline since the exploit
+  (Velocity rebrand). Verdict: adapter deliberately NOT built — S-05
+  conformance cannot pass against a dead market; compliance row moved to
+  `SUSPENDED` in `src/lib/venue/types.ts`. **Open founder input:** B9 was
+  founder-ratified, so the freed #4 slot needs a founder verdict — promote
+  Azuro (currently #5), substitute another venue, or hold the slot until a
+  relaunch is announced. No lineup change is self-approved.
+- Phase 6 — **locked, implemented and closed** (2026-11-18): Robot Studio
+  completion — templates P-03 (four launch-family templates, robot-from-
+  template parity verified against the DB), guided session (template → first
+  backtest in one run, venue-scoped market pick per B11), trace UI depth
+  (A-08 front-end: provenance envelope + per-check risk details in a shared
+  expansion panel), visual regression harness (pixel + DOM modes) wired into
+  the phase smoke. Three-persona usability walkthrough recorded as a scripted
+  proxy (`docs/USABILITY_PHASE6.md`, findings F1/F2 fixed in-phase); the
+  brief's real three-user check stays owed on the founder host. Acceptance
+  evidence: `scripts/smoke_phase6.py` SMOKE PASS (16 checks on live APIs),
+  regression re-runs of smoke_phase4 + smoke_phase5 PASS, typecheck/lint
+  clean — full per-item ledger in `docs/DEVELOPMENT_PLAN.md` §4 (Phase 6).
+  Live trading remains disabled by contract (Phase 7 gates).
+
 ## Phase-5 checkpoint status (probability & AI layer hardening)
 
 - Phase 5 scope — **locked and implemented** (2026-11-17): A-03 baseline

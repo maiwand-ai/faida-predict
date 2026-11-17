@@ -12,7 +12,10 @@
 //      order book on Base, public REST. Thinner liquidity is handled
 //      structurally (min-touch-depth refusal + edge-after-fees + per-market
 //      cap) — thin books make robots conservative, not broken.
-//   4. DRIFT_BET — fast-follow. Solana, SDK-first, bot-friendly.
+//   4. DRIFT_BET — SUSPENDED 2026-11-18 ([VERIFY] before adapter work): the
+//      April 1, 2026 Drift exploit ($285M) took the protocol into a full
+//      reboot; BET has been offline since and no relaunch is announced.
+//      Adapter deliberately NOT built — a dead market cannot pass S-05.
 //   5. AZURO     — fast-follow. EVM, sports-leaning, SDK-first.
 //   6. KALSHI    — fast-follow. CFTC-regulated US exchange, REST + key auth;
 //      the US-persons complement to the non-US crypto venues.
@@ -74,7 +77,7 @@ export const VENUES: VenueDef[] = [
     role: "FAST_FOLLOW",
     short: "DB",
     hex: "#C6F542", // lime — Solana energy
-    note: "Fast-follow — Solana, SDK-first, bot-friendly (B9)",
+    note: "SUSPENDED [VERIFY 2026-11-18] — offline since the April 2026 Drift exploit ($285M, protocol reboot pending two audits); adapter deliberately not built, a dead market cannot pass S-05 — slot #4 substitution awaits founder ratification (B9)",
   },
   {
     id: "AZURO",

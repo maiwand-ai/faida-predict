@@ -10,7 +10,7 @@
 > Before closing any phase, tick its acceptance criteria here and commit the
 > tick. Nothing gets dropped because it is written down here.
 
-Last revised: 2026-11-17 (Phase 5 closed — model registry, provenance, screening, governance, edge gate; next: Phase 6).
+Last revised: 2026-11-18 (Phase 6 closed — Robot Studio completion, usability walkthrough, Drift BET verdict: venue #4 deliberately not built, slot decision escalated to the founder; next: Phase 7).
 
 ---
 
@@ -344,11 +344,79 @@ clean, `scripts/demotion_drill.py` DRILL PASS, `scripts/smoke_phase5.py`
 SMOKE PASS (28 checks on live APIs), screenshot pass over Settings (registry
 + governance cards) and dashboard traces (§7.4).
 
-### Phase 6 — Robot Studio completion + venue #4 (Drift BET)
+### Phase 6 — Robot Studio completion + venue #4 (Drift BET) — **DONE, commit pending push**
 
 Robot templates P-03, trace UI depth (A-08 front-end), visual regression,
 three-user usability check (template → first backtest in one guided
 session). Drift BET adapter per §3 contract.
+
+- **P6.1 — Robot templates (P-03).** `src/lib/robotTemplates.ts` ships four
+  templates across the B6 launch families, each with a full payload (capital,
+  risk stops, strategy knobs, venue, guided path text) served via
+  `GET /api/robot-templates`; the Studio step-1 gallery shows template cards +
+  "Start from scratch" first, and applying a template prefills the wizard down
+  to the review term sheet. Parity is checked, not assumed: a robot created
+  from a template payload matches the template's capital, risk stops and C5
+  knobs in the DB (Robot row + immutable StrategyVersion v1).
+  *Acceptance: template → robot parity.* — **sandbox-verified 2026-11-18
+  (smoke P6-1/P6-2).**
+- **P6.2 — Guided session (template → first backtest in one run).** Applying
+  a template opens the guided panel with three numbered steps; cycle summaries
+  include the new robot (step 2) and the first backtest (step 3) picks its
+  default market **on the robot's venue** (B11) and prefers candidates with
+  ≥20 recorded ticks. Usability finding F1 (a fresh database honestly refused
+  the first backtest on thin tick history) produced two fixes: venue-scoped
+  default-market pick and per-venue 120-tick SYNTHETIC-labeled seed history.
+  *Acceptance: one guided session reaches the first backtest.* —
+  **sandbox-verified 2026-11-18 (smoke P6-3; persona A retry).**
+- **P6.3 — Trace UI depth (A-08 front-end).** Fresh DecisionTraces carry
+  `riskChecks` + `provenance` JSON and the depth fields (`trigger`,
+  `strategyVersionId`); the dashboard and venue workspaces share an expansion
+  panel that shows the provenance envelope (model chip, kind, estimator
+  version, cache state, PASS/FLAGGED screening verdict, evidence hash) and
+  every pre-trade risk check with its measured detail, collapsed to the
+  glanceable verdict by default.
+  *Acceptance: a trace can be audited from the UI alone.* —
+  **sandbox-verified 2026-11-18 (smoke P6-4; persona C walkthrough).**
+- **P6.4 — Visual regression.** `scripts/visual-regression.ts` runs two
+  modes — pixel hash over touched views and DOM structure assertions — and
+  exits 0 on the current stack; wired into the phase smoke so a UI break
+  fails acceptance.
+  *Acceptance: harness exits 0.* — **sandbox-verified 2026-11-18
+  (smoke P6-6).**
+- **P6.5 — Usability walkthrough (three personas, scripted proxy).**
+  `docs/USABILITY_PHASE6.md`: three scripted persona sessions (first-time
+  trader / quant tinkerer / operator) driven through the real UI over the
+  live stack. Findings register F1 (guided backtest refused on a fresh DB —
+  correct refusal, wrong guidance; **fixed in-phase**), F2 (strategy knobs
+  hidden in step 2; **fixed in-phase**), F3 (no trace-depth defect found).
+  Honest limits recorded: scripted operator, sandbox stack — the brief's
+  real three-user check stays owed on the founder host (open inputs).
+- **P6.6 — Drift BET verdict (venue #4): adapter deliberately NOT built.**
+  Before any adapter work (S-05 §3.2 discipline), the venue failed its own
+  [VERIFY]: Drift Protocol suffered the April 1 2026 ~$285M exploit
+  (Lazarus social engineering of multisig signers), the protocol entered a
+  reboot contingent on two independent audits, `drift.bet` /
+  `bet.drift.trade` were unreachable on 2026-11-18 and no BET relaunch is
+  announced. A dead market cannot pass S-05 conformance, so the compliance
+  row is `SUSPENDED` with dated evidence in `src/lib/venues.ts`, robot
+  creation for DRIFT_BET is refused 422, and no template recommends the
+  suspended venue. **This is a recorded deviation from the phase plan, not a
+  silent drop** — the freed slot #4 needs a founder verdict (promote Azuro,
+  substitute another venue, or hold for a relaunch); no lineup change is
+  self-approved (B9).
+  *Acceptance: verdict demonstrated.* — **sandbox-verified 2026-11-18
+  (smoke P6-5).**
+
+**Non-goals for Phase 6 (kept):** live orders of any kind; billing; Azuro/
+Kalshi adapters; multi-user accounts (Phase 8). Verification evidence:
+`bunx tsc --noEmit` clean, `bun run lint` clean, `scripts/smoke_phase4.py`
+and `scripts/smoke_phase5.py` regression re-runs PASS (each phase smoke is
+isolation-run — they reset their own state and back-to-back sequencing trips
+cross-suite assertions),
+`scripts/smoke_phase6.py` SMOKE PASS (16 checks on live APIs), screenshot
+pass over Studio template gallery, strategy knobs, expanded dashboard trace
+and venue workspace (§7.4).
 
 ### Phase 7 — Gated live automation (first real money)
 

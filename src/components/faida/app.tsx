@@ -183,7 +183,7 @@ export default function FaidaApp() {
                 <span className={`text-[14px] font-bold tracking-wide ${c.text}`}>FAIDA</span>
                 <span className={`text-[9px] font-bold tracking-[0.2em] ${c.bright}`}>PREDICT</span>
               </div>
-              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 5</div>
+              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 6</div>
             </div>
           </div>
           <nav className="flex flex-col gap-1">
@@ -263,7 +263,7 @@ export default function FaidaApp() {
               <MarketsView markets={markets} onSync={syncMarkets} busy={busy} onTrade={(m) => setTradeMarket(m)} />
             )}
             {view === "studio" && (
-              <StudioView key={studioVenue ?? "any"} initialVenue={studioVenue ?? undefined} dash={dash} onCreate={(payload) => post("/api/robots", payload, "Robot created as PAPER_ONLY draft")} onAfterChange={refreshDashboard} />
+              <StudioView key={studioVenue ?? "any"} initialVenue={studioVenue ?? undefined} dash={dash} onCreate={(payload) => post("/api/robots", payload, "Robot created as PAPER_ONLY draft")} onAfterChange={refreshDashboard} onAction={post} />
             )}
             {view === "trading" && (
               <TradingView
@@ -314,7 +314,7 @@ export default function FaidaApp() {
             )}
           </main>
           <footer className={`border-t ${c.border} px-6 py-3 text-center text-[11px] ${c.text3}`}>
-            FAIDA Predict — Phase 5 (probability & AI layer hardening · A-01 model registry · A-02 provenance · A-06 screening · A-07 governance). All figures paper-labeled per D-03/D-05. Live trading requires Phase 7 gates + explicit authorization.
+            FAIDA Predict — Phase 6 (Robot Studio completion · P-03 templates · A-08 trace depth · usability walkthrough · Drift BET verdict). All figures paper-labeled per D-03/D-05. Live trading requires Phase 7 gates + explicit authorization.
           </footer>
         </div>
       </div>

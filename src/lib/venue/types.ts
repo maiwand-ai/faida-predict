@@ -72,8 +72,9 @@ export const COMPLIANCE_CATALOG = [
   },
   {
     venue: "DRIFT_BET",
-    status: "PLANNED",
-    notes: "Fast-follow — Solana SDK adapter per §3 contract; conformance fixtures + fee schedule required before LIVE.",
+    status: "SUSPENDED",
+    notes:
+      "[VERIFY] executed 2026-11-18 BEFORE adapter work (S-05 §3.2) — venue is NOT landable: Drift Protocol suffered a ~$285M exploit on 2026-04-01 (TRM Labs/Lazarus attribution); drift.trade incident-recovery updates (Apr 16 / May 5 / Jun 3 / Oct 1, 2026) cover recovery and a protocol reboot contingent on two independent audits (Ottersec, Asymmetric) with no BET relaunch announced; drift.bet and bet.drift.trade were unreachable on 2026-11-18; third-party trackers list Drift BET offline since the exploit (Velocity rebrand). Adapter deliberately NOT built — S-05 contract tests cannot pass against a dead market. Awaits founder verdict: substitute venue for the freed #4 slot or hold until a relaunch is announced.",
   },
   {
     venue: "AZURO",

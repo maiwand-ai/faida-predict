@@ -49,6 +49,9 @@ export interface TraceDTO {
   marketPriceCents: number | null;
   edgeNetPct: number | null;
   riskChecks: string;
+  // A-08 front-end depth: trigger + the exact strategy version that decided.
+  trigger?: string | null;
+  strategyVersionId?: string | null;
   // Phase 5 (A-02): the producing model + provenance envelope.
   modelKey?: string | null;
   provenance?: string | null;
@@ -350,6 +353,38 @@ export const FAMILIES = [
   { id: "AI_RESEARCH", label: "AI Research", desc: "LLM-driven evidence gathering with sourced citations; trades only after the edge gate." },
   { id: "ARBITRAGE", label: "Arbitrage (planned)", desc: "YES+NO parity and clustered offsets — deterministic edge, later phase." },
 ] as const;
+
+// P-03 — Robot template as served by GET /api/robot-templates (venue status
+// annotated). Mirrors src/lib/robotTemplates.ts RobotTemplate.
+export interface TemplateDTO {
+  id: string;
+  label: string;
+  family: string;
+  riskProfile: "CONSERVATIVE" | "BALANCED" | "AGGRESSIVE";
+  thesis: string;
+  behavior: string;
+  venue: string;
+  venueLabel: string;
+  venueLive: boolean;
+  venueWhy: string;
+  nameSuggestion: string;
+  capital: {
+    allocatedCents: number;
+    maxPositionCents: number;
+    maxOpenPositions: number;
+    dailyLossStopPct: number;
+    drawdownStopPct: number;
+  };
+  strategy: {
+    entryRule: string;
+    minEdgePts: number;
+    estimatorTiltPct: number;
+    exitEdgePts: number;
+    holdTicksMax: number;
+    estimator: string;
+  };
+  guidedPath: string[];
+}
 
 export const FAMILY_LABEL: Record<string, string> = Object.fromEntries(
   FAMILIES.map((f) => [f.id, f.label]),

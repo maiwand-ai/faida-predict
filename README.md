@@ -1,4 +1,4 @@
-# FAIDA Predict — Phase 5 (probability & AI layer hardening · model registry · provenance)
+# FAIDA Predict — Phase 6 (Robot Studio completion · templates · trace depth · Drift verdict)
 
 Autonomous prediction-market trading platform — paper-mode core with the full
 trust architecture from the specification review brief. **All execution is
@@ -9,6 +9,28 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
 
 ## What is working
 
+- **Robot templates (P-03, Phase 6)** — four launch-family templates with full
+  payloads (capital, risk stops, C5 knobs, venue, guided path) served via
+  `GET /api/robot-templates`; the Studio gallery + review term sheet prove
+  provenance, and a robot built from a template is verified to match it in
+  the DB (Robot row + immutable StrategyVersion v1).
+- **Guided session (Phase 6)** — template → first backtest in one run:
+  three numbered steps wired to real cycle summaries and a venue-scoped (B11)
+  first backtest that prefers markets with ≥20 recorded ticks.
+- **Trace depth UI (A-08, Phase 6)** — every decision trace expands in place
+  (dashboard + venue workspaces) to the full provenance envelope and each
+  pre-trade risk check with its measured detail; collapsed to the glanceable
+  verdict by default.
+- **Visual regression (Phase 6)** — `scripts/visual-regression.ts` (pixel +
+  DOM modes) wired into the phase smoke so a UI break fails acceptance.
+- **Usability walkthrough (Phase 6)** — three-persona scripted proxy with a
+  findings register (F1/F2 fixed in-phase) in `docs/USABILITY_PHASE6.md`; the
+  real three-user check stays owed on the founder host.
+- **Drift BET verdict (Phase 6, venue #4)** — adapter deliberately NOT built:
+  the venue is offline since the April 2026 exploit and cannot pass S-05
+  conformance; compliance row `SUSPENDED` with dated [VERIFY] evidence,
+  DRIFT_BET robot creation refused 422. Slot #4 substitution awaits the
+  founder's verdict (B9) — promote Azuro, substitute, or hold for relaunch.
 - **Model registry (A-01, Phase 5)** — every estimator is a registry row
   (`ProbabilityModel`): the baseline heuristic is the floor (A-03), AI models
   accumulate calibration evidence as CANDIDATES and only the founder can
@@ -60,7 +82,8 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
   slippage, fee schedule, 5%-of-liquidity guard; SYNTHETIC vs LIVE honesty
   badge (D-03).
 - **Venue lineup (B9/B11)** — six-venue registry in `src/lib/venues.ts`
-  (Polymarket primary · Manifold harness · Limitless live · Drift BET / Azuro /
+  (Polymarket primary · Manifold harness · Limitless live · Drift BET
+  **SUSPENDED since Phase 6** — adapter deliberately not built · Azuro /
   Kalshi fast-follows); robots are scoped to exactly one venue; every market,
   order, robot card, trace and ticket names its venue; wizard step 1 is a
   venue picker that only allows live adapters.

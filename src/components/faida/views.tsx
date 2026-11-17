@@ -20,9 +20,11 @@ import {
   type ProbabilityDTO,
   type ProviderDTO,
   type RiskViewDTO,
+  type TemplateDTO,
   type VersionDTO,
   FAMILIES,
 } from "./types";
+import { FAMILY_LABEL } from "./types";
 import { StateChip, VenueBadge, card, c, fmtCents, mono, venueScopeStyle } from "./ui";
 import { ROLE_LABEL, VENUES, VENUE_LABEL, isVenue } from "@/lib/venues";
 
@@ -36,7 +38,7 @@ async function safeJson<T = unknown>(res: Response): Promise<T | null> {
 }
 
 // ── Robot Studio ─────────────────────────────────────────────────────────────
-export function StudioView({ dash, onCreate, onAfterChange, initialVenue }: { dash: DashboardDTO | null; onCreate: (p: unknown) => Promise<unknown>; onAfterChange?: () => void; initialVenue?: string }) {
+export function StudioView({ dash, onCreate, onAfterChange, initialVenue, onAction }: { dash: DashboardDTO | null; onCreate: (p: unknown) => Promise<unknown>; onAfterChange?: () => void; initialVenue?: string; onAction?: (url: string, body: unknown, okMsg: string) => Promise<unknown> }) {
   const [step, setStep] = useState(1);
   const [family, setFamily] = useState<string>("PROBABILITY_EDGE");
   // B11: every robot is scoped to exactly one venue; only live adapters selectable.
@@ -48,14 +50,52 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue }: { da
   const [maxOpen, setMaxOpen] = useState(4);
   const [dailyLoss, setDailyLoss] = useState(5);
   const [drawdown, setDrawdown] = useState(10);
+  // C5 strategy knobs — set by a template (P-03) or tuned by hand in step 2;
+  // the cycle engine reads them from the immutable strategy version.
+  const [minEdge, setMinEdge] = useState(8);
+  const [tilt, setTilt] = useState(25);
+  const [exitEdge, setExitEdge] = useState(2);
+  const [holdTicks, setHoldTicks] = useState(12);
   const platformMaxDaily = dash?.risk.find((r) => r.key === "DAILY_LOSS_STOP_PCT" && r.scope === "PLATFORM")?.valueNum ?? 20;
   const platformMaxDd = dash?.risk.find((r) => r.key === "DRAWDOWN_STOP_PCT" && r.scope === "PLATFORM")?.valueNum ?? 30;
+
+  // P-03: template gallery + guided session (template → first backtest in one run).
+  const [templates, setTemplates] = useState<TemplateDTO[]>([]);
+  const [appliedTemplate, setAppliedTemplate] = useState<TemplateDTO | null>(null);
+  const [guided, setGuided] = useState<{ robotId: string; robotName: string; templateLabel: string | null } | null>(null);
+  const [guidedDone, setGuidedDone] = useState<{ cycle: boolean; backtest: boolean }>({ cycle: false, backtest: false });
+  const [guidedBusy, setGuidedBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/robot-templates")
+      .then((r) => (r.ok ? safeJson<{ templates: TemplateDTO[] }>(r) : null))
+      .then((j) => j?.templates && setTemplates(j.templates))
+      .catch(() => {/* transient — gallery stays empty, scratch path unaffected */});
+  }, []);
+
+  const applyTemplate = (t: TemplateDTO) => {
+    if (!t.venueLive) return;
+    setVenue(isVenue(t.venue) ? t.venue : "POLYMARKET");
+    setFamily(t.family);
+    setName(t.nameSuggestion);
+    setAllocated(Math.round(t.capital.allocatedCents / 100));
+    setPosCap(Math.round(t.capital.maxPositionCents / 100));
+    setMaxOpen(t.capital.maxOpenPositions);
+    setDailyLoss(t.capital.dailyLossStopPct);
+    setDrawdown(t.capital.drawdownStopPct);
+    setMinEdge(t.strategy.minEdgePts);
+    setTilt(t.strategy.estimatorTiltPct);
+    setExitEdge(t.strategy.exitEdgePts);
+    setHoldTicks(t.strategy.holdTicksMax);
+    setAppliedTemplate(t);
+    setStep(5); // one click lands on Review — the guided session carries the rest
+  };
 
   const steps = ["Robot family", "Strategy & model", "Capital & risk", "Execution", "Review & activation"];
   const canNext = step !== 1 || name.trim().length > 1;
 
   const submit = async () => {
-    await onCreate({
+    const res = (await onCreate({
       name: name.trim(),
       family,
       venue,
@@ -66,14 +106,42 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue }: { da
       drawdownStopPct: drawdown,
       config: {
         family,
-        entryRule: "edge>=8pts net of fees",
+        entryRule: appliedTemplate?.strategy.entryRule ?? `edge>=${minEdge}pts net of fees`,
+        minEdgePts: minEdge,
+        estimatorTiltPct: tilt,
+        exitEdgePts: exitEdge,
+        holdTicksMax: holdTicks,
         exitPolicy: "edge_disappears_or_adverse_verified_info",
         schedule: "continuous_cloud",
         estimator: family === "AI_RESEARCH" ? "AI_OR_HEURISTIC" : "HEURISTIC",
       },
-    });
+    })) as { robot?: { id?: string; name?: string } } | undefined;
+    if (res?.robot?.id) {
+      // P-03 guided session: keep the template context and walk the user to
+      // the first cycle and the first backtest — one session, no hunting.
+      setGuided({ robotId: res.robot.id, robotName: res.robot.name ?? name.trim(), templateLabel: appliedTemplate?.label ?? null });
+      setGuidedDone({ cycle: false, backtest: false });
+    }
+    setAppliedTemplate(null);
     setStep(1);
     setName("");
+  };
+
+  const runGuidedStep = async (what: "cycle" | "backtest") => {
+    if (!guided) return;
+    setGuidedBusy(what);
+    try {
+      if (what === "cycle") {
+        const res = (await onAction?.("/api/cycle", { action: "CYCLE" }, "Cycle complete — trace recorded")) as { summaries?: Array<{ robotId?: string }> } | undefined;
+        if (res?.summaries?.some((s) => s.robotId === guided.robotId)) setGuidedDone((d) => ({ ...d, cycle: true }));
+      } else {
+        const res = (await onAction?.("/api/backtests", { robotId: guided.robotId }, "First backtest complete — evidence recorded (A-05)")) as Record<string, unknown> | undefined;
+        if (res && res.ok !== false) setGuidedDone((d) => ({ ...d, backtest: true }));
+      }
+      onAfterChange?.();
+    } finally {
+      setGuidedBusy(null);
+    }
   };
 
   return (
@@ -82,6 +150,38 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue }: { da
         <h1 className="text-[19px] font-semibold">Robot Studio</h1>
         <span className={`text-[12px] ${c.text3}`}>one decision per step — activation stays off until the Phase 7 gates pass (C5)</span>
       </div>
+
+      {/* P-03 guided session — template → first cycle → first backtest, one run */}
+      {guided && (
+        <div className={`${card} border-[#00B0F0]/40 p-4`}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.bright} bg-[#00B0F0]/10`}>GUIDED SESSION</span>
+            <span className="text-[13px] font-semibold">From {guided.templateLabel ? `template “${guided.templateLabel}”` : "scratch"} to first backtest — {guided.robotName}</span>
+          </div>
+          <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className={`rounded-lg border p-2.5 ${c.border} ${guidedDone.cycle || guidedDone.backtest ? "border-[#2FC08E]/40" : ""}`}>
+              <div className="flex items-center gap-2 text-[12px] font-semibold"><span className={guidedDone.cycle || guidedDone.backtest ? c.gain : c.text3}>✓</span>1 · Robot created</div>
+              <div className={`mt-0.5 text-[10.5px] ${c.text3}`}>PAPER_ONLY draft saved with the template config (C5 v1)</div>
+            </div>
+            <div className={`rounded-lg border p-2.5 ${c.border} ${guidedDone.cycle ? "border-[#2FC08E]/40" : ""}`}>
+              <div className="flex items-center gap-2 text-[12px] font-semibold"><span className={guidedDone.cycle ? c.gain : c.text3}>{guidedDone.cycle ? "✓" : "2"}</span>Run the first cycle</div>
+              <div className={`mt-0.5 text-[10.5px] ${c.text3}`}>Every robot evaluates its book; the trace lands on the dashboard (A-08)</div>
+              <Button size="sm" variant="outline" className={`mt-2 h-7 border-[#2E3C5F] bg-[#151D30] text-[9px] text-[#9AA8C0] hover:bg-[#1B2540]`} disabled={guidedBusy !== null} onClick={() => runGuidedStep("cycle")}>
+                {guidedBusy === "cycle" ? "Running cycle…" : guidedDone.cycle ? "Run again" : "Run first cycle"}
+              </Button>
+            </div>
+            <div className={`rounded-lg border p-2.5 ${c.border} ${guidedDone.backtest ? "border-[#2FC08E]/40" : ""}`}>
+              <div className="flex items-center gap-2 text-[12px] font-semibold"><span className={guidedDone.backtest ? c.gain : c.text3}>{guidedDone.backtest ? "✓" : "3"}</span>Run the first backtest</div>
+              <div className={`mt-0.5 text-[10.5px] ${c.text3}`}>Recorded-tick replay with adverse slippage + fees (A-05 evidence)</div>
+              <Button size="sm" variant="outline" className={`mt-2 h-7 border-[#2E3C5F] bg-[#151D30] text-[9px] text-[#9AA8C0] hover:bg-[#1B2540]`} disabled={guidedBusy !== null} onClick={() => runGuidedStep("backtest")}>
+                {guidedBusy === "backtest" ? "Backtesting…" : guidedDone.backtest ? "Run again" : "Run first backtest"}
+              </Button>
+            </div>
+          </div>
+          <div className={`mt-2 text-[10.5px] ${c.text3}`}>Evidence review lives in the Strategy lab below — a backtest is evidence, never a promise (A-05/D-03).</div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[250px_1fr_300px]">
         {/* step rail */}
         <div className={`${card} p-2.5`}>
@@ -103,7 +203,36 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue }: { da
         <div className="flex flex-col gap-3">
           {step === 1 && (
             <div className={`${card} flex flex-col gap-2.5 p-4`}>
-              <div className={`text-[12px] font-semibold ${c.text2}`}>Venue — which market does this robot trade on?</div>
+              {/* P-03: template gallery — curated starting points per B6 family */}
+              <div className={`text-[12px] font-semibold ${c.text2}`}>Start from a template (P-03) — one click prefills everything</div>
+              <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+                {templates.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => applyTemplate(t)}
+                    disabled={!t.venueLive}
+                    className={`rounded-lg border p-3 text-left transition-colors ${t.venueLive ? "border-[#202B45] hover:border-[#00B0F0] hover:bg-[#131A2C]" : "cursor-not-allowed border-[#202B45] opacity-50"}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-[12.5px] font-semibold ${c.text}`}>{t.label}</span>
+                      <span className="flex items-center gap-1">
+                        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${t.riskProfile === "CONSERVATIVE" ? "text-[#2FC08E] bg-[#2FC08E]/10" : t.riskProfile === "AGGRESSIVE" ? "text-[#F0525F] bg-[#F0525F]/10" : `${c.bright} bg-[#00B0F0]/10`}`}>{t.riskProfile}</span>
+                        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#151D30]`}>{t.venueLabel}{t.venueLive ? "" : " · offline"}</span>
+                      </span>
+                    </div>
+                    <div className={`mt-1 text-[11px] ${c.text2}`}>{t.thesis}</div>
+                    <div className={`mt-1 text-[10.5px] ${c.text3}`}>
+                      entry ≥{t.strategy.minEdgePts} pts · fade {t.strategy.estimatorTiltPct}% · {fmtCents(t.capital.allocatedCents)} · {FAMILY_LABEL[t.family] ?? t.family}
+                    </div>
+                  </button>
+                ))}
+                <div className={`rounded-lg border border-dashed p-3 ${c.borderStrong}`}>
+                  <div className={`text-[12.5px] font-semibold ${c.text2}`}>Start from scratch</div>
+                  <div className={`mt-1 text-[11px] ${c.text2}`}>Pick venue, family and every knob yourself — nothing prefilled.</div>
+                  <div className={`mt-1 text-[10.5px] ${c.text3}`}>Templates never promise performance — each robot still earns its own evidence (A-05/D-03).</div>
+                </div>
+              </div>
+              <div className={`mt-1 text-[12px] font-semibold ${c.text2}`}>Venue — which market does this robot trade on?</div>
               {VENUES.map((v) => (
                 // B12: each venue option shows its color; the selected venue
                 // tints the row so the robot's scope is unmistakable.
@@ -143,11 +272,39 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue }: { da
             <div className={`${card} flex flex-col gap-3 p-4`}>
               <div className={`text-[12px] font-semibold ${c.text2}`}>Strategy & model</div>
               <div className={`rounded-lg border p-3 text-[12px] ${c.border} ${c.elevated} ${c.text2}`}>
-                Probability source: <b className={c.text}>heuristic estimator</b> (deterministic, no key needed). Add any AI provider key in Settings and robots upgrade automatically (A-06).
+                Probability source: <b className={c.text}>{family === "AI_RESEARCH" ? "AI estimator chain (A-01 registry → screening → cache → fallback)" : "heuristic estimator"}</b> — deterministic when no key is set; add any AI provider key in Settings and robots upgrade automatically (A-06).
               </div>
+              {appliedTemplate && (
+                <div className={`rounded-lg border p-3 text-[12px] ${c.border}`}>
+                  <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${c.bright} bg-[#00B0F0]/10`}>TEMPLATE</span>
+                  <span className={`ml-2 ${c.text2}`}>{appliedTemplate.label} — {appliedTemplate.behavior}</span>
+                </div>
+              )}
               <div className={`rounded-lg border p-3 text-[12px] ${c.border}`}>
                 <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${c.bright} bg-[#00B0F0]/10`}>EDGE GATE</span>
-                <span className={`ml-2 ${c.text2}`}>Only models that pass the gate trade live. Entry rule: model-vs-market edge ≥ <b className={c.text}>8.0 pts</b> net of fees. Edge alone never triggers a trade.</span>
+                <span className={`ml-2 ${c.text2}`}>Only models that pass the gate trade live. Entry: edge ≥ <b className={c.text}>{minEdge} pts</b> net of fees. Edge alone never triggers a trade.</span>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <div className={`flex justify-between text-[12px] ${c.text2}`}><span>Min edge at entry (net of fees)</span><span className={mono + " " + c.text}>{minEdge} pts</span></div>
+                  <Slider value={[minEdge]} onValueChange={(v) => setMinEdge(v[0])} min={1} max={25} step={1} className="mt-2" />
+                  <div className={`mt-1 text-[10px] ${c.text3}`}>C5 knob — the cycle refuses entries below this edge.</div>
+                </div>
+                <div>
+                  <div className={`flex justify-between text-[12px] ${c.text2}`}><span>Contrarian fade tilt</span><span className={mono + " " + c.text}>{tilt}%</span></div>
+                  <Slider value={[tilt]} onValueChange={(v) => setTilt(v[0])} min={0} max={40} step={1} className="mt-2" />
+                  <div className={`mt-1 text-[10px] ${c.text3}`}>How hard the heuristic fades the book price toward 50%.</div>
+                </div>
+                <div>
+                  <div className={`flex justify-between text-[12px] ${c.text2}`}><span>Exit when edge falls below</span><span className={mono + " " + c.text}>{exitEdge} pts</span></div>
+                  <Slider value={[exitEdge]} onValueChange={(v) => setExitEdge(v[0])} min={0} max={10} step={1} className="mt-2" />
+                  <div className={`mt-1 text-[10px] ${c.text3}`}>Positions close when the thesis disappears.</div>
+                </div>
+                <div>
+                  <div className={`flex justify-between text-[12px] ${c.text2}`}><span>Max hold (ticks)</span><span className={mono + " " + c.text}>{holdTicks}</span></div>
+                  <Slider value={[holdTicks]} onValueChange={(v) => setHoldTicks(v[0])} min={3} max={60} step={1} className="mt-2" />
+                  <div className={`mt-1 text-[10px] ${c.text3}`}>Hard time stop — every position ends somewhere.</div>
+                </div>
               </div>
             </div>
           )}
@@ -190,13 +347,15 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue }: { da
               <div className={`text-[12px] font-semibold ${c.text2}`}>Review — term sheet</div>
               {[
                 ["Venue", <span key="venue" className="vc-scope vc-text" style={venueScopeStyle(venue)}>{VENUE_LABEL[venue] ?? venue}</span>],
-                ["Family", FAMILIES.find((f) => f.id === family)?.label ?? family],
+                ["Family", FAMILY_LABEL[family] ?? family],
+                ["Template", appliedTemplate ? `${appliedTemplate.label} (${appliedTemplate.riskProfile})` : "custom — no template"],
                 ["Name", name || "—"],
                 ["Capital allocation", fmtCents(allocated * 100)],
                 ["Max per position", fmtCents(posCap * 100)],
                 ["Max open positions", String(maxOpen)],
                 ["Daily loss stop", `${dailyLoss}%`],
                 ["Total drawdown stop", `${drawdown}%`],
+                ["Entry rule", `edge ≥ ${minEdge} pts net of fees · fade tilt ${tilt}% · exit ${exitEdge} pts · hold ≤ ${holdTicks} ticks`],
                 ["Backtest", "required before live (recorder data, A-05)"],
                 ["Paper session", "required before live"],
               ].map(([k, v]) => (
@@ -221,7 +380,7 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue }: { da
         {/* summary rail */}
         <div className={`${card} h-fit p-4`}>
           <div className={`mb-2 text-[13px] font-semibold`}>Configuration summary</div>
-          {[["Venue", <span key="venue" className="vc-scope vc-text" style={venueScopeStyle(venue)}>{VENUE_LABEL[venue] ?? venue}</span>], ["Family", FAMILIES.find((f) => f.id === family)?.label ?? family], ["Name", name || "—"], ["Allocation", fmtCents(allocated * 100)], ["Position cap", fmtCents(posCap * 100)], ["Daily stop", `${dailyLoss}%`], ["Drawdown stop", `${drawdown}%`]].map(([k, v]) => (
+          {[["Venue", <span key="venue" className="vc-scope vc-text" style={venueScopeStyle(venue)}>{VENUE_LABEL[venue] ?? venue}</span>], ["Family", FAMILY_LABEL[family] ?? family], ["Template", appliedTemplate?.label ?? "custom"], ["Name", name || "—"], ["Allocation", fmtCents(allocated * 100)], ["Position cap", fmtCents(posCap * 100)], ["Daily stop", `${dailyLoss}%`], ["Drawdown stop", `${drawdown}%`], ["Entry", `≥ ${minEdge} pts · fade ${tilt}%`]].map(([k, v]) => (
             <div key={String(k)} className={`flex justify-between py-1 text-[12px]`}>
               <span className={c.text2}>{k}</span><span className={c.text}>{v}</span>
             </div>

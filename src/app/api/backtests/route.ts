@@ -73,14 +73,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "no strategy version available — create one first" }, { status: 422 });
   }
 
-  // market: explicit, else the most liquid tradeable market (same pick logic as the live cycle)
-  const market = body.marketId
+  // market: explicit, else the most liquid tradeable market ON THE ROBOT'S
+  // VENUE (B11 — evidence must name the venue it belongs to; a cross-venue
+  // replay would be meaningless for the robot being evaluated). Among venue
+  // candidates, prefer one with enough recorded history (A-05 needs ≥20 ticks)
+  // so a default backtest runs instead of failing on an empty book of ticks.
+  let market = body.marketId
     ? await db.market.findUnique({ where: { id: body.marketId } })
-    : await db.market.findFirst({
-        where: { ambiguityFlag: false, resolvedAt: null, yesPriceCents: { not: null } },
-        orderBy: { volumeCents: "desc" },
-      });
-  if (!market) return NextResponse.json({ ok: false, error: "no market available" }, { status: 422 });
+    : null;
+  if (!market) {
+    const candidates = await db.market.findMany({
+      where: { venue: robot.venue, ambiguityFlag: false, resolvedAt: null, yesPriceCents: { not: null } },
+      orderBy: { volumeCents: "desc" },
+      take: 6,
+    });
+    const counts = candidates.length
+      ? await db.marketPriceTick.groupBy({
+          by: ["marketId"],
+          _count: true,
+          where: { marketId: { in: candidates.map((c) => c.id) } },
+        })
+      : [];
+    const countMap = new Map(counts.map((c) => [c.marketId, c._count]));
+    market =
+      candidates.find((c) => (countMap.get(c.id) ?? 0) >= 20) ?? candidates[0] ?? null;
+  }
+  if (!market) return NextResponse.json({ ok: false, error: `no tradeable market available on ${robot.venue} for this backtest` }, { status: 422 });
 
   try {
     const result = await runBacktest(robot.id, market.id, version.id, {
