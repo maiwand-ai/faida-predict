@@ -10,7 +10,7 @@
 > Before closing any phase, tick its acceptance criteria here and commit the
 > tick. Nothing gets dropped because it is written down here.
 
-Last revised: 2026-11-18 (Phase 7.5 closed — hardening + closed beta readiness: six runbooks written AND drilled R1–R6, C19.1 re-executed, chaos suite executed with three in-phase fixes (atomic lease claim, atomic wizard create, WAL + connection_limit=1 posture), B5 load measured — 500 robots, p95 699 ms, 100% availability — closed-beta program locked in docs/BETA_PHASE75.md; live sends still held until the founder arms on the founder host).
+Last revised: 2026-11-18 (Phase 8 engineering scope closed — commercial platform minus billing + venue #5 Azuro: P-04 notification taxonomy + anti-storm with honest suppressed accounting; P-06 data export + read-only API keys (hash-only storage, public read API, rate limit); P-07 compliance ops + retention with financial-truth preservation guarantee; P-08 platform metrics; Azuro adapter IMPLEMENTED against the SDK-verified V3 contract but the venue stays PENDING — feed hosts unreachable from the sandbox, dated [VERIFY] evidence recorded BEFORE adapter work, conformance fixtures owed from an unblocked vantage; B4 pricing DRAFTED in docs/PRICING_B4.md and escalated — no billing code exists until the founder approves and the beta exit bar holds).
 
 ---
 
@@ -59,7 +59,7 @@ signs + audits but sends nothing until the founder arms it).
 | 2 | **Manifold** | Play money (Mana), free | Public REST `api.manifold.markets/v0` | **LIVE** from Phase 3 | Week-one harness. Binary markets only. Zero-risk proving ground: the whole pipeline (sync → decision → paper fill → ledger → trace) must run on Manifold before the edge gate exists. |
 | 3 | **Limitless** | Base network, USDC, order book | API/SDK | **LIVE** from Phase 4 (market data) | Closest Polymarket twin. **Structural thin-liquidity rules, not afterthoughts**: (a) refuse entry if touch depth < configured minimum; (b) edge computed **after** venue fees; (c) per-market position cap. Thin books make robots conservative, not broken. Conformance fixtures: `tests/fixtures/limitless` (`bun run conformance`). |
 | 4 | **Drift BET** | Solana, SDK-first | TypeScript SDK | **SUSPENDED** (2026-11-18 verdict, §4 Phase 6) | Offline since the April 2026 ~$285M exploit; S-05 conformance cannot pass against a dead market. Compliance row SUSPENDED with dated evidence; robot creation refused 422. Slot #4 substitution awaits the founder's verdict (B9) — no lineup change is self-approved. |
-| 5 | **Azuro** | EVM, sports-leaning | SDK + subgraph odds | PENDING (fast-follow) | Sports events shape: shorter closes, different resolution sources — eligibility matrix and category handling must cover it. |
+| 5 | **Azuro** | EVM, sports-leaning | SDK + subgraph odds | **PENDING — adapter built, conformance owed from unblocked vantage (Phase 8)** | Sports events shape: shorter closes, different resolution sources — eligibility matrix and category handling must cover it. Phase 8: adapter implemented against the SDK-verified V3 REST contract (binary prematch conditions, margin-embedded fees, game-level A-04 clusters, close-time structural rule); every feed host is unreachable from the sandbox (dated [VERIFY] evidence in the compliance row) — `record-fixtures-azuro` + `conformance:azuro` must pass from the founder host before the registry flips (no self-approved flip). |
 | 6 | **Kalshi** | CFTC-regulated US DCM, USD | REST + RSA key auth | PENDING (fast-follow, last) | The US-persons complement where Polymarket is venue-restricted. Key-based auth (not wallet) — adapter must handle a second credential kind. |
 
 Standing rules for every venue adapter, no exceptions:
@@ -583,12 +583,102 @@ Azuro/Kalshi adapters (Phases 8/9); no ARMED live send (founder authorization
 on the founder host); beta round 1 does NOT start until the founder host is
 ready — the program doc is the contract, not a claim that users exist.
 
-### Phase 8 — Commercial platform + venue #5 (Azuro)
+### Phase 8 — Commercial platform + venue #5 (Azuro) — **engineering scope DONE (2026-11-18); billing gated on founder B4 approval + beta exit bar**
 
-Billing per B4 (entitlement snapshots, dunning, refunds P-05 — founder
-approves pricing before any billing code), notification taxonomy + anti-storm
-P-04, export + read-only API keys P-06, compliance ops + retention P-07,
-metrics P-08. Azuro adapter per §3 contract.
+Founder directive: "continue phase 8" (2026-11-18). The beta exit bar gates
+Phase 8 **billing** specifically (BETA_PHASE75 §4: "commercialization never
+starts on top of an open S0/S1"); the founder directed the non-billing
+engineering scope forward while beta round 1 still awaits founder-host
+readiness. Every item below carries its evidence (all 2026-11-18, sandbox):
+
+- **P8.1 — B4 pricing drafted, NOT wired.** `docs/PRICING_B4.md`: Free/Pro/
+  Professional tiers with AI-credit allowances, entitlement-snapshot contract
+  (C5-pattern snapshots, named refusals), dunning ladder (14-day grace, no
+  data deletion), refunds/proration P-05 policy + [VERIFY] tax row, pluggable
+  provider posture. **No billing code exists** — the phase smoke asserts the
+  negative (P8-8c: zero payment-SDK markers in src/), DECISIONS.md B4 stays
+  PENDING, and the beta exit bar holds. The founder's approval checklist is
+  §7 of the draft. P-01 organization schema stays unwritten with it (modeled
+  "when billing lands").
+- **P8.2 — Azuro venue #5 (adapter built, venue honestly PENDING).** S-05
+  [VERIFY] executed BEFORE adapter work per §3.2: the protocol is alive
+  (azuro.org + docs active; official @azuro-org/toolkit v7.2.0, npm
+  2026-10-10, pins the V3 contract — REST `api.onchainfeed.org/api/v1/public`
+  market-manager, environments PolygonUSDT/BaseWETH, GameState/ConditionState
+  enums, margin embedded in odds) and the adapter is IMPLEMENTED against it
+  (`src/lib/venue/azuro.ts`: games-by-filters + conditions-by-game-ids,
+  binary Active prematch conditions only, sports-shape handling — closeDate
+  = game start, league/country/provider resolution source, sport-slug
+  categories, A-04 eventKey = game). BUT every Azuro feed host returns
+  origin-level 404 from the sandbox (api/dev-api/preprod/api.azuro.org,
+  streams host, and thegraph.onchainfeed.org does not resolve) across
+  HTTP versions/methods/headers while Gamma/Manifold/Limitless/CLOB all
+  answer from the same vantage — conformance fixtures CANNOT be recorded
+  here. **Verdict (Drift precedent, proportionate): compliance row
+  VERIFY_BLOCKED with dated evidence; venue stays PENDING; robot creation
+  refused 422; registry flip owed after `bun scripts/record-fixtures-azuro.ts`
+  + `bun run conformance:azuro` pass from an unblocked vantage (founder
+  host).** Structural rules armed for the sports shape (rules.ts rule (d):
+  `minMinutesBeforeClose` = 20 min generic close-time window, fail-closed on
+  missing closeDate, enforced in the shared risk engine for any venue that
+  declares it; $100 per-market cap; depth rule deliberately NOT armed — the
+  feed exposes no book and arming it would fail-close everything).
+  *Acceptance per §3 standing rules: adapter module ✓, catalog row ✓ (with
+  [VERIFY] evidence), fee schedule config ✓ (per-condition margin/overround →
+  bps), conformance harness ✓ (honest SKIP without fixtures — never a fake
+  pass), engine venue-blind ✓, UI venue naming ✓ (B11 badges unchanged).*
+- **P8.3 — P-04 notification taxonomy + anti-storm.** `src/lib/notifications.ts`
+  is now the SINGLE writer (all 8 former creation sites routed through it):
+  seven-family taxonomy (RISK, EXECUTION, AI_BUDGET, MODEL_GOVERNANCE,
+  SYSTEM, COMPLIANCE, BILLING-dormant), per-family policy = severity +
+  dedupe window + hourly cap + digest. CRITICAL is never capped (kill-switch
+  breaks through by construction). Suppressed attempts are RECORDED as
+  suppressed rows (the storm is provable, never silently dropped) and the
+  feed collapses DIGEST families at read time. `GET /api/notifications`
+  returns the feed + digest groups + per-family delivered/absorbed accounting.
+  Evidence: storm probe through the real notifyUser path — dedupe absorbed
+  repeats, cap absorbed beyond headroom (smoke P8-3a..P8-3f with
+  baseline-relative expectations).
+- **P8.4 — P-06 export + read-only API keys.** `ApiKey` model: plaintext
+  shown once, SHA-256 hash stored (constant-time compare), scope READ_ONLY
+  only — no write surface exists at all. `POST/GET/DELETE /api/keys`
+  (lifecycle audited via outbox + COMPLIANCE notifications);
+  `GET /api/export?entity=…&format=json|csv` (robots/orders/ledger/positions/
+  traces, venue-labeled per B11, honesty meta); `GET /api/public/v1/{robots,
+  orders,positions,ledger}` Bearer-authenticated, rate-limited 60 req/min per
+  key (honest 429 naming the limit), venue labels on every row.
+- **P8.5 — P-07 compliance ops + retention.** `src/lib/compliance.ts` +
+  `GET/POST /api/compliance`: four retention policies (ticks 90d, traces
+  180d, notifications 30d, failed outbox 7d — bounded, clamped), dry counts
+  preview, manual run (`RetentionRun` audit row + COMPLIANCE outbox event +
+  notification). **Financial truth is NEVER pruned** — LedgerEntry, Order +
+  OrderEvent, Fill, Position, ReconciliationEntry, RetentionRun are outside
+  policy by construction and the run result carries the preserved list
+  (smoke P8-6d asserts ledger/order counts unchanged across a run).
+- **P8.6 — P-08 platform metrics.** `src/lib/metrics.ts` + `GET /api/metrics`
+  + Settings card: robots by status/venue, orders/fills/fees 24h, per-venue
+  sync freshness (all six venues, honest "never synced"), notification
+  anti-storm accounting, outbox backlog + dispatch lag p50/p95, AI
+  governance counters, API-key usage, retention runs. Null where the
+  platform does not record a number — no invented precision (D-03).
+- **P8.7 — Acceptance smoke.** `scripts/smoke_phase8.py`: SMOKE PASS
+  (P8-1..P8-8, 45 checks, isolation-run, re-run PASS) — Azuro posture +
+  mapping vectors + honest conformance SKIP, storm probe through the real
+  taxonomy, key lifecycle + rate limit + public API, export JSON/CSV,
+  retention with financial-truth preservation, metrics, B4 negative check;
+  platform ends SAFE (pause off, paper-only). Regression re-runs:
+  smoke_phase4 + smoke_phase5 PASS (isolated). Visual pass: four Settings
+  cards + phase badge (badge → 8; Settings re-baseline documented).
+- **Verification protocol:** `bunx tsc --noEmit` clean, `bun run lint` clean,
+  `bun run db:push` applied (ApiKey + Notification anti-storm fields +
+  RetentionRun — additive only), dev-server smoke of every new route
+  (statuses asserted in the phase smoke).
+
+**Non-goals for Phase 8 (kept):** NO billing code of any kind until the
+founder approves B4 (docs/PRICING_B4.md §7 checklist) AND the beta exit bar
+holds; P-01 organization schema waits with it; no Azuro registry flip without
+recorded conformance fixtures; no Kalshi work (Phase 9); no ARMED live send
+(founder authorization on the founder host).
 
 ### Phase 9 — Mobile + venue #6 (Kalshi)
 
@@ -601,15 +691,16 @@ These are scheduled spec obligations that no phase may silently drop:
 
 | Item | Obligation | When |
 |------|-----------|------|
-| S-05 conformance catalogue | Every new venue: catalog row + [VERIFY] check + contract tests + fee schedule | With each venue adapter (P3.1, 4, 6, 8, 9) |
+| S-05 conformance catalogue | Every new venue: catalog row + [VERIFY] check + contract tests + fee schedule | With each venue adapter (P3.1, 4, 6, 8, 9) — **Azuro executed 2026-11-18 (Phase 8): [VERIFY] evidence dated BEFORE adapter work; conformance fixtures owed from an unblocked vantage before the registry flips** |
 | C19.1 kill-switch drill | Scheduled operational drill, not just a feature | **Executed 2026-11-18 (rehearsal DRILL PASS, §4 Phase 7); re-executed on the 7.5 cadence (smoke P75-5); monthly + per beta round from 7.5** |
 | S-08 custody rubric | Rubric results recorded in DECISIONS.md before live signing | **Recorded 2026-11-18** (rubric verdict + S1–S6 self-test in DECISIONS.md) |
 | B3 [VERIFY] rows | Counsel sign-off on geo/restriction entries | Rehearsal sign-off only (smoke P7-13, resets on exit) — **real counsel sign-off owed before the live pilot** |
 | B5 operational targets | Freshness 5 s (live), decision latency 750 ms p95 [VERIFY], 500 concurrent robots, availability 99.5% | Live book budget landed + measured in P7-9; **latency p95 + load measured in 7.5 (P75.4): 500 robots, p95 699 ms @ 16-way, 100% availability — sandbox numbers; founder-host production re-run owed before the live pilot scales** |
 | A-04 clustering | Related-market exposure stacking | **Landed in Phase 4** (`eventKey` stacking in `src/lib/risk.ts`; re-check for every new venue adapter) |
 | D-03 honesty badges | SYNTHETIC vs LIVE labeling everywhere evidence is shown | Standing rule, every phase |
-| P-01 organizations | Data model early, feature later | Model when billing lands (Phase 8) |
+| P-01 organizations | Data model early, feature later | Model when billing lands (Phase 8) — **billing stays unwritten pending founder B4 approval + beta exit bar (Phase 8 ledger, P8.1); P-01 waits with it** |
 | R-01 B5 defaults | Founder numbers recorded in DECISIONS.md | Confirmed via B5; **7.5 stress pass recorded (32-way lockstep burst p95 977 ms — capacity holds, latency budget needs paced scheduling); revisit at the live pilot** |
+| B4 pricing | Engineering draft approved by founder **before** billing code exists | **Drafted 2026-11-18 (`docs/PRICING_B4.md`, §7 approval checklist) — founder approval owed; no billing code exists (smoke-asserted)** |
 | Kalshi credential kind | RSA key auth ≠ wallet signing — adapter + settings must support it | Phase 9 |
 | Push discipline | Local commits are not delivered until the founder provides a fresh fine-grained PAT | Every handoff |
 
@@ -638,10 +729,15 @@ These are scheduled spec obligations that no phase may silently drop:
 
 ## 8. Open founder inputs
 
-- **Fresh fine-grained PAT** to push pending commits (`f5352d9`, `bbf2574`,
-  plus the Phase 3 plan and implementation commits) to
+- **Fresh fine-grained PAT** to push pending commits (Phases 3–8) to
   `maiwand-ai/faida-predict`. Tokens are injected per-process only and never
   stored; revoke each after use.
-- B4 pricing draft approval remains owed before any billing code (Phase 8).
+- **B4 pricing approval** — `docs/PRICING_B4.md` §7 checklist (tiers, overage
+  policy, dunning ladder, refunds, implementation order). Billing code stays
+  unwritten until approved AND the beta exit bar holds.
+- **Azuro unblock** — run `bun scripts/record-fixtures-azuro.ts` then
+  `bun run conformance:azuro` from the founder host (or any unblocked
+  vantage); a recorded-fixture pass is the registry-flip condition (S-05 §3.4;
+  no self-approved flip).
 - Full 72-hour soak (P3.5 acceptance) runs on the founder's host — the
   sandbox runs the shortened variant.

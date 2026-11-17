@@ -110,8 +110,9 @@ export const COMPLIANCE_CATALOG = [
   },
   {
     venue: "AZURO",
-    status: "PLANNED",
-    notes: "Fast-follow — EVM sports SDK + subgraph odds; eligibility matrix must cover sports event shapes.",
+    status: "VERIFY_BLOCKED",
+    notes:
+      "[VERIFY] executed 2026-11-18 BEFORE adapter work (S-05 §3.2). Protocol ALIVE: azuro.org reachable, docs (gem.azuro.org) active, official @azuro-org/toolkit v7.2.0 (npm, 2026-10-10) pins the V3 feed contract — adapter IMPLEMENTED against it (src/lib/venue/azuro.ts: REST api.onchainfeed.org/api/v1/public market-manager, environments PolygonUSDT/BaseWETH, GameState Prematch, ConditionState Active, margin embedded in odds, binary conditions only). BUT every Azuro feed host (api.onchainfeed.org, dev-api.onchainfeed.org, preprod-api.azuro.org, api.azuro.org, streams.onchainfeed.org) returns origin-level 404 for ALL paths from the sandbox, and thegraph.onchainfeed.org does not resolve — across HTTP versions/methods/headers, while Gamma/Manifold/Limitless/CLOB all answer from the same vantage. Conformance fixtures CANNOT be recorded here → venue stays PENDING, robot creation refused 422 (Drift precedent applied proportionately: no self-approved flip). UNBLOCK: from the founder host (or any unblocked vantage) run `bun scripts/record-fixtures-azuro.ts` then `bun run conformance:azuro`; pass flips the registry. Sports-shape structural rules ARMED in rules.ts (rule (d) close-time window 20 min + $100 per-market cap); eligibility matrix must cover sports categories [VERIFY with counsel].",
   },
   {
     venue: "KALSHI",

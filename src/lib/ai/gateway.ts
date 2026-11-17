@@ -6,6 +6,7 @@
 // Phase 5 (A-07): every attempt is logged (AiCallLog: latency, cost, outcome)
 // and crossing a provider budget raises an AI_BUDGET notification once.
 import { db } from "@/lib/db";
+import { notifyUser } from "@/lib/notifications";
 
 export interface EstimateResult {
   estimatePct: number;
@@ -74,14 +75,14 @@ async function maybeBudgetNotification(p: ProviderRow, before: number, after: nu
     budgetNotified.add(p.name);
     const user = await db.user.findUnique({ where: { email: "founder@faida.local" }, select: { id: true } });
     if (user) {
-      await db.notification.create({
-        data: {
-          userId: user.id,
-          severity: "WARNING",
-          family: "AI_BUDGET",
-          title: `AI provider ${p.name} hit its monthly budget`,
-          body: `Spend ${after}¢ reached the ${p.monthlyBudgetCents}¢ budget — further AI estimates fall back to the heuristic baseline until the budget is raised or the month resets (A-07).`,
-        },
+      // P-04 taxonomy: AI_BUDGET — capped + digested; the in-process guard
+      // stays as a second layer, the dedupe window as the durable one.
+      await notifyUser(user.id, {
+        family: "AI_BUDGET",
+        severity: "WARNING",
+        title: `AI provider ${p.name} hit its monthly budget`,
+        body: `Spend ${after}¢ reached the ${p.monthlyBudgetCents}¢ budget — further AI estimates fall back to the heuristic baseline until the budget is raised or the month resets (A-07).`,
+        dedupeKey: `budget:${p.name}`,
       });
     }
   }

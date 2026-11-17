@@ -116,6 +116,7 @@ export async function preTradeRiskChecks(params: {
       eventKey: true,
       yesTouchDepthCents: true,
       noTouchDepthCents: true,
+      closeDate: true,
     },
   });
   const venue = market?.venue ?? robot?.venue ?? "UNKNOWN";
@@ -220,6 +221,22 @@ export async function preTradeRiskChecks(params: {
         touchDepth == null
           ? `${venue} rule (a): book depth unavailable for the ${params.side === "BUY_YES" ? "YES" : "NO"} touch — fail-closed, sync captured no book`
           : `${venue} rule (a): ${params.side === "BUY_YES" ? "YES" : "NO"} touch depth ${touchDepth}¢ vs minimum ${rules.minTouchDepthCents}¢`,
+    });
+  }
+
+  // ── (d) close-time window — venue structural rule (AZURO, sports shape) ──
+  //    Refuse entries inside the final N minutes before closeDate (kickoff);
+  //    fail-closed when closeDate is missing on a venue that arms the rule.
+  if (rules.minMinutesBeforeClose != null) {
+    const closeMs = market?.closeDate ? new Date(market.closeDate).getTime() : null;
+    const minutesLeft = closeMs != null ? (closeMs - Date.now()) / 60000 : null;
+    checks.push({
+      check: "close_time_window",
+      passed: minutesLeft != null && minutesLeft >= rules.minMinutesBeforeClose,
+      detail:
+        minutesLeft == null
+          ? `${venue} rule (d): close date missing — fail-closed (sports odds inside the closing window are unstable)`
+          : `${venue} rule (d): ${minutesLeft.toFixed(1)} min until close vs minimum ${rules.minMinutesBeforeClose} min window`,
     });
   }
 

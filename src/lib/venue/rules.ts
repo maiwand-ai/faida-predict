@@ -26,11 +26,20 @@ export interface VenueEntryRules {
    * null = rule not armed for this venue.
    */
   perMarketPositionCapCents: number | null;
+  /**
+   * (d) close-time window (Phase 8, sports shape — AZURO): entry refused
+   * inside the final N minutes before the market's closeDate (game start).
+   * Prematch sports odds inside the closing window are unstable and often
+   * suspended — robots must not enter it. Fail-closed when closeDate is
+   * missing on a venue that arms the rule. null = rule not armed.
+   */
+  minMinutesBeforeClose: number | null;
 }
 
 export const EMPTY_ENTRY_RULES: VenueEntryRules = {
   minTouchDepthCents: null,
   perMarketPositionCapCents: null,
+  minMinutesBeforeClose: null,
 };
 
 export const VENUE_ENTRY_RULES: Record<string, VenueEntryRules> = {
@@ -42,10 +51,20 @@ export const VENUE_ENTRY_RULES: Record<string, VenueEntryRules> = {
   LIMITLESS: {
     minTouchDepthCents: 5000, // $50 — refuse entries the touch cannot absorb
     perMarketPositionCapCents: 50000, // $500 per market, user-wide across robots
+    minMinutesBeforeClose: null, // rule (d) not armed — crypto markets close soft
   },
   // Fast-follow venues adopt rules when their adapters land (Phase 6 / 8 / 9).
   DRIFT_BET: EMPTY_ENTRY_RULES,
-  AZURO: EMPTY_ENTRY_RULES,
+  // Azuro (sports, Phase 8): the feed exposes no book depth — rule (a) must
+  // NOT arm (it would fail-close everything). Sports shape arms instead:
+  // conservative per-market cap + a close-time window (odds inside the final
+  // minutes before kickoff are unstable and often suspended). Config, not
+  // code — recalibrate by editing this row only.
+  AZURO: {
+    minTouchDepthCents: null,
+    perMarketPositionCapCents: 10000, // $100 per game condition, user-wide
+    minMinutesBeforeClose: 20, // no entries inside the final 20 minutes
+  },
   KALSHI: EMPTY_ENTRY_RULES,
 };
 

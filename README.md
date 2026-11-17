@@ -1,4 +1,4 @@
-# FAIDA Predict — Phase 7.5 (Hardening + closed beta readiness · runbooks drilled · B5 load measured · beta program locked)
+# FAIDA Predict — Phase 8 (Commercial platform minus billing · P-04/P-06/P-07/P-08 landed · Azuro adapter built, venue honestly PENDING · B4 pricing drafted for founder approval)
 
 Autonomous prediction-market trading platform — paper-mode core with the full
 trust architecture from the specification review brief. **All execution is
@@ -12,6 +12,28 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
 
 ## What is working
 
+- **Commercial platform surfaces (Phase 8, billing excluded)** — P-04
+  notification taxonomy + anti-storm (one writer, 7 families, CRITICAL never
+  capped, suppressed repeats recorded — the storm is provable); P-06 data
+  export (`/api/export`, JSON/CSV, venue-labeled) + **read-only API keys**
+  (plaintext shown once, SHA-256-only storage, Bearer public read API at
+  `/api/public/v1/{robots,orders,positions,ledger}`, 60 req/min honest 429 —
+  no write surface exists); P-07 compliance ops + retention (audited runs;
+  financial truth NEVER pruned); P-08 platform metrics (per-venue sync
+  freshness, outbox dispatch lag, honest nulls) — `bun run smoke:phase8`
+  (45 checks).
+- **Azuro adapter built, venue honestly PENDING (Phase 8)** — implemented
+  against the SDK-verified V3 contract (binary prematch sports conditions,
+  margin-embedded fees, game-level exposure clusters, 20-min close-time
+  rule); every Azuro feed host is unreachable from the sandbox (dated
+  [VERIFY] evidence in the compliance row) so conformance fixtures cannot be
+  recorded here — flip owed after `bun scripts/record-fixtures-azuro.ts` +
+  `bun run conformance:azuro` pass from the founder host. Robot creation
+  refuses 422 until then (no self-approved flip).
+- **B4 pricing drafted — billing code absent by design (Phase 8)** —
+  `docs/PRICING_B4.md` (Free/Pro/Professional, entitlement snapshots,
+  dunning, refunds) awaits founder approval; no billing code exists and the
+  phase smoke asserts that negative.
 - **Runbooks written AND drilled (Phase 7.5)** — `docs/RUNBOOKS.md`: startup
   reconciliation, stuck-robot diagnosis, venue outage, fee update,
   jurisdiction update, model demotion (R1–R6) — every one drilled through the
@@ -210,10 +232,12 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
 bun install
 bun run db:push
 bun prisma/seed.ts
-bun run conformance   # S-05 Limitless contract test against recorded fixtures
-bun run drill         # A-01 demotion drill (governance round trip)
-bun run smoke:phase5  # Phase-5 acceptance smoke against a running instance
-bun run dev           # http://localhost:3000
+bun run conformance        # S-05 Limitless contract test against recorded fixtures
+bun run conformance:azuro  # S-05 Azuro contract test (honest SKIP until fixtures recorded)
+bun run drill              # A-01 demotion drill (governance round trip)
+bun run smoke:phase5       # Phase-5 acceptance smoke against a running instance
+bun run smoke:phase8       # Phase-8 acceptance smoke (45 checks, isolation-run)
+bun run dev                # http://localhost:3000
 ```
 
 ## Try the trust machinery

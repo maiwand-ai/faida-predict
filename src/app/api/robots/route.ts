@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { enqueueOutbox } from "@/lib/outbox";
+import { notifyUser } from "@/lib/notifications";
 import { isVenue, isLiveVenue, VENUE_IDS, VENUE_LABEL } from "@/lib/venues";
 
 export const dynamic = "force-dynamic";
@@ -89,15 +90,6 @@ export async function POST(req: Request) {
       await tx.strategyVersion.create({
         data: { robotId: r.id, version: 1, config: JSON.stringify(body.config ?? {}) },
       });
-      await tx.notification.create({
-        data: {
-          userId: user.id,
-          severity: "INFO",
-          family: "SYSTEM",
-          title: `Robot created: ${r.name}`,
-          body: "Paper-only. Run the edge gate, backtest and paper session before requesting live activation.",
-        },
-      });
       await enqueueOutbox(tx, [
         {
           aggregateType: "ROBOT",
@@ -110,6 +102,15 @@ export async function POST(req: Request) {
     },
     { timeout: 20_000, maxWait: 10_000 },
   );
+  // P-04: the creation notification goes through the taxonomy AFTER the
+  // transaction commits — the wizard create stays all-or-nothing (chaos fix)
+  // and a failed notification write can never roll back a created robot.
+  await notifyUser(user.id, {
+    family: "SYSTEM",
+    title: `Robot created: ${robot.name}`,
+    body: "Paper-only. Run the edge gate, backtest and paper session before requesting live activation.",
+    dedupeKey: `robot-created:${robot.id}`,
+  });
   return NextResponse.json({ robot });
 }
 

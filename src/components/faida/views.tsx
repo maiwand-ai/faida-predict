@@ -674,6 +674,18 @@ export function SettingsView(props: {
       {/* notification dispatcher (Phase 2) */}
       <NotifyCard />
 
+      {/* notification taxonomy + anti-storm (Phase 8, P-04) */}
+      <NotificationsCard />
+
+      {/* export + read-only API keys (Phase 8, P-06) */}
+      <ApiKeysCard />
+
+      {/* compliance ops + retention (Phase 8, P-07) */}
+      <ComplianceCard />
+
+      {/* platform metrics (Phase 8, P-08) */}
+      <MetricsCard />
+
       {/* eligibility */}
       <div className={`${card} p-4`}>
         <div className={`mb-1 text-[13px] font-semibold`}>Jurisdiction eligibility matrix (C4.5)</div>
@@ -1253,6 +1265,299 @@ export function LiveTradingCard() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Phase 8 — commercial platform cards (P-04 / P-06 / P-07 / P-08) ─────────
+
+interface TaxonomyRow { family: string; delivered: number; suppressed: number; policy: { severity: string; dedupeWindowSec: number; hourlyCap: number; digest: boolean } }
+interface NotificationsDTO {
+  windowSec: number;
+  feed: Array<{ id: string; severity: string; family: string; title: string; body: string; createdAt: string }>;
+  digest: Array<{ family: string; count: number; latestTitle: string; latestAt: string }>;
+  suppressedCount: number;
+  byFamily: TaxonomyRow[];
+}
+
+// P-04 — notification taxonomy + anti-storm: one writer, honest suppression
+// counts, read-time digest. CRITICAL never capped (kill-switch breaks through).
+export function NotificationsCard() {
+  const [d, setD] = useState<NotificationsDTO | null>(null);
+  useEffect(() => {
+    const load = () => fetch("/api/notifications?windowSec=86400").then((r) => safeJson<NotificationsDTO>(r)).then((j) => j && setD(j)).catch(() => undefined);
+    load();
+    const t = setInterval(load, 30000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className={`${card} p-4`}>
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <div className={`text-[13px] font-semibold`}>Notification taxonomy & anti-storm (P-04)</div>
+        {d && <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#151D30]`}>last 24h · {d.suppressedCount} absorbed</span>}
+      </div>
+      <div className={`mb-3 text-[11.5px] ${c.text3}`}>
+        Every notification goes through one taxonomy (family → severity, dedupe window, hourly cap, digest policy). CRITICAL is never capped — a kill-switch event always breaks through. Suppressed repeats are RECORDED (never silently dropped) and counted here.
+      </div>
+      {!d && <div className={`py-3 text-center text-[12px] ${c.text3}`}>Loading taxonomy…</div>}
+      {d && (
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2 text-[11px] md:grid-cols-4">
+            {d.byFamily.map((f) => (
+              <div key={f.family} className={`rounded-lg border p-2.5 ${c.border}`}>
+                <div className={`text-[10.5px] font-semibold ${c.text}`}>{f.family}</div>
+                <div className={`mt-1 flex flex-wrap gap-x-2 text-[9.5px] ${c.text3}`}>
+                  <span>delivered {f.delivered}</span>
+                  <span>absorbed {f.suppressed}</span>
+                  <span>{f.policy.severity.toLowerCase()}</span>
+                  <span>{f.policy.dedupeWindowSec > 0 ? `dedupe ${f.policy.dedupeWindowSec}s` : "no dedupe"}</span>
+                  <span>{f.policy.hourlyCap > 0 ? `cap ${f.policy.hourlyCap}/h` : "uncapped"}</span>
+                  <span>{f.policy.digest ? "digest" : "immediate"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {d.digest.length > 0 && (
+            <div className={`rounded-lg border p-2.5 text-[11px] ${c.border}`}>
+              <div className={`mb-1 text-[9.5px] uppercase tracking-wide ${c.text3}`}>DIGESTED (grouped at read time)</div>
+              {d.digest.map((g) => (
+                <div key={g.family} className={`flex justify-between ${c.text2}`}>
+                  <span>{g.family} × {g.count}</span>
+                  <span className={`text-[10px] ${c.text3}`}>{g.latestTitle}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface ApiKeyRow { id: string; name: string; prefix: string; scope: string; status: string; createdAt: string; lastUsedAt: string | null; revokedAt: string | null }
+
+// P-06 — export + read-only API keys. Plaintext shown ONCE at creation.
+export function ApiKeysCard() {
+  const [keys, setKeys] = useState<ApiKeyRow[] | null>(null);
+  const [name, setName] = useState("");
+  const [plaintext, setPlaintext] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(() => {
+    fetch("/api/keys").then((r) => safeJson<{ keys: ApiKeyRow[] }>(r)).then((j) => j && setKeys(j.keys)).catch(() => undefined);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const create = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/keys", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name }) });
+      const j = await res.json();
+      if (j?.key?.plaintext) setPlaintext(j.key.plaintext);
+      setName("");
+      load();
+    } finally { setBusy(false); }
+  };
+  const revoke = async (keyId: string) => {
+    await fetch("/api/keys", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ keyId }) });
+    load();
+  };
+
+  return (
+    <div className={`${card} p-4`}>
+      <div className="mb-1 text-[13px] font-semibold">Export & read-only API keys (P-06)</div>
+      <div className={`mb-3 text-[11.5px] ${c.text3}`}>
+        Export your data (robots, orders, ledger, positions, traces — JSON/CSV, venue-labeled per B11). API keys are READ-ONLY by design: they authenticate /api/public/v1/* reads, no write surface exists. Plaintext is shown once and only its SHA-256 hash is stored (S-08 posture). Rate limit 60 req/min per key.
+      </div>
+      <div className="mb-3 flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[11px] hover:bg-[#1B2540]`} onClick={() => window.open("/api/export?entity=all&format=json", "_blank")}>Export all (JSON)</Button>
+        <Button size="sm" variant="outline" className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[11px] hover:bg-[#1B2540]`} onClick={() => window.open("/api/export?entity=ledger&format=csv", "_blank")}>Export ledger (CSV)</Button>
+        <Button size="sm" variant="outline" className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[11px] hover:bg-[#1B2540]`} onClick={() => window.open("/api/export?entity=orders&format=csv", "_blank")}>Export orders (CSV)</Button>
+      </div>
+      <div className="mb-3 flex gap-2">
+        <Input placeholder="key name (e.g. grafana-read)" value={name} onChange={(e) => setName(e.target.value)} className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[12px] ${c.text}`} />
+        <Button size="sm" variant="outline" className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[11px] hover:bg-[#1B2540]`} disabled={busy} onClick={create}>Create key</Button>
+      </div>
+      {plaintext && (
+        <div className={`mb-3 rounded-lg border border-[#D9B25C]/40 bg-[#D9B25C]/10 p-2.5 text-[11px] ${c.warn}`}>
+          <div className="mb-1 font-semibold">Copy it now — this is shown ONCE and cannot be recovered:</div>
+          <div className={`${mono} break-all text-[11px]`}>{plaintext}</div>
+          <button className={`mt-1 text-[10px] underline ${c.text3}`} onClick={() => setPlaintext(null)}>dismiss</button>
+        </div>
+      )}
+      {!keys && <div className={`py-2 text-center text-[12px] ${c.text3}`}>Loading keys…</div>}
+      {keys && keys.length === 0 && <div className={`text-[11.5px] ${c.text3}`}>No API keys yet — create one above, then call /api/public/v1/robots with `Authorization: Bearer &lt;key&gt;`.</div>}
+      {keys && keys.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {keys.map((k) => (
+            <div key={k.id} className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2.5 text-[11px] ${c.border}`}>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${k.status === "ACTIVE" ? `${c.gain} bg-[#2FC08E]/10` : `${c.loss} bg-[#F0525F]/10`}`}>{k.status}</span>
+                <span className={`font-semibold ${c.text}`}>{k.name}</span>
+                <span className={`${mono} ${c.text2}`}>{k.prefix}…</span>
+                <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#151D30]`}>{k.scope}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-[9.5px] ${c.text3}`}>{k.lastUsedAt ? `used ${new Date(k.lastUsedAt).toLocaleString()}` : "never used"}</span>
+                {k.status === "ACTIVE" && (
+                  <Button size="sm" variant="outline" className={`h-7 border-[#F0525F]/40 bg-[#151D30] px-2 text-[10.5px] text-[#F0525F] hover:bg-[#2A1A22]`} onClick={() => revoke(k.id)}>Revoke</Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface RetentionPolicy { key: string; label: string; days: number; bounds: { min: number; max: number } }
+interface ComplianceDTO {
+  policies: RetentionPolicy[];
+  wouldPrune: { ticks: number; traces: number; notifications: number; outboxFailed: number };
+  runs: Array<{ id: string; kind: string; pruned: Record<string, number>; ranAt: string }>;
+  preservedNote: string;
+}
+
+// P-07 — compliance ops: retention policies (ephemeral data only — financial
+// truth is never pruned) + manual run, every run audited (RetentionRun).
+export function ComplianceCard() {
+  const [d, setD] = useState<ComplianceDTO | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    fetch("/api/compliance").then((r) => safeJson<ComplianceDTO>(r)).then((j) => j && setD(j)).catch(() => undefined);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const setDays = async (key: string, days: number) => {
+    await fetch("/api/compliance", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "SET_RETENTION", key, days }) });
+    load();
+  };
+  const run = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/compliance", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "RUN_RETENTION", kind: "MANUAL" }) });
+      const j = await res.json();
+      if (j?.ok) {
+        const r = j.result;
+        setMsg(`Ran ${new Date(r.ranAt).toLocaleTimeString()}: ticks ${r.ticks} · traces ${r.traces} · notifications ${r.notifications} · failed outbox ${r.outboxFailed} — financial truth untouched.`);
+      }
+      load();
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className={`${card} p-4`}>
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <div className={`text-[13px] font-semibold`}>Compliance ops — data retention (P-07)</div>
+        <Button size="sm" variant="outline" className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[11px] hover:bg-[#1B2540]`} disabled={busy} onClick={run}>{busy ? "Running…" : "Run retention now"}</Button>
+      </div>
+      <div className={`mb-3 text-[11.5px] ${c.text3}`}>
+        Ephemeral operational data is pruned after its window; financial truth (ledger, orders, fills, positions, reconciliation, retention runs) is NEVER pruned — append-only is the product. Every run is audited (RetentionRun) and notified (COMPLIANCE).
+      </div>
+      {!d && <div className={`py-2 text-center text-[12px] ${c.text3}`}>Loading policies…</div>}
+      {d && (
+        <>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {d.policies.map((p) => (
+              <div key={p.key} className={`rounded-lg border p-2.5 ${c.border}`}>
+                <div className={`text-[10.5px] font-semibold ${c.text}`}>{p.label}</div>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <Input type="number" min={p.bounds.min} max={p.bounds.max} defaultValue={p.days}
+                    onBlur={(e) => { const v = Number(e.target.value); if (v && v !== p.days) setDays(p.key, v); }}
+                    className={`h-7 w-20 border-[#2E3C5F] bg-[#151D30] text-[12px] ${c.text}`} />
+                  <span className={`text-[10px] ${c.text3}`}>days ({p.bounds.min}–{p.bounds.max})</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className={`mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10.5px] ${c.text2}`}>
+            <span>would prune today: ticks {d.wouldPrune.ticks}</span>
+            <span>traces {d.wouldPrune.traces}</span>
+            <span>notifications {d.wouldPrune.notifications}</span>
+            <span>failed outbox {d.wouldPrune.outboxFailed}</span>
+          </div>
+          {msg && <div className={`mt-2 rounded-lg border border-[#2FC08E]/30 bg-[#2FC08E]/10 p-2 text-[11px] ${c.gain}`}>{msg}</div>}
+          {d.runs.length > 0 && (
+            <div className={`mt-2 text-[10.5px] ${c.text3}`}>
+              Last run {new Date(d.runs[0].ranAt).toLocaleString()} ({d.runs[0].kind.toLowerCase()}) — {d.runs.length} run{d.runs.length === 1 ? "" : "s"} audited.
+            </div>
+          )}
+          <div className={`mt-1 text-[10px] ${c.text3}`}>{d.preservedNote}</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+interface MetricsDTO {
+  robots: { total: number; byStatus: Record<string, number>; byVenue: Record<string, number>; livePilot: number };
+  orders24h: { total: number; byState: Record<string, number>; fills: number; feesCents: number };
+  ledger: { entries: number; paperBalanceCents: number };
+  markets: { total: number; ambiguous: number; freshness: Array<{ venue: string; label: string; adapter: string; markets: number; lastSyncMinAgo: number | null }> };
+  notifications24h: { delivered: number; suppressed: number };
+  outbox: { pending: number; failed24h: number; dispatched24h: number; dispatchLagP50Ms: number | null; dispatchLagP95Ms: number | null };
+  ai: { calls24h: number; failed24h: number; blocked24h: number; cacheEntries: number };
+  apiKeys: { active: number; revoked: number; usedLast24h: number };
+  decisions: { traces24h: number; trades24h: number; noTrades24h: number };
+  compliance: { retentionRuns: number; lastRetentionRanAt: string | null };
+}
+
+// P-08 — platform metrics: one honest operational snapshot.
+export function MetricsCard() {
+  const [m, setM] = useState<MetricsDTO | null>(null);
+  useEffect(() => {
+    const load = () => fetch("/api/metrics").then((r) => safeJson<{ metrics: MetricsDTO }>(r)).then((j) => j && setM(j.metrics)).catch(() => undefined);
+    load();
+    const t = setInterval(load, 30000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className={`${card} p-4`}>
+      <div className="mb-1 text-[13px] font-semibold">Platform metrics (P-08)</div>
+      <div className={`mb-3 text-[11.5px] ${c.text3}`}>Operational snapshot — robots, orders, sync freshness per venue, notification anti-storm, outbox dispatch lag, AI governance. Null means the platform does not record that number — no invented precision (D-03).</div>
+      {!m && <div className={`py-2 text-center text-[12px] ${c.text3}`}>Loading metrics…</div>}
+      {m && (
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-3 gap-2 text-[11px] md:grid-cols-6">
+            <Stat label="Robots" val={String(m.robots.total)} />
+            <Stat label="Live-pilot" val={String(m.robots.livePilot)} tone={m.robots.livePilot > 0 ? "gain" : undefined} />
+            <Stat label="Orders 24h" val={String(m.orders24h.total)} />
+            <Stat label="Fills 24h" val={String(m.orders24h.fills)} />
+            <Stat label="Fees 24h" val={fmtCents(m.orders24h.feesCents)} />
+            <Stat label="Paper balance" val={fmtCents(m.ledger.paperBalanceCents)} />
+            <Stat label="Markets" val={String(m.markets.total)} />
+            <Stat label="Ambiguous" val={String(m.markets.ambiguous)} tone={m.markets.ambiguous > 0 ? "loss" : undefined} />
+            <Stat label="Traces 24h" val={String(m.decisions.traces24h)} />
+            <Stat label="Trades 24h" val={String(m.decisions.trades24h)} />
+            <Stat label="Outbox pending" val={String(m.outbox.pending)} tone={m.outbox.pending > 50 ? "loss" : undefined} />
+            <Stat label="Outbox p95 lag" val={m.outbox.dispatchLagP95Ms != null ? `${m.outbox.dispatchLagP95Ms}ms` : "—"} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <div className={`text-[9.5px] uppercase tracking-wide ${c.text3}`}>SYNC FRESHNESS PER VENUE (B11)</div>
+            {m.markets.freshness.map((f) => (
+              <div key={f.venue} className={`flex flex-wrap items-center justify-between gap-2 text-[11px] ${c.text2}`}>
+                <span className="flex items-center gap-2">
+                  <span className={`inline-block h-2 w-2 rounded-full ${f.adapter === "LIVE" ? "bg-[#2FC08E]" : "bg-[#55617E]"}`} />
+                  {f.label}
+                  <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#151D30]`}>{f.adapter}</span>
+                </span>
+                <span className={mono}>
+                  {f.markets} market{f.markets === 1 ? "" : "s"} · {f.lastSyncMinAgo != null ? `last sync ${f.lastSyncMinAgo}m ago` : "never synced"}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className={`flex flex-wrap gap-x-4 gap-y-1 text-[10.5px] ${c.text2}`}>
+            <span>notifications 24h: {m.notifications24h.delivered} delivered / {m.notifications24h.suppressed} absorbed</span>
+            <span>AI 24h: {m.ai.calls24h} calls · {m.ai.failed24h} failed · {m.ai.blocked24h} budget-blocked</span>
+            <span>API keys: {m.apiKeys.active} active / {m.apiKeys.revoked} revoked</span>
+            <span>retention runs: {m.compliance.retentionRuns}</span>
           </div>
         </div>
       )}

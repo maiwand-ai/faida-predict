@@ -3,6 +3,7 @@
 // then drained asynchronously by the dispatcher. No dual-write window.
 import { db } from "@/lib/db";
 import { EMAIL_EVENT_TYPES, emailSubjectFor, notifyEnvStatus, sendEmail } from "@/lib/notify";
+import { notifyUser } from "@/lib/notifications";
 
 export type OutboxAggregate = "ORDER" | "ROBOT" | "LEDGER" | "RECONCILIATION" | "MODEL";
 export type OutboxEventType =
@@ -25,7 +26,11 @@ export type OutboxEventType =
   | "LIVE_ORDER_SIGNED_NOT_SENT"
   | "LIVE_ORDER_ACCEPTED"
   | "LIVE_ORDER_REJECTED"
-  | "LIVE_ORDER_ACK_LOST";
+  | "LIVE_ORDER_ACK_LOST"
+  // Phase 8 — commercial platform (P-06/P-07 audit trail)
+  | "API_KEY_CREATED"
+  | "API_KEY_REVOKED"
+  | "COMPLIANCE_RETENTION_RUN";
 
 export interface OutboxDraft {
   aggregateType: OutboxAggregate;
@@ -127,28 +132,27 @@ async function consume(
   if (eventType === "RISK_PAUSE") {
     const userId = String(data.userId ?? "");
     if (userId) {
-      await db.notification.create({
-        data: {
-          userId,
-          severity: "WARNING",
-          family: "RISK",
-          title: String(data.title ?? "Robot paused by risk"),
-          body: String(data.body ?? ""),
-        },
+      // P-04 taxonomy: risk pauses are RISK-family (WARNING) with a per-robot
+      // dedupe key — a flapping robot cannot storm the feed, but the FIRST
+      // pause always lands and any PAUSE after a resume lands too.
+      await notifyUser(userId, {
+        family: "RISK",
+        title: String(data.title ?? "Robot paused by risk"),
+        body: String(data.body ?? ""),
+        dedupeKey: `risk-pause:${String(data.robotId ?? aggregateId)}`,
       });
     }
   }
   if (eventType === "RECONCILIATION_OPENED") {
     const userId = String(data.userId ?? "");
     if (userId) {
-      await db.notification.create({
-        data: {
-          userId,
-          severity: "CRITICAL",
-          family: "EXECUTION",
-          title: "Order entered reconciliation — venue state unconfirmed",
-          body: `Order ${aggregateId}: ${String(data.reason ?? "")}`,
-        },
+      // P-04 taxonomy: reconciliation openings are EXECUTION/CRITICAL —
+      // UNKNOWN orders are the highest-severity signal the platform emits.
+      await notifyUser(userId, {
+        family: "EXECUTION",
+        title: "Order entered reconciliation — venue state unconfirmed",
+        body: `Order ${aggregateId}: ${String(data.reason ?? "")}`,
+        dedupeKey: `recon-open:${aggregateId}`,
       });
     }
   }

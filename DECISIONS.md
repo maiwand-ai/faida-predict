@@ -8,7 +8,7 @@ truth for choices that must not drift; code reads them via config, not folklore.
 | B1 | Custody model | **SELF-CUSTODY** — each user's wallet signs every order (EIP-712); platform never holds keys | RATIFIED | `Wallet.signingModel` is a schema invariant; live signing lands in Phase 7 |
 | B2 | Launch venue | **Polymarket only** (adapter architecture ready for Limitless / Manifold harness / Kalshi later) | RATIFIED | Compliance catalog: S-05 rows in `src/lib/venue/types.ts` |
 | B3 | Jurisdiction | **Editable eligibility matrix** — EU-first allow set; venue-restricted and sanctioned lists blocked; default-deny unknown countries | RATIFIED | `EligibilityRule` table + Settings UI; [VERIFY] rows need counsel sign-off pre-launch |
-| B4 | Pricing | Free / Pro / Professional with AI-credit allowances — to be drafted by engineering, approved by founder **before billing is wired** | PENDING (P-05) | No billing code exists yet; nothing charges anyone |
+| B4 | Pricing | Free / Pro / Professional with AI-credit allowances — to be drafted by engineering, approved by founder **before billing is wired** | DRAFTED — AWAITING FOUNDER APPROVAL | Engineering draft recorded 2026-11-18 in `docs/PRICING_B4.md` (§7 approval checklist). **No billing code exists** (phase-smoke negative check) and none gets written until the founder approves AND the beta exit bar holds; P-01 organization schema waits with it |
 | B5 | Risk defaults | Two-tier: platform ceilings (daily loss 20%, drawdown 30%, per-event 50%, AI budget $200/mo) + user defaults (5% / 10% / 40% / $100/mo). Users may only be stricter. Fully editable in-app | RATIFIED | `RiskConfig` table + `src/lib/risk.ts`; changes audited |
 | B6 | Robot families at launch | Probability Edge, Market-Making, AI Research (Arbitrage/Parity planned as family #4) | RATIFIED | Skeleton ships all three as paper robots |
 | B7 | AI strategy | **Provider-agnostic gateway**: any provider key (GLM keyless in sandbox, OpenAI, Anthropic, OpenAI-compatible base URL) makes the research engine work; deterministic heuristic fallback when none configured | RATIFIED | `AiProvider` table + `src/lib/ai/gateway.ts`; keys masked, never returned |
@@ -20,6 +20,50 @@ truth for choices that must not drift; code reads them via config, not folklore.
 | A-03 | Baseline estimator | **heuristic-contrarian-v1**: `est = clamp(p + round((50 − p) × tilt / 100), 2, 98)`, tilt 25 — the deterministic contrarian fade of the YES book toward 50%. It is the calibration floor every registered model must beat (Brier, ≥30 resolved forecasts, 5% margin) and the fallback the platform always returns to. Baseline Brier is derived analytically from the recorded book price, so comparisons can never cherry-pick their sample | RATIFIED | `src/lib/probability/baseline.ts` + `MODEL_BASELINE` in PlatformControl; recorded with Phase 5 (2026-11-17) |
 | A-01 | Model governance | Unproven models never drive decisions: a candidate estimates nothing until the founder promotes it on calibration evidence (B8); an ACTIVE model that drifts worse than baseline by >5% over its recent window is demoted automatically and the baseline re-activates. Every promote/demote writes a MODEL_GOVERNANCE notification + MODEL outbox event. Drills must pass before a phase that touches models closes | RATIFIED | `ProbabilityModel` table + `src/lib/probability/registry.ts`; demotion drill `scripts/demotion_drill.py` |
 | A-06 | Evidence integrity | Market text is untrusted: every forecast input passes prompt-injection screening before any AI prompt, and flagged evidence fails closed to the baseline with the FLAGGED verdict recorded in the trace provenance. Every estimate carries an evidence hash binding it to its exact inputs | RATIFIED | `src/lib/probability/screening.ts`; traces carry `provenance` (A-02) since Phase 5 |
+
+## Phase-8 checkpoint status (commercial platform minus billing + Azuro)
+
+- Phase 8 engineering scope — **locked, implemented and verified
+  (2026-11-18, founder-directed)**: P-04 notification taxonomy + anti-storm
+  (single writer, 7 families, honest suppressed-row accounting, read-time
+  digest, CRITICAL never capped), P-06 data export + read-only API keys
+  (plaintext shown once, SHA-256-only storage, Bearer public read API at
+  `/api/public/v1/*`, 60 req/min honest 429, no write surface by design),
+  P-07 compliance ops + retention (4 bounded policies, audited runs —
+  financial truth NEVER pruned, asserted by the smoke), P-08 platform
+  metrics (per-venue sync freshness for all six venues, outbox dispatch lag,
+  honest nulls). Acceptance: `scripts/smoke_phase8.py` SMOKE PASS (P8-1..
+  P8-8, 45 checks, isolation-run + re-run), smoke_phase4/phase5 regression
+  re-runs PASS, tsc + lint clean, db:push additive (ApiKey + Notification
+  anti-storm fields + RetentionRun), visual pass over the four new Settings
+  cards; badge → 8.
+- Azuro (venue #5) — **adapter IMPLEMENTED against the SDK-verified V3
+  contract; venue stays PENDING (2026-11-18, recorded BEFORE adapter work
+  per S-05 §3.2)**. Protocol alive (azuro.org, docs, @azuro-org/toolkit
+  v7.2.0 npm 2026-10-10) — the official SDK dist types pin the REST contract
+  the adapter implements (`api.onchainfeed.org/api/v1/public` market-manager;
+  PolygonUSDT/BaseWETH environments; binary Active prematch conditions;
+  margin-embedded fees; game-level A-04 clusters; close-time structural rule
+  (d) armed in the shared risk engine). BUT every Azuro feed host returns
+  origin-level 404 from the sandbox (api/dev-api/preprod/api.azuro.org,
+  streams host; thegraph.onchainfeed.org does not resolve) while every other
+  venue API answers from the same vantage — conformance fixtures cannot be
+  recorded here. Drift precedent applied proportionately: compliance row
+  VERIFY_BLOCKED with dated evidence, robot creation refused 422, **registry
+  flip owed after `bun scripts/record-fixtures-azuro.ts` +
+  `bun run conformance:azuro` pass from an unblocked vantage (founder host)**
+  — no self-approved flip.
+- B4 pricing — **drafted, NOT approved (2026-11-18)**: `docs/PRICING_B4.md`
+  carries the engineering draft (Free €0 / Pro €19 / Professional €79 with
+  AI-credit allowances, entitlement snapshots, hard-stop overage, 14-day
+  dunning grace, refunds P-05, pluggable provider posture) and the founder
+  approval checklist (§7). The BILLING family exists in the P-04 taxonomy as
+  DORMANT — no code path emits it. **No billing code exists** (smoke P8-8c
+  negative check) and none gets written until the founder approves AND the
+  beta exit bar holds (BETA_PHASE75 §4).
+- Live sends — **still held** (unchanged): the arm switch stays SAFE; the
+  founder's explicit arm on the founder host remains the only path to a real
+  send.
 
 ## Phase-7.5 checkpoint status (hardening + closed beta readiness)
 

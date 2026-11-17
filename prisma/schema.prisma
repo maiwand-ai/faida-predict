@@ -24,6 +24,7 @@ model User {
   notifications  Notification[]
   riskConfigs    RiskConfig[]
   orders         Order[]
+  apiKeys        ApiKey[]
 }
 
 // B1 decision: SELF-CUSTODY — we store the address only, never keys.
@@ -383,12 +384,22 @@ model Notification {
   id        String    @id @default(cuid())
   userId    String
   severity  String    // CRITICAL | WARNING | INFO
-  family    String    // RISK | EXECUTION | AI_BUDGET | SYSTEM
+  family    String    // P-04 taxonomy: RISK | EXECUTION | AI_BUDGET | MODEL_GOVERNANCE | SYSTEM | COMPLIANCE | BILLING (dormant)
   title     String
   body      String
+  // P-04 anti-storm (Phase 8): a suppressed row is an honestly-recorded
+  // duplicate/cap event — it never renders in the feed but proves the storm
+  // was absorbed. dedupeKey groups repeats ("risk-pause:<robotId>");
+  // digest rows surface only when the read-time digest groups them.
+  dedupeKey  String?
+  suppressed Boolean @default(false)
+  digest     String  @default("IMMEDIATE") // IMMEDIATE | DIGEST
   readAt    DateTime?
   createdAt DateTime  @default(now())
   user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, dedupeKey, createdAt])
+  @@index([userId, family, createdAt])
 }
 
 // C19/S-07: platform control plane (self-host single-tenant). JSON values in
@@ -410,6 +421,34 @@ model RobotLease {
   holder     String
   acquiredAt DateTime @default(now())
   expiresAt  DateTime
+}
+
+// P-06: read-only API keys. The plaintext secret is shown ONCE at creation
+// and never stored — only its SHA-256 hash. Scope is READ_ONLY by design:
+// no key can ever write (the write paths have no key auth at all).
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  prefix     String    // display fragment, e.g. "fdp_ro_a1b2" — never the secret
+  keyHash    String    @unique // sha256hex of the full plaintext key
+  scope      String    @default("READ_ONLY") // only READ_ONLY exists
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+// P-07: compliance ops ledger — every retention/prune run is recorded with
+// its exact counts. LedgerEntry and Order rows are NEVER pruned (hard
+// invariants 1/6; the append-only ledger is the product) — this model exists
+// so every run that touched ephemeral data is auditable forever.
+model RetentionRun {
+  id        String   @id @default(cuid())
+  kind      String   @default("MANUAL") // MANUAL | SCHEDULED
+  policies  String   // JSON snapshot of the policies applied
+  pruned    String   // JSON {ticks, traces, notifications, ...}
+  ranAt     DateTime @default(now())
 }
 
 // A-04 event clustering note: eventKey carries the A-01/A-04 stacking key for

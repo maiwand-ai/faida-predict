@@ -14,6 +14,7 @@
 // can never double-run the same robot (S-06).
 import { db } from "@/lib/db";
 import { enqueueOutbox } from "@/lib/outbox";
+import { notifyUser } from "@/lib/notifications";
 
 export const CONTROL_KEYS = {
   GLOBAL_PAUSE: "GLOBAL_PAUSE",
@@ -88,14 +89,13 @@ export async function pausePlatform(reason: string, actor = "founder"): Promise<
   await setControl(CONTROL_KEYS.GLOBAL_PAUSE, state);
   const userId = await founderUserId();
   if (userId) {
-    await db.notification.create({
-      data: {
-        userId,
-        severity: "CRITICAL",
-        family: "SYSTEM",
-        title: "Platform paused — kill switch engaged",
-        body: `All robot cycles and new orders are refused until resume. Reason: ${state.reason}`,
-      },
+    // P-04: kill-switch events go through the taxonomy — EXECUTION is
+    // CRITICAL-family, uncapped and never digested (breaks through always).
+    await notifyUser(userId, {
+      family: "EXECUTION",
+      title: "Platform paused — kill switch engaged",
+      body: `All robot cycles and new orders are refused until resume. Reason: ${state.reason}`,
+      dedupeKey: `pause:${state.pausedAt}`,
     });
     await enqueueOutbox(db, [
       {
@@ -111,19 +111,17 @@ export async function pausePlatform(reason: string, actor = "founder"): Promise<
 
 export async function resumePlatform(actor = "founder"): Promise<GlobalPauseState> {
   const prev = await getPauseState();
+  const at = new Date().toISOString();
   const state: GlobalPauseState = { paused: false, reason: null, pausedAt: null, pausedBy: null };
   await setControl(CONTROL_KEYS.GLOBAL_PAUSE, state);
   if (prev.paused) {
     const userId = await founderUserId();
     if (userId) {
-      await db.notification.create({
-        data: {
-          userId,
-          severity: "INFO",
-          family: "SYSTEM",
-          title: "Platform resumed",
-          body: "Robot cycles and order placement are active again.",
-        },
+      await notifyUser(userId, {
+        family: "SYSTEM",
+        title: "Platform resumed",
+        body: "Robot cycles and order placement are active again.",
+        dedupeKey: `resume:${at}`,
       });
     }
   }

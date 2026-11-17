@@ -86,7 +86,7 @@ export const VENUES: VenueDef[] = [
     role: "FAST_FOLLOW",
     short: "AZ",
     hex: "#B18CFF", // lavender — EVM sports
-    note: "Fast-follow — EVM, sports-leaning, SDK-first (B9)",
+    note: "Phase 8 — adapter IMPLEMENTED against the SDK-verified V3 contract, venue stays PENDING: Azuro feed hosts are unreachable from the sandbox (origin-level 404, dated evidence in the S-05 compliance row), conformance fixtures cannot be recorded here; flip owed after `record-fixtures-azuro` + `conformance:azuro` pass from an unblocked vantage (B9/S-05)",
   },
   {
     id: "KALSHI",

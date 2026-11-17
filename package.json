@@ -22,7 +22,10 @@
     "smoke:phase75": "python3 scripts/smoke_phase75.py",
     "drill:phase75": "python3 scripts/drill_phase75.py",
     "chaos:phase75": "python3 scripts/chaos_phase75.py",
-    "load:phase75": "python3 scripts/load_phase75.py --robots 500 --concurrency 16"
+    "load:phase75": "python3 scripts/load_phase75.py --robots 500 --concurrency 16",
+    "conformance:azuro": "bun scripts/conformance-azuro.ts",
+    "record:azuro": "bun scripts/record-fixtures-azuro.ts",
+    "smoke:phase8": "python3 scripts/smoke_phase8.py"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -7,6 +7,7 @@
 // through — SYNTHETIC-heavy samples are labeled as such (D-03).
 import { db } from "@/lib/db";
 import { type OutboxEventType } from "@/lib/outbox";
+import { notifyUser } from "@/lib/notifications";
 import { baselineEstimate, ensureBaselineRow, getBaselineDef, getModelKnobs, BASELINE_KEY } from "./baseline";
 
 export interface CalibrationSnapshot {
@@ -236,6 +237,7 @@ export async function promoteModel(key: string): Promise<{ ok: boolean; detail: 
     "INFO",
     "Model promoted",
     `${model.key} is now ACTIVE (brier ${cal.brier.toFixed(4)} vs baseline ${cal.baselineBrier.toFixed(4)}, n=${cal.n}, resolved evidence ${cal.nLive} live / ${cal.nSynthetic} synthetic).${prevNote}`,
+    `promote:${model.key}`,
   );
   await outboxGovernance("MODEL_PROMOTED", model.key, { key: model.key, brier: cal.brier, n: cal.n });
   return { ok: true, detail: `${model.key} promoted to ACTIVE` };
@@ -259,6 +261,7 @@ export async function demoteModel(key: string, reason: string, automatic = false
     "WARNING",
     `Model demoted${automatic ? " (drill)" : ""}`,
     `${model.key} was demoted — ${reason} All robots fall back to the baseline heuristic (${BASELINE_KEY}) until a model is promoted again.`,
+    `demote:${model.key}`,
   );
   await outboxGovernance("MODEL_DEMOTED", model.key, { key: model.key, reason, automatic });
   return { ok: true, detail: `${model.key} demoted → baseline ACTIVE` };
@@ -287,10 +290,12 @@ export async function checkDemotion(): Promise<{ demoted: string | null; detail:
   return { demoted: res.ok ? active.key : null, detail: res.detail };
 }
 
-async function notifyGovernance(severity: "INFO" | "WARNING" | "CRITICAL", title: string, body: string): Promise<void> {
+async function notifyGovernance(severity: "INFO" | "WARNING" | "CRITICAL", title: string, body: string, dedupeKey?: string): Promise<void> {
   const user = await db.user.findUnique({ where: { email: "founder@faida.local" }, select: { id: true } });
   if (!user) return;
-  await db.notification.create({ data: { userId: user.id, severity, family: "MODEL_GOVERNANCE", title, body } });
+  // P-04 taxonomy: MODEL_GOVERNANCE — capped + digested (promotion/demotion
+  // bursts read better as one grouped row than a stack of singles).
+  await notifyUser(user.id, { family: "MODEL_GOVERNANCE", severity, title, body, dedupeKey });
 }
 
 // Governance outbox events are deterministic: the create is awaited, never

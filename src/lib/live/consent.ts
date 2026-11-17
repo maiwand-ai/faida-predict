@@ -10,6 +10,7 @@ import { createHash } from "node:crypto";
 import { db } from "@/lib/db";
 import { getControl, setControl } from "@/lib/control";
 import { enqueueOutbox } from "@/lib/outbox";
+import { notifyUser } from "@/lib/notifications";
 
 export const LIVE_CONSENT_KEY = "LIVE_CONSENT";
 export const CONSENT_PHRASE = "I AUTHORIZE LIVE TRADING";
@@ -73,14 +74,13 @@ export async function recordConsent(input: {
   await setControl(LIVE_CONSENT_KEY, consent);
   const founder = await db.user.findUnique({ where: { email: "founder@faida.local" }, select: { id: true } });
   if (founder) {
-    await db.notification.create({
-      data: {
-        userId: founder.id,
-        severity: "CRITICAL",
-        family: "EXECUTION",
-        title: "Live-trading consent recorded (C25)",
-        body: `Wallet ${input.walletAddress} authorized live trading in pilot caps. Revoke from Settings → Live trading; revocation stops every robot within the measured target.`,
-      },
+    // P-04 taxonomy: consent lifecycle is EXECUTION/CRITICAL — uncapped,
+    // never deduped within the minute, never digested.
+    await notifyUser(founder.id, {
+      family: "EXECUTION",
+      title: "Live-trading consent recorded (C25)",
+      body: `Wallet ${input.walletAddress} authorized live trading in pilot caps. Revoke from Settings → Live trading; revocation stops every robot within the measured target.`,
+      dedupeKey: `consent-recorded:${at}`,
     });
     await enqueueOutbox(db, [
       { aggregateType: "ROBOT", aggregateId: "PLATFORM", eventType: "CONSENT_RECORDED", payload: { wallet: input.walletAddress, at, hash: consent.consentHash } },
@@ -101,14 +101,11 @@ export async function revokeConsent(actor = "founder"): Promise<LiveConsent> {
   await setControl(LIVE_CONSENT_KEY, consent);
   const founder = await db.user.findUnique({ where: { email: "founder@faida.local" }, select: { id: true } });
   if (founder) {
-    await db.notification.create({
-      data: {
-        userId: founder.id,
-        severity: "CRITICAL",
-        family: "EXECUTION",
-        title: "Live-trading consent revoked",
-        body: "All live cycles and live orders refuse from their next read. Paper trading is unaffected.",
-      },
+    await notifyUser(founder.id, {
+      family: "EXECUTION",
+      title: "Live-trading consent revoked",
+      body: "All live cycles and live orders refuse from their next read. Paper trading is unaffected.",
+      dedupeKey: `consent-revoked:${at}`,
     });
     await enqueueOutbox(db, [
       { aggregateType: "ROBOT", aggregateId: "PLATFORM", eventType: "CONSENT_REVOKED", payload: { at, by: actor, prevHash: prev.consentHash } },
