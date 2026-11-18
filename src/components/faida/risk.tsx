@@ -149,9 +149,9 @@ export function RiskCenter(props: {
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
             <Panel title="Exposure by venue">
               <div className="flex flex-col items-center gap-4">
-                <Donut segments={venueSeg} center={<div><div className="fd-num text-[20px] font-bold text-white">{money(exposure, { compact: true })}</div><div className="text-[12px] text-[#7C889B]">open</div></div>} />
+                <Donut segments={venueSeg} center={<div><div className="fd-num text-[20px] font-bold text-[var(--fd-strong)]">{money(exposure, { compact: true })}</div><div className="text-[12px] text-[var(--fd-text3)]">open</div></div>} />
                 <div className="w-full">
-                  {venueSeg.length === 0 ? <p className="text-center text-[14px] text-[#9AA6B8]">No open positions.</p> : venueSeg.map((s) => <LegendRow key={s.label} hex={s.hex} label={s.label} value={money(s.value)} sub={pct((s.value / Math.max(1, exposure)) * 100, 0)} />)}
+                  {venueSeg.length === 0 ? <p className="text-center text-[14px] text-[var(--fd-text2)]">No open positions.</p> : venueSeg.map((s) => <LegendRow key={s.label} hex={s.hex} label={s.label} value={money(s.value)} sub={pct((s.value / Math.max(1, exposure)) * 100, 0)} />)}
                 </div>
               </div>
             </Panel>
@@ -167,35 +167,35 @@ export function RiskCenter(props: {
               <ul className="flex flex-col gap-3">
                 {gates.map((g) => (
                   <li key={g.name} className="flex items-start gap-3">
-                    {g.ok ? <CheckCircle2 size={19} className="mt-0.5 shrink-0 text-[#00D69A]" /> : <XCircle size={19} className="mt-0.5 shrink-0 text-[#7C889B]" />}
+                    {g.ok ? <CheckCircle2 size={19} className="mt-0.5 shrink-0 text-[var(--fd-green-text)]" /> : <XCircle size={19} className="mt-0.5 shrink-0 text-[var(--fd-text3)]" />}
                     <div>
-                      <div className="text-[14.5px] font-medium text-white">{g.name}</div>
-                      <div className="text-[13px] text-[#9AA6B8]">{g.detail}</div>
+                      <div className="text-[14.5px] font-medium text-[var(--fd-strong)]">{g.name}</div>
+                      <div className="text-[13px] text-[var(--fd-text2)]">{g.detail}</div>
                     </div>
                   </li>
                 ))}
               </ul>
-              {!live && <p className="mt-4 text-[13px] text-[#7C889B]">Live-gate details are visible to operators only.</p>}
+              {!live && <p className="mt-4 text-[13px] text-[var(--fd-text3)]">Live-gate details are visible to operators only.</p>}
             </Panel>
           </div>
 
           <Panel title="Risk alerts" subtitle="Warnings and critical events">
             {alerts.length === 0 && riskPaused.length === 0 ? (
-              <div className="flex items-center gap-3 rounded-xl bg-[#00D69A]/8 p-4 text-[14.5px] text-[#C9F5E6]"><CheckCircle2 size={20} className="text-[#00D69A]" /> All clear. No risk alerts right now.</div>
+              <div className="flex items-center gap-3 rounded-xl bg-[#00D69A]/8 p-4 text-[14.5px] text-[var(--fd-green-soft-text)]"><CheckCircle2 size={20} className="text-[var(--fd-green-text)]" /> All clear. No risk alerts right now.</div>
             ) : (
               <ul className="flex flex-col gap-2">
                 {riskPaused.map((r) => (
                   <li key={r.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-[#FF5268]/30 bg-[#FF5268]/8 px-4 py-3">
                     <Badge tone="red">Critical</Badge>
-                    <button className="font-semibold text-white hover:underline" onClick={() => onOpenRobot(r.id)}>{r.name}</button>
-                    <span className="text-[14px] text-[#C9D2DE]">paused by the risk engine{r.statusReason ? `: ${r.statusReason}` : ""}</span>
+                    <button className="font-semibold text-[var(--fd-strong)] hover:underline" onClick={() => onOpenRobot(r.id)}>{r.name}</button>
+                    <span className="text-[14px] text-[var(--fd-text-soft)]">paused by the risk engine{r.statusReason ? `: ${r.statusReason}` : ""}</span>
                   </li>
                 ))}
                 {alerts.map((n) => (
-                  <li key={n.id} className="flex flex-wrap items-start gap-3 rounded-xl border border-[#1E2A3D] bg-[#0D121C] px-4 py-3">
+                  <li key={n.id} className="flex flex-wrap items-start gap-3 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] px-4 py-3">
                     <Badge tone={n.severity === "CRITICAL" ? "red" : "amber"}>{n.severity === "CRITICAL" ? "Critical" : "Warning"}</Badge>
-                    <div className="min-w-[200px] flex-1"><div className="text-[14.5px] font-medium text-white">{n.title}</div><div className="text-[13px] text-[#9AA6B8]">{n.body}</div></div>
-                    <span className="text-[12.5px] text-[#7C889B]">{ago(n.createdAt)}</span>
+                    <div className="min-w-[200px] flex-1"><div className="text-[14.5px] font-medium text-[var(--fd-strong)]">{n.title}</div><div className="text-[13px] text-[var(--fd-text2)]">{n.body}</div></div>
+                    <span className="text-[12.5px] text-[var(--fd-text3)]">{ago(n.createdAt)}</span>
                   </li>
                 ))}
               </ul>
@@ -273,7 +273,7 @@ export function RiskCenter(props: {
                     <td className={td}><VenueTag venue={v.id} /></td>
                     <td className={td}><Badge tone={status === "Healthy" ? "green" : status === "Stale" || status === "No data" || status === "Pending" ? "amber" : "red"} dot>{status}</Badge></td>
                     <td className={`${td} fd-num text-right`}>{st?.markets ?? 0}</td>
-                    <td className={`${td} text-[#C9D2DE]`}>{st?.syncedAt ? ago(st.syncedAt) : "—"}</td>
+                    <td className={`${td} text-[var(--fd-text-soft)]`}>{st?.syncedAt ? ago(st.syncedAt) : "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -300,10 +300,10 @@ export function RiskCenter(props: {
               <tbody>
                 {auditRows.map((a, i) => (
                   <tr key={i} className={trow}>
-                    <td className={`${td} fd-num whitespace-nowrap text-[#C9D2DE]`}>{new Date(a.at).toISOString().replace("T", " ").slice(0, 19)}</td>
+                    <td className={`${td} fd-num whitespace-nowrap text-[var(--fd-text-soft)]`}>{new Date(a.at).toISOString().replace("T", " ").slice(0, 19)}</td>
                     <td className={td}><Badge tone={a.kind === "CRITICAL" || a.kind === "REJECTED" || a.kind === "PAUSE" ? "red" : a.kind === "WARNING" || a.kind === "UNKNOWN" ? "amber" : "blue"}>{a.kind.toLowerCase()}</Badge></td>
                     <td className={`${td} font-medium`}>{a.title}</td>
-                    <td className={`${td} max-w-[420px] text-[#9AA6B8]`}>{a.body}</td>
+                    <td className={`${td} max-w-[420px] text-[var(--fd-text2)]`}>{a.body}</td>
                   </tr>
                 ))}
               </tbody>
@@ -316,15 +316,15 @@ export function RiskCenter(props: {
 }
 
 function Limit({ label, used, detail }: { label: string; used: number; detail: ReactNode }) {
-  const tone = used >= 95 ? "text-[#FF7A8B]" : used >= 80 ? "text-[#FFC266]" : "text-white";
+  const tone = used >= 95 ? "text-[var(--fd-red-text)]" : used >= 80 ? "text-[var(--fd-amber-text)]" : "text-[var(--fd-strong)]";
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between text-[14px]">
-        <span className="flex items-center gap-2 text-[#C9D2DE]">{used >= 80 && <AlertTriangle size={15} className="text-[#FFB547]" />}{label}</span>
+        <span className="flex items-center gap-2 text-[var(--fd-text-soft)]">{used >= 80 && <AlertTriangle size={15} className="text-[var(--fd-amber-text)]" />}{label}</span>
         <span className={`fd-num font-semibold ${tone}`}>{pct(Math.min(999, used), 0)}</span>
       </div>
       <Bar value={used} max={100} warnAt={80} label={label} />
-      <div className="mt-1.5 text-[12.5px] text-[#7C889B]">{detail}</div>
+      <div className="mt-1.5 text-[12.5px] text-[var(--fd-text3)]">{detail}</div>
     </div>
   );
 }

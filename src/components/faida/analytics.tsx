@@ -179,7 +179,7 @@ export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue }: {
         </Panel>
         <Panel title="Capital allocation" subtitle="Allocated to each robot">
           <div className="flex flex-col items-center gap-4">
-            <Donut segments={alloc} center={<div><div className="fd-num text-[20px] font-bold text-white">{money(dash.allocatedCents, { compact: true })}</div><div className="text-[12px] text-[#7C889B]">allocated</div></div>} />
+            <Donut segments={alloc} center={<div><div className="fd-num text-[20px] font-bold text-[var(--fd-strong)]">{money(dash.allocatedCents, { compact: true })}</div><div className="text-[12px] text-[var(--fd-text3)]">allocated</div></div>} />
             <div className="w-full">{alloc.map((s) => <LegendRow key={s.label} hex={s.hex} label={s.label} value={money(s.value, { compact: true })} sub={pct((s.value / Math.max(1, dash.allocatedCents)) * 100, 0)} />)}</div>
           </div>
         </Panel>
@@ -193,7 +193,7 @@ export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue }: {
             <div className="h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={a.daily.map((d) => ({ ...d, y: d.v / 100 }))} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid stroke="#1A2333" vertical={false} />
+                  <CartesianGrid stroke="var(--fd-line)" vertical={false} />
                   <XAxis dataKey="day" tick={{ fill: T.text3, fontSize: 12 }} tickLine={false} axisLine={false} />
                   <YAxis tick={{ fill: T.text3, fontSize: 12 }} tickLine={false} axisLine={false} width={56} tickFormatter={(v) => `$${v}`} />
                   <Tooltip contentStyle={{ background: T.elevated, border: `1px solid ${T.borderStrong}`, borderRadius: 12, color: T.text }} formatter={(v: number) => [`$${v.toFixed(2)}`, "P&L"]} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
@@ -210,9 +210,9 @@ export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue }: {
             {a.venues.map((v) => {
               const max = Math.max(1, ...a.venues.map((x) => Math.abs(x.pnl ?? 0)));
               return (
-                <button key={v.id} onClick={() => onOpenVenue(v.id)} className="grid grid-cols-[120px_1fr_100px] items-center gap-3 rounded-lg px-1 py-1 text-left hover:bg-white/[0.03]">
-                  <span className="flex items-center gap-2 text-[14px] text-[#C9D2DE]"><span className="h-2.5 w-2.5 rounded-full" style={{ background: v.hex }} />{v.label}</span>
-                  <span className="h-2.5 overflow-hidden rounded-full bg-white/[0.05]">
+                <button key={v.id} onClick={() => onOpenVenue(v.id)} className="grid grid-cols-[120px_1fr_100px] items-center gap-3 rounded-lg px-1 py-1 text-left hover:bg-[color:var(--fd-ink)]/[0.03]">
+                  <span className="flex items-center gap-2 text-[14px] text-[var(--fd-text-soft)]"><span className="h-2.5 w-2.5 rounded-full" style={{ background: v.hex }} />{v.label}</span>
+                  <span className="h-2.5 overflow-hidden rounded-full bg-[color:var(--fd-ink)]/[0.05]">
                     <span className="block h-full rounded-full" style={{ width: `${(Math.abs(v.pnl ?? 0) / max) * 100}%`, background: (v.pnl ?? 0) >= 0 ? v.hex : T.red }} />
                   </span>
                   <span className={`fd-num text-right text-[14px] font-semibold ${toneText[toneOf(v.pnl)]}`}>{v.pnl != null ? money(v.pnl, { sign: true }) : "—"}</span>
@@ -236,8 +236,8 @@ export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue }: {
             {a.robots.map((r) => (
               <tr key={r.name} className={`${trow} ${r.id ? "cursor-pointer" : ""}`} onClick={() => r.id && onOpenRobot(r.id)}>
                 <td className={`${td} font-semibold`}>{r.name}</td>
-                <td className={td}>{r.venue ? <VenueTag venue={r.venue} /> : <span className="text-[#7C889B]">—</span>}</td>
-                <td className={`${td} text-[#C9D2DE]`}>{r.family ? FAMILY_LABEL[r.family] ?? r.family : "Manual orders"}</td>
+                <td className={td}>{r.venue ? <VenueTag venue={r.venue} /> : <span className="text-[var(--fd-text3)]">—</span>}</td>
+                <td className={`${td} text-[var(--fd-text-soft)]`}>{r.family ? FAMILY_LABEL[r.family] ?? r.family : "Manual orders"}</td>
                 <td className={`${td} fd-num text-right`}>{money(r.allocated)}</td>
                 <td className={`${td} fd-num text-right`}>{r.orders}</td>
                 <td className={`${td} fd-num text-right font-semibold ${toneText[toneOf(r.pnl)]}`}>{r.pnl != null ? money(r.pnl, { sign: true }) : "—"}</td>
@@ -245,9 +245,9 @@ export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue }: {
             ))}
           </tbody>
         </TableWrap>
-        <div className="flex flex-wrap gap-6 border-t border-[#1A2333] px-5 py-4 text-[14px] text-[#9AA6B8]">
-          <span>Filled orders <span className="fd-num font-semibold text-white">{a.filled.length}</span></span>
-          <span>Rejected orders <span className="fd-num font-semibold text-white">{a.rejected.length}</span></span>
+        <div className="flex flex-wrap gap-6 border-t border-[var(--fd-line)] px-5 py-4 text-[14px] text-[var(--fd-text2)]">
+          <span>Filled orders <span className="fd-num font-semibold text-[var(--fd-strong)]">{a.filled.length}</span></span>
+          <span>Rejected orders <span className="fd-num font-semibold text-[var(--fd-strong)]">{a.rejected.length}</span></span>
           <span>Open position marks <span className={`fd-num font-semibold ${toneText[toneOf(a.unrealized)]}`}>{money(a.unrealized, { sign: true })}</span></span>
         </div>
       </Panel>
@@ -257,9 +257,9 @@ export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue }: {
 
 function Highlight({ title, value, detail, tone, icon }: { title: string; value: string; detail: string; tone: "gain" | "loss" | "flat"; icon: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-[#1E2A3D] bg-[#111827] p-5">
-      <div className="flex items-center gap-2 text-[13.5px] text-[#9AA6B8]"><span className="text-[#2583FF]">{icon}</span>{title}</div>
-      <div className="mt-2 truncate text-[18px] font-semibold text-white">{value}</div>
+    <div className="rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-5">
+      <div className="flex items-center gap-2 text-[13.5px] text-[var(--fd-text2)]"><span className="text-[var(--fd-blue-text)]">{icon}</span>{title}</div>
+      <div className="mt-2 truncate text-[18px] font-semibold text-[var(--fd-strong)]">{value}</div>
       <div className={`fd-num mt-1 text-[14px] ${toneText[tone]}`}>{detail}</div>
     </div>
   );

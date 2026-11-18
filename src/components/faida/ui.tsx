@@ -5,21 +5,21 @@ import type { CSSProperties, ReactNode } from "react";
 import { VENUES, VENUE_LABEL, venueColor } from "@/lib/venues";
 
 export const c = {
-  bg: "bg-[#080B12]",
-  surface: "bg-[#111827]",
-  elevated: "bg-[#161F2D]",
-  border: "border-[#1E2A3D]",
-  borderStrong: "border-[#253247]",
-  text: "text-[#E8EDF5]",
-  text2: "text-[#9AA6B8]",
-  text3: "text-[#7C889B]",
-  accent: "text-[#2583FF]",
-  bright: "text-[#08D9E8]",
-  gain: "text-[#00D69A]",
-  loss: "text-[#FF5268]",
-  warn: "text-[#FFB547]",
-  ai: "text-[#9B7BFF]",
-  paper: "text-[#FFB547]",
+  bg: "bg-[var(--fd-bg)]",
+  surface: "bg-[var(--fd-surface)]",
+  elevated: "bg-[var(--fd-elevated)]",
+  border: "border-[var(--fd-border)]",
+  borderStrong: "border-[var(--fd-border2)]",
+  text: "text-[var(--fd-text)]",
+  text2: "text-[var(--fd-text2)]",
+  text3: "text-[var(--fd-text3)]",
+  accent: "text-[var(--fd-blue-text)]",
+  bright: "text-[var(--fd-cyan-text)]",
+  gain: "text-[var(--fd-green-text)]",
+  loss: "text-[var(--fd-red-text)]",
+  warn: "text-[var(--fd-amber-text)]",
+  ai: "text-[var(--fd-purple-text)]",
+  paper: "text-[var(--fd-amber-text)]",
 };
 
 export const card = `${c.surface} border ${c.border} rounded-2xl`;
@@ -64,10 +64,10 @@ export function StateChip({ state }: { state: string }) {
     PARTIALLY_FILLED: `${c.bright} bg-[#2583FF]/10`,
     SUBMITTED: `${c.accent} bg-[#2583FF]/10`,
     VALIDATED: `${c.accent} bg-[#2583FF]/10`,
-    CREATED: c.text3 + " bg-[#161F2D]",
-    CANCELLED: c.text3 + " bg-[#161F2D]",
+    CREATED: c.text3 + " bg-[var(--fd-elevated)]",
+    CANCELLED: c.text3 + " bg-[var(--fd-elevated)]",
     REJECTED: `${c.loss} bg-[#FF5268]/10`,
-    EXPIRED: c.text3 + " bg-[#161F2D]",
+    EXPIRED: c.text3 + " bg-[var(--fd-elevated)]",
     RECONCILING: `${c.warn} bg-[#FFB547]/10`,
     UNKNOWN: `${c.warn} bg-[#FFB547]/10`,
   };
@@ -87,7 +87,7 @@ export function Pill({ status }: { status: string }) {
     PAUSED_BY_RISK: `${c.warn} bg-[#FFB547]/10 border-[#FFB547]/30`,
     PAUSED_BY_AI_BUDGET: `${c.ai} bg-[#8B7CF6]/10 border-[#8B7CF6]/30`,
     ERROR: `${c.loss} bg-[#FF5268]/10 border-[#FF5268]/30`,
-    STOPPED: c.text3 + " bg-[#161F2D] border-[#253247]",
+    STOPPED: c.text3 + " bg-[var(--fd-elevated)] border-[var(--fd-border2)]",
   };
   const glyph: Record<string, string> = {
     RUNNING: "●", PAPER_ONLY: "◇", PAUSED_BY_USER: "‖", PAUSED_BY_RISK: "‖",
@@ -108,7 +108,7 @@ export function Meter({ label, pct, detail, tone = "accent" }: { label: string; 
         <span>{label}</span>
         <span className={mono}>{Math.round(pct)}%</span>
       </div>
-      <div className="mt-1 h-1.5 rounded bg-[#161F2D]">
+      <div className="mt-1 h-1.5 rounded bg-[var(--fd-elevated)]">
         <div className={`h-full rounded ${fill}`} style={{ width: `${Math.min(100, Math.max(2, pct))}%` }} />
       </div>
       <div className={`mt-1 text-[12px] ${c.text3}`}>{detail}</div>

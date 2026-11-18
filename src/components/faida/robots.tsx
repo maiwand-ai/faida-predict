@@ -86,19 +86,19 @@ export function RobotsView(props: {
                         </span>
                         <div className="min-w-0">
                           <div className="truncate font-semibold">{r.name}</div>
-                          <div className="text-[12.5px] text-[#7C889B]">v{r.activeVersion}{r.statusReason ? ` · ${r.statusReason}` : ""}</div>
+                          <div className="text-[12.5px] text-[var(--fd-text3)]">v{r.activeVersion}{r.statusReason ? ` · ${r.statusReason}` : ""}</div>
                         </div>
                       </div>
                     </td>
                     <td className={td}>
                       <button onClick={(e) => { e.stopPropagation(); onOpenVenue(r.venue); }}><VenueTag venue={r.venue} /></button>
                     </td>
-                    <td className={`${td} text-[#C9D2DE]`}>{FAMILY_LABEL[r.family] ?? r.family}</td>
+                    <td className={`${td} text-[var(--fd-text-soft)]`}>{FAMILY_LABEL[r.family] ?? r.family}</td>
                     <td className={td}>{robotStatusBadge(r.status)}</td>
                     <td className={`${td} fd-num text-right`}>{money(r.allocatedCents)}</td>
-                    <td className={`${td} fd-num text-right`}>{s?.open ?? 0}<span className="text-[#7C889B]">/{r.maxOpenPositions}</span></td>
+                    <td className={`${td} fd-num text-right`}>{s?.open ?? 0}<span className="text-[var(--fd-text3)]">/{r.maxOpenPositions}</span></td>
                     <td className={`${td} fd-num text-right font-semibold ${toneText[toneOf(s?.pnl)]}`}>{s?.pnl != null ? money(s.pnl, { sign: true }) : "—"}</td>
-                    <td className={`${td} text-[#C9D2DE]`}>{lastTrace.has(r.name) ? ago(lastTrace.get(r.name)) : <span className="text-[#7C889B]">None yet</span>}</td>
+                    <td className={`${td} text-[var(--fd-text-soft)]`}>{lastTrace.has(r.name) ? ago(lastTrace.get(r.name)) : <span className="text-[var(--fd-text3)]">None yet</span>}</td>
                     <td className={`${td} text-right`}>
                       <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                         <button className={btn.small} onClick={() => onCycleRobot(r.id, r.name)} disabled={busy !== null || !CAN_PAUSE.includes(r.status)} title="Run one decision cycle now" aria-label={`Run a cycle for ${r.name}`}>
@@ -125,7 +125,7 @@ export function RobotsView(props: {
       </Panel>
       {robots.some((r) => r.status === "PAUSED_BY_RISK") && (
         <Panel>
-          <div className="flex items-center gap-3 text-[14px] text-[#C9D2DE]"><Badge tone="red">Risk pause</Badge> A robot was paused by the risk engine. Review it before resuming.</div>
+          <div className="flex items-center gap-3 text-[14px] text-[var(--fd-text-soft)]"><Badge tone="red">Risk pause</Badge> A robot was paused by the risk engine. Review it before resuming.</div>
         </Panel>
       )}
     </div>

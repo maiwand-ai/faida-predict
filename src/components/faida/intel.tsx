@@ -73,7 +73,7 @@ export function IntelligenceView(props: {
   const aiTraces = research.filter((t) => t.modelKey?.startsWith("ai:"));
   const gov = probability?.governance;
   const decisions = [...new Set(traces.map((t) => t.decision))];
-  const selCls = "h-10 rounded-xl border border-[#253247] bg-[#111827] px-3 text-[14px] text-[#E8EDF5]";
+  const selCls = "h-10 rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-surface)] px-3 text-[14px] text-[var(--fd-text)]";
 
   return (
     <div className="flex flex-col gap-6">
@@ -103,10 +103,10 @@ export function IntelligenceView(props: {
                 <tbody>
                   {latestByMarket.slice(0, 15).map((t) => (
                     <tr key={t.id} className={`${trow} cursor-pointer`} onClick={() => t.market && onOpenMarket(t.market.id)}>
-                      <td className={`${td} max-w-[300px]`}><div className="truncate">{t.market?.question}</div><div className="text-[12.5px] text-[#7C889B]">{ago(t.createdAt)}</div></td>
+                      <td className={`${td} max-w-[300px]`}><div className="truncate">{t.market?.question}</div><div className="text-[12.5px] text-[var(--fd-text3)]">{ago(t.createdAt)}</div></td>
                       <td className={`${td} fd-num text-right`}>{t.marketPriceCents ?? "—"}¢</td>
-                      <td className={`${td} fd-num text-right text-[#B9A2FF]`}>{t.modelEstimatePct?.toFixed(1)}%</td>
-                      <td className={`${td} fd-num text-right font-semibold ${(t.edgeNetPct ?? 0) > 0 ? "text-[#3BE6B0]" : "text-[#9AA6B8]"}`}>{t.edgeNetPct != null ? `${t.edgeNetPct > 0 ? "+" : ""}${t.edgeNetPct.toFixed(1)}` : "—"}</td>
+                      <td className={`${td} fd-num text-right text-[var(--fd-purple-text)]`}>{t.modelEstimatePct?.toFixed(1)}%</td>
+                      <td className={`${td} fd-num text-right font-semibold ${(t.edgeNetPct ?? 0) > 0 ? "text-[var(--fd-green-text)]" : "text-[var(--fd-text2)]"}`}>{t.edgeNetPct != null ? `${t.edgeNetPct > 0 ? "+" : ""}${t.edgeNetPct.toFixed(1)}` : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -125,7 +125,7 @@ export function IntelligenceView(props: {
                       <td className={`${td} max-w-[280px] truncate`}>{m.question}</td>
                       <td className={td}><VenueTag venue={m.venue} /></td>
                       <td className={`${td} fd-num text-right`}>{m.yesPriceCents}¢</td>
-                      <td className={`${td} fd-num text-right font-semibold ${m.change24hCents! > 0 ? "text-[#3BE6B0]" : "text-[#FF7A8B]"}`}>{m.change24hCents! > 0 ? "+" : ""}{m.change24hCents}¢</td>
+                      <td className={`${td} fd-num text-right font-semibold ${m.change24hCents! > 0 ? "text-[var(--fd-green-text)]" : "text-[var(--fd-red-text)]"}`}>{m.change24hCents! > 0 ? "+" : ""}{m.change24hCents}¢</td>
                     </tr>
                   ))}
                 </tbody>
@@ -140,18 +140,18 @@ export function IntelligenceView(props: {
                   {probability.models.map((m) => (
                     <tr key={m.key} className={trow}>
                       <td className={`${td} fd-num`}>{m.key}</td>
-                      <td className={`${td} text-[#C9D2DE]`}>{m.kind.toLowerCase()}</td>
+                      <td className={`${td} text-[var(--fd-text-soft)]`}>{m.kind.toLowerCase()}</td>
                       <td className={td}><Badge tone={m.status === "PROMOTED" || m.status === "ACTIVE" ? "green" : m.status === "DEMOTED" ? "red" : "neutral"}>{m.status.toLowerCase()}</Badge></td>
                       <td className={`${td} fd-num text-right`}>{m.calibration?.n ?? 0}</td>
                       <td className={`${td} fd-num text-right`}>{m.calibration ? m.calibration.brier.toFixed(3) : "—"}</td>
-                      <td className={`${td} fd-num text-right ${m.calibration && m.calibration.deltaPct > 0 ? "text-[#3BE6B0]" : "text-[#9AA6B8]"}`}>{m.calibration ? pct(m.calibration.deltaPct, 1, true) : "—"}</td>
+                      <td className={`${td} fd-num text-right ${m.calibration && m.calibration.deltaPct > 0 ? "text-[var(--fd-green-text)]" : "text-[var(--fd-text2)]"}`}>{m.calibration ? pct(m.calibration.deltaPct, 1, true) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </TableWrap>
             )}
-            <div className="border-t border-[#1A2333] px-5 py-3 text-[13px] text-[#7C889B]">
-              Manage providers and promote or demote models in <button className="text-[#6AA9FF] hover:underline" onClick={() => onNavigate({ view: "settings", tab: "models" })}>Settings › Model Registry</button>.
+            <div className="border-t border-[var(--fd-line)] px-5 py-3 text-[13px] text-[var(--fd-text3)]">
+              Manage providers and promote or demote models in <button className="text-[var(--fd-blue-text)] hover:underline" onClick={() => onNavigate({ view: "settings", tab: "models" })}>Settings › Model Registry</button>.
             </div>
           </Panel>
         </div>
@@ -163,7 +163,7 @@ export function IntelligenceView(props: {
             pad={false}
           >
             {tab === "decisions" && (
-              <div className="flex flex-wrap gap-2 border-b border-[#1A2333] px-4 pb-4">
+              <div className="flex flex-wrap gap-2 border-b border-[var(--fd-line)] px-4 pb-4">
                 <label className="sr-only" htmlFor="d-dec">Decision</label>
                 <select id="d-dec" className={selCls} value={fDecision} onChange={(e) => setFDecision(e.target.value)}>
                   <option value="ALL">All decisions</option>
@@ -192,18 +192,18 @@ export function IntelligenceView(props: {
                       <button
                         onClick={() => setSelected(t.id)}
                         aria-current={on}
-                        className={`flex w-full gap-3 border-t border-[#1A2333] px-4 py-3.5 text-left transition-colors ${on ? "bg-[#2583FF]/10" : "hover:bg-white/[0.03]"}`}
+                        className={`flex w-full gap-3 border-t border-[var(--fd-line)] px-4 py-3.5 text-left transition-colors ${on ? "bg-[#2583FF]/10" : "hover:bg-[color:var(--fd-ink)]/[0.03]"}`}
                       >
                         <span className="mt-1 h-10 w-1 shrink-0 rounded-full" style={{ background: venueColor(t.market?.venue ?? "") }} aria-hidden />
                         <span className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-center gap-2">
                             {decisionBadge(t.decision)}
-                            <span className="text-[14px] font-semibold text-white">{t.robot?.name}</span>
-                            <span className="ml-auto text-[12px] text-[#7C889B]">{ago(t.createdAt)}</span>
+                            <span className="text-[14px] font-semibold text-[var(--fd-strong)]">{t.robot?.name}</span>
+                            <span className="ml-auto text-[12px] text-[var(--fd-text3)]">{ago(t.createdAt)}</span>
                           </span>
-                          <span className="mt-1 block truncate text-[13.5px] text-[#C9D2DE]">{t.market?.question}</span>
+                          <span className="mt-1 block truncate text-[13.5px] text-[var(--fd-text-soft)]">{t.market?.question}</span>
                           {t.modelEstimatePct != null && (
-                            <span className="fd-num mt-1 block text-[12.5px] text-[#9AA6B8]">model {t.modelEstimatePct.toFixed(1)}% · market {t.marketPriceCents}¢ · edge {t.edgeNetPct?.toFixed(1) ?? "—"} pts</span>
+                            <span className="fd-num mt-1 block text-[12.5px] text-[var(--fd-text2)]">model {t.modelEstimatePct.toFixed(1)}% · market {t.marketPriceCents}¢ · edge {t.edgeNetPct?.toFixed(1) ?? "—"} pts</span>
                           )}
                         </span>
                       </button>
@@ -222,9 +222,9 @@ export function IntelligenceView(props: {
                 <div className="flex flex-wrap items-center gap-2">
                   {decisionBadge(sel.decision)}
                   {sel.market && <VenueTag venue={sel.market.venue} />}
-                  <button className="text-[14px] font-semibold text-white hover:underline" onClick={() => sel.robot && onOpenRobot(sel.robot.id)}>{sel.robot?.name}</button>
+                  <button className="text-[14px] font-semibold text-[var(--fd-strong)] hover:underline" onClick={() => sel.robot && onOpenRobot(sel.robot.id)}>{sel.robot?.name}</button>
                 </div>
-                <button className="text-left text-[18px] font-semibold leading-snug text-white hover:underline" onClick={() => sel.market && onOpenMarket(sel.market.id)}>{sel.market?.question}</button>
+                <button className="text-left text-[18px] font-semibold leading-snug text-[var(--fd-strong)] hover:underline" onClick={() => sel.market && onOpenMarket(sel.market.id)}>{sel.market?.question}</button>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <Labeled kind="verified" label="Market price" value={sel.marketPriceCents != null ? `${sel.marketPriceCents}¢` : "—"} />
@@ -233,13 +233,13 @@ export function IntelligenceView(props: {
                 </div>
 
                 <div>
-                  <h3 className="mb-1.5 text-[14px] font-semibold uppercase tracking-wider text-[#7C889B]">Reasoning</h3>
-                  <p className="text-[15px] leading-relaxed text-[#E8EDF5]">{sel.reason}</p>
+                  <h3 className="mb-1.5 text-[14px] font-semibold uppercase tracking-wider text-[var(--fd-text3)]">Reasoning</h3>
+                  <p className="text-[15px] leading-relaxed text-[var(--fd-text)]">{sel.reason}</p>
                 </div>
 
                 <TraceDetail t={sel} />
 
-                <div className="rounded-xl border border-[#9B7BFF]/25 bg-[#9B7BFF]/[0.06] p-4 text-[13.5px] leading-relaxed text-[#C9D2DE]">
+                <div className="rounded-xl border border-[#9B7BFF]/25 bg-[#9B7BFF]/[0.06] p-4 text-[13.5px] leading-relaxed text-[var(--fd-text-soft)]">
                   Model estimates are probabilities, not guarantees. A trade only happens after deterministic risk checks pass; the estimate alone never places an order.
                 </div>
               </div>
@@ -259,7 +259,7 @@ export function IntelligenceView(props: {
                   <td className={td}><Badge tone={p.enabled ? "green" : "neutral"}>{p.enabled ? "enabled" : "disabled"}</Badge></td>
                   <td className={`${td} fd-num text-right`}>{p.calls24h}</td>
                   <td className={`${td} fd-num text-right`}>{p.blocked24h}</td>
-                  <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{p.p50Ms ?? "—"} / {p.p95Ms ?? "—"} ms</td>
+                  <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{p.p50Ms ?? "—"} / {p.p95Ms ?? "—"} ms</td>
                   <td className={`${td} fd-num text-right`}>{pct(p.budgetUsedPct, 0)}</td>
                 </tr>
               ))}
@@ -280,13 +280,13 @@ export function IntelligenceView(props: {
 
 function Labeled({ kind, label, value }: { kind: "verified" | "model" | "derived"; label: string; value: string }) {
   const meta = {
-    verified: { tag: "Verified venue data", tone: "cyan", color: "text-white" },
-    model: { tag: "Model estimate", tone: "purple", color: "text-[#B9A2FF]" },
-    derived: { tag: "Calculated", tone: "neutral", color: "text-white" },
+    verified: { tag: "Verified venue data", tone: "cyan", color: "text-[var(--fd-strong)]" },
+    model: { tag: "Model estimate", tone: "purple", color: "text-[var(--fd-purple-text)]" },
+    derived: { tag: "Calculated", tone: "neutral", color: "text-[var(--fd-strong)]" },
   }[kind];
   return (
-    <div className="rounded-xl border border-[#1E2A3D] bg-[#0D121C] p-4">
-      <div className="text-[13px] text-[#9AA6B8]">{label}</div>
+    <div className="rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-4">
+      <div className="text-[13px] text-[var(--fd-text2)]">{label}</div>
       <div className={`fd-num mt-1 text-[22px] font-semibold ${meta.color}`}>{value}</div>
       <div className="mt-2"><Badge tone={meta.tone}>{meta.tag}</Badge></div>
     </div>

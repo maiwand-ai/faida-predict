@@ -129,8 +129,8 @@ export function DashboardView(props: {
       <div className="flex flex-wrap items-center gap-4">
         <Image src="/brand/logo_mark.png" alt="" width={52} height={52} className="hidden object-contain sm:block" />
         <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
-          <h1 className="text-[26px] font-bold tracking-tight text-white sm:text-[30px]">{greeting}, {firstName}</h1>
-          <p className="mt-1 text-[15px] text-[#9AA6B8]">Your autonomous prediction trading command centre</p>
+          <h1 className="text-[26px] font-bold tracking-tight text-[var(--fd-strong)] sm:text-[30px]">{greeting}, {firstName}</h1>
+          <p className="mt-1 text-[15px] text-[var(--fd-text2)]">Your autonomous prediction trading command centre</p>
         </div>
         <div className="flex flex-wrap gap-2.5">
           <button className={btn.secondary} onClick={onSync} disabled={busy === "sync"}>
@@ -176,7 +176,7 @@ export function DashboardView(props: {
         >
           <AreaChart data={perfData} height={300} format={(v) => `$${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`} emptyTitle="No performance history in this range" emptyBody="The chart starts with your first trade." />
         </Panel>
-        <Panel title="Robot status" action={<button className="text-[14px] font-semibold text-[#6AA9FF] hover:underline" onClick={() => onNavigate({ view: "robots" })}>View all</button>}>
+        <Panel title="Robot status" action={<button className="text-[14px] font-semibold text-[var(--fd-blue-text)] hover:underline" onClick={() => onNavigate({ view: "robots" })}>View all</button>}>
           {dash.robots.length === 0 ? (
             <EmptyState compact title="No robots yet" action={<button className={btn.primary} onClick={() => onNavigate({ view: "studio" })}>Create robot</button>} />
           ) : (
@@ -185,11 +185,11 @@ export function DashboardView(props: {
                 const st = rs.get(rb.name);
                 return (
                   <li key={rb.id}>
-                    <button onClick={() => onOpenRobot(rb.id)} className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left hover:bg-white/[0.03]">
+                    <button onClick={() => onOpenRobot(rb.id)} className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left hover:bg-[color:var(--fd-ink)]/[0.03]">
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: venueColor(rb.venue) }} aria-hidden />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[15px] font-semibold text-white">{rb.name}</span>
-                        <span className="block truncate text-[13px] text-[#7C889B]">{VENUE_LABEL[rb.venue]} · {FAMILY_LABEL[rb.family] ?? rb.family}</span>
+                        <span className="block truncate text-[15px] font-semibold text-[var(--fd-strong)]">{rb.name}</span>
+                        <span className="block truncate text-[13px] text-[var(--fd-text3)]">{VENUE_LABEL[rb.venue]} · {FAMILY_LABEL[rb.family] ?? rb.family}</span>
                       </span>
                       {robotStatusBadge(rb.status)}
                       <span className={`fd-num w-20 text-right text-[14px] font-semibold ${toneText[toneOf(st?.pnl)]}`}>{st?.pnl != null ? money(st.pnl, { sign: true }) : "—"}</span>
@@ -204,8 +204,8 @@ export function DashboardView(props: {
 
       <section>
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-[20px] font-semibold text-white">Venues</h2>
-          <span className="text-[14px] text-[#9AA6B8]">{venuesWithData} of {liveVenues.length} live venues have data · click a venue to open its workspace</span>
+          <h2 className="text-[20px] font-semibold text-[var(--fd-strong)]">Venues</h2>
+          <span className="text-[14px] text-[var(--fd-text2)]">{venuesWithData} of {liveVenues.length} live venues have data · click a venue to open its workspace</span>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {VENUES.map((v) => <VenueCard key={v.id} venueDef={v} stat={dash.venues.find((s) => s.venue === v.id)} onOpen={() => onOpenVenue(v.id)} />)}
@@ -233,12 +233,12 @@ export function DashboardView(props: {
                   <tr key={rb.id} className={`${trow} cursor-pointer`} onClick={() => onOpenRobot(rb.id)}>
                     <td className={`${td} font-semibold`}>{rb.name}</td>
                     <td className={td}><VenueTag venue={rb.venue} /></td>
-                    <td className={`${td} text-[#C9D2DE]`}>{FAMILY_LABEL[rb.family] ?? rb.family}</td>
+                    <td className={`${td} text-[var(--fd-text-soft)]`}>{FAMILY_LABEL[rb.family] ?? rb.family}</td>
                     <td className={td}>{robotStatusBadge(rb.status)}</td>
                     <td className={`${td} fd-num text-right`}>{money(rb.allocatedCents)}</td>
-                    <td className={`${td} fd-num text-right`}>{st?.open ?? 0}<span className="text-[#7C889B]">/{rb.maxOpenPositions}</span></td>
+                    <td className={`${td} fd-num text-right`}>{st?.open ?? 0}<span className="text-[var(--fd-text3)]">/{rb.maxOpenPositions}</span></td>
                     <td className={`${td} fd-num text-right font-semibold ${toneText[toneOf(st?.pnl)]}`}>{st?.pnl != null ? money(st.pnl, { sign: true }) : "—"}</td>
-                    <td className={`${td} text-[#C9D2DE]`}>{lastAct.has(rb.name) ? ago(lastAct.get(rb.name)) : <span className="text-[#7C889B]">No decisions yet</span>}</td>
+                    <td className={`${td} text-[var(--fd-text-soft)]`}>{lastAct.has(rb.name) ? ago(lastAct.get(rb.name)) : <span className="text-[var(--fd-text3)]">No decisions yet</span>}</td>
                     <td className={`${td} text-right`} onClick={(e) => e.stopPropagation()}>
                       {canPause && <button className={btn.small} disabled={busy !== null} onClick={() => onRobotStatus(rb.id, "PAUSED_BY_USER", rb.name)}><Pause size={14} /> Pause</button>}
                       {canResume && <button className={btn.small} disabled={busy !== null} onClick={() => onRobotStatus(rb.id, "PAPER_ONLY", rb.name)}><Play size={14} /> Resume</button>}
@@ -252,26 +252,26 @@ export function DashboardView(props: {
       </Panel>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <Panel title="Market opportunities" subtitle="Largest recorded moves first, then volume" action={<button className="text-[14px] font-semibold text-[#6AA9FF] hover:underline" onClick={() => onNavigate({ view: "markets", tab: "trending" })}>View all</button>}>
+        <Panel title="Market opportunities" subtitle="Largest recorded moves first, then volume" action={<button className="text-[14px] font-semibold text-[var(--fd-blue-text)] hover:underline" onClick={() => onNavigate({ view: "markets", tab: "trending" })}>View all</button>}>
           {opps.length === 0 ? (
             <EmptyState compact title="No markets synced yet" action={<button className={btn.primary} onClick={onSync}>Sync now</button>} />
           ) : (
             <ul className="flex flex-col gap-2">
               {opps.map((m) => (
                 <li key={m.id}>
-                  <button onClick={() => onOpenMarket(m.id)} className="flex w-full items-center gap-3 rounded-xl border border-[#1A2333] bg-[#0D121C] px-4 py-3 text-left transition-colors hover:border-[#253247]">
+                  <button onClick={() => onOpenMarket(m.id)} className="flex w-full items-center gap-3 rounded-xl border border-[var(--fd-line)] bg-[var(--fd-bg2)] px-4 py-3 text-left transition-colors hover:border-[var(--fd-border2)]">
                     <span className="h-9 w-1 shrink-0 rounded-full" style={{ background: venueColor(m.venue) }} aria-hidden />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14.5px] font-medium text-white">{m.question}</span>
-                      <span className="mt-0.5 block text-[12.5px] text-[#7C889B]">
+                      <span className="block truncate text-[14.5px] font-medium text-[var(--fd-strong)]">{m.question}</span>
+                      <span className="mt-0.5 block text-[12.5px] text-[var(--fd-text3)]">
                         {VENUE_LABEL[m.venue]} · vol {money(m.volumeCents, { compact: true })} · liq {money(m.liquidityCents, { compact: true })}{m.closeDate ? ` · closes ${new Date(m.closeDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : ""}
                       </span>
                     </span>
                     {m.change24hCents != null && m.change24hCents !== 0 && (
-                      <span className={`fd-num text-[13px] font-semibold ${m.change24hCents > 0 ? "text-[#3BE6B0]" : "text-[#FF7A8B]"}`}>{m.change24hCents > 0 ? "+" : ""}{m.change24hCents}¢</span>
+                      <span className={`fd-num text-[13px] font-semibold ${m.change24hCents > 0 ? "text-[var(--fd-green-text)]" : "text-[var(--fd-red-text)]"}`}>{m.change24hCents > 0 ? "+" : ""}{m.change24hCents}¢</span>
                     )}
-                    <span className="fd-num rounded-lg bg-[#00D69A]/12 px-2 py-1 text-[13px] font-semibold text-[#3BE6B0]">YES {m.yesPriceCents}¢</span>
-                    <span className="fd-num hidden rounded-lg bg-[#FF5268]/12 px-2 py-1 text-[13px] font-semibold text-[#FF8A9A] sm:inline">NO {m.noPriceCents ?? "—"}¢</span>
+                    <span className="fd-num rounded-lg bg-[#00D69A]/12 px-2 py-1 text-[13px] font-semibold text-[var(--fd-green-text)]">YES {m.yesPriceCents}¢</span>
+                    <span className="fd-num hidden rounded-lg bg-[#FF5268]/12 px-2 py-1 text-[13px] font-semibold text-[var(--fd-red-text)] sm:inline">NO {m.noPriceCents ?? "—"}¢</span>
                   </button>
                 </li>
               ))}
@@ -279,7 +279,7 @@ export function DashboardView(props: {
           )}
         </Panel>
 
-        <Panel title="Decision feed" subtitle="Latest robot decisions with their reasoning" action={<button className="text-[14px] font-semibold text-[#6AA9FF] hover:underline" onClick={() => onNavigate({ view: "intel", tab: "decisions" })}>View all</button>}>
+        <Panel title="Decision feed" subtitle="Latest robot decisions with their reasoning" action={<button className="text-[14px] font-semibold text-[var(--fd-blue-text)] hover:underline" onClick={() => onNavigate({ view: "intel", tab: "decisions" })}>View all</button>}>
           {dash.traces.length === 0 ? (
             <EmptyState compact title="No decisions yet" body="Run a robot cycle and every verdict lands here with its risk checks." />
           ) : (
@@ -288,18 +288,18 @@ export function DashboardView(props: {
                 const checks = (() => { try { return JSON.parse(t.riskChecks) as Array<{ passed: boolean }>; } catch { return []; } })();
                 const passed = checks.filter((c) => c.passed).length;
                 return (
-                  <li key={t.id} className="flex gap-3 border-t border-[#1A2333] py-3 first:border-t-0">
+                  <li key={t.id} className="flex gap-3 border-t border-[var(--fd-line)] py-3 first:border-t-0">
                     <span className="mt-1 h-10 w-1 shrink-0 rounded-full" style={{ background: venueColor(t.market?.venue ?? "") }} aria-hidden />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         {decisionBadge(t.decision)}
-                        <span className="text-[14px] font-semibold text-white">{t.robot?.name}</span>
-                        {t.modelEstimatePct != null && <span className="fd-num text-[12.5px] text-[#B9A2FF]">conf. {t.modelEstimatePct.toFixed(0)}%</span>}
-                        {checks.length > 0 && <span className={`text-[12.5px] ${passed === checks.length ? "text-[#3BE6B0]" : "text-[#FFC266]"}`}>{passed}/{checks.length} checks</span>}
-                        <span className="fd-num ml-auto text-[12.5px] text-[#7C889B]">{new Date(t.createdAt).toISOString().slice(11, 16)} UTC</span>
+                        <span className="text-[14px] font-semibold text-[var(--fd-strong)]">{t.robot?.name}</span>
+                        {t.modelEstimatePct != null && <span className="fd-num text-[12.5px] text-[var(--fd-purple-text)]">conf. {t.modelEstimatePct.toFixed(0)}%</span>}
+                        {checks.length > 0 && <span className={`text-[12.5px] ${passed === checks.length ? "text-[var(--fd-green-text)]" : "text-[var(--fd-amber-text)]"}`}>{passed}/{checks.length} checks</span>}
+                        <span className="fd-num ml-auto text-[12.5px] text-[var(--fd-text3)]">{new Date(t.createdAt).toISOString().slice(11, 16)} UTC</span>
                       </div>
-                      <div className="mt-1 truncate text-[13.5px] text-[#C9D2DE]">{t.market?.question}</div>
-                      <div className="mt-0.5 line-clamp-2 text-[13px] text-[#9AA6B8]">{t.reason}</div>
+                      <div className="mt-1 truncate text-[13.5px] text-[var(--fd-text-soft)]">{t.market?.question}</div>
+                      <div className="mt-0.5 line-clamp-2 text-[13px] text-[var(--fd-text2)]">{t.reason}</div>
                     </div>
                   </li>
                 );
@@ -320,10 +320,10 @@ export function DashboardView(props: {
                   <tr key={p.id} className={trow}>
                     <td className={td}>{p.market?.venue ? <VenueTag venue={p.market.venue} /> : "—"}</td>
                     <td className={`${td} max-w-[320px] truncate`}>{p.market?.question}</td>
-                    <td className={`${td} text-[#C9D2DE]`}>{p.robot?.name}</td>
+                    <td className={`${td} text-[var(--fd-text-soft)]`}>{p.robot?.name}</td>
                     <td className={td}><Badge tone={p.side === "YES" ? "green" : "red"}>{p.side}</Badge></td>
                     <td className={`${td} fd-num text-right`}>{money(p.sizeCents)}</td>
-                    <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{p.avgPriceCents}¢ → {mark != null ? `${mark}¢` : "—"}</td>
+                    <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{p.avgPriceCents}¢ → {mark != null ? `${mark}¢` : "—"}</td>
                     <td className={`${td} fd-num text-right font-semibold ${toneText[toneOf(p.unrealizedCents)]}`}>{p.unrealizedCents != null ? money(p.unrealizedCents, { sign: true }) : "—"}</td>
                   </tr>
                 );
@@ -333,7 +333,7 @@ export function DashboardView(props: {
         </Panel>
       )}
 
-      <Panel title="System health" icon={<Activity size={18} />} action={<button className="text-[14px] font-semibold text-[#6AA9FF] hover:underline" onClick={() => onNavigate({ view: "risk", tab: "health" })}>Details</button>}>
+      <Panel title="System health" icon={<Activity size={18} />} action={<button className="text-[14px] font-semibold text-[var(--fd-blue-text)] hover:underline" onClick={() => onNavigate({ view: "risk", tab: "health" })}>Details</button>}>
         <div className="grid grid-cols-1 gap-x-8 md:grid-cols-2">
           <div>
             <KV k="Venue connectivity" v={<Badge tone={venuesWithData === liveVenues.length ? "green" : venuesWithData > 0 ? "amber" : "red"} dot>{venuesWithData}/{liveVenues.length} venues with data</Badge>} />
@@ -348,10 +348,10 @@ export function DashboardView(props: {
             <KV k="Alerts" v={dash.openAlerts > 0 ? <Badge tone="amber">{dash.openAlerts} open</Badge> : <Badge tone="green">None</Badge>} />
           </div>
         </div>
-        <div className="mt-5 flex flex-col gap-3 rounded-xl border border-[#1E2A3D] bg-[#0D121C] p-4 lg:flex-row lg:items-center">
+        <div className="mt-5 flex flex-col gap-3 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-4 lg:flex-row lg:items-center">
           <div className="min-w-0 flex-1">
-            <div className="text-[15px] font-semibold text-white">Autopilot</div>
-            <div className="text-[13.5px] text-[#9AA6B8]">{auto?.enabled ? `On: robots cycle every ${auto.intervalSec}s` : "Off: robots only run when you start a cycle"} · you own the switches, robots never change them</div>
+            <div className="text-[15px] font-semibold text-[var(--fd-strong)]">Autopilot</div>
+            <div className="text-[13.5px] text-[var(--fd-text2)]">{auto?.enabled ? `On: robots cycle every ${auto.intervalSec}s` : "Off: robots only run when you start a cycle"} · you own the switches, robots never change them</div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {!auto?.enabled && (
@@ -393,7 +393,7 @@ function VenueCard({ venueDef: v, stat, onOpen }: { venueDef: (typeof VENUES)[nu
       <button
         onClick={onOpen}
         aria-label={`Open ${v.label} workspace`}
-        className="group relative flex min-h-[200px] flex-col overflow-hidden rounded-3xl border border-dashed p-6 text-left transition-colors hover:bg-white/[0.02]"
+        className="group relative flex min-h-[200px] flex-col overflow-hidden rounded-3xl border border-dashed p-6 text-left transition-colors hover:bg-[color:var(--fd-ink)]/[0.02]"
         style={{
           borderColor: `color-mix(in srgb, ${v.hex} 40%, transparent)`,
           backgroundImage: `repeating-linear-gradient(135deg, color-mix(in srgb, ${v.hex} 6%, transparent) 0 12px, transparent 12px 24px)`,
@@ -401,10 +401,10 @@ function VenueCard({ venueDef: v, stat, onOpen }: { venueDef: (typeof VENUES)[nu
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="font-display text-[24px] font-bold" style={{ color: `color-mix(in srgb, ${v.hex} 70%, #C9D0DC)` }}>{v.label}</div>
+            <div className="font-display text-[24px] font-bold" style={{ color: `color-mix(in srgb, ${v.hex} 70%, var(--fd-text-soft))` }}>{v.label}</div>
             <div className={`mt-1 text-[15px] ${c.text2}`}>{VENUE_TAGLINE[v.id] ?? ""}</div>
           </div>
-          <span className="rounded-full bg-white/[0.06] px-3 py-1 text-[13px] font-semibold text-[#C9D0DC]">{suspended ? "Suspended" : "Coming soon"}</span>
+          <span className="rounded-full bg-[color:var(--fd-ink)]/[0.06] px-3 py-1 text-[13px] font-semibold text-[var(--fd-text-soft)]">{suspended ? "Suspended" : "Coming soon"}</span>
         </div>
         <p className={`mt-auto pt-6 text-[15px] leading-relaxed ${c.text2}`}>
           {suspended
@@ -458,7 +458,7 @@ function VenueCard({ venueDef: v, stat, onOpen }: { venueDef: (typeof VENUES)[nu
 function SetupStep(props: { n: number; done: boolean; hex: string; title: string; body: string; action: string; onAction?: () => void; disabled?: boolean }) {
   const { n, done, hex, title, body, action, onAction, disabled } = props;
   return (
-    <div className={`flex flex-col gap-3 rounded-2xl border p-5 ${done ? "border-white/[0.06] bg-white/[0.02]" : "border-white/10 bg-[#161F2D]"}`}>
+    <div className={`flex flex-col gap-3 rounded-2xl border p-5 ${done ? "border-[color:var(--fd-ink)]/[0.06] bg-[color:var(--fd-ink)]/[0.02]" : "border-[color:var(--fd-ink)]/10 bg-[var(--fd-elevated)]"}`}>
       <div className="flex items-center gap-3">
         <span
           className="grid h-10 w-10 place-items-center rounded-xl font-display text-[18px] font-bold"
@@ -467,7 +467,7 @@ function SetupStep(props: { n: number; done: boolean; hex: string; title: string
         >
           {done ? "✓" : n}
         </span>
-        <span className="text-[18px] font-semibold text-white">{title}</span>
+        <span className="text-[18px] font-semibold text-[var(--fd-strong)]">{title}</span>
       </div>
       <p className={`text-[15px] leading-relaxed ${c.text2}`}>{body}</p>
       {onAction ? (
@@ -480,7 +480,7 @@ function SetupStep(props: { n: number; done: boolean; hex: string; title: string
           {action}
         </Button>
       ) : (
-        <span className="mt-auto text-[15px] font-semibold text-[#4FDCA6]">✓ {action}</span>
+        <span className="mt-auto text-[15px] font-semibold text-[var(--fd-green-text)]">✓ {action}</span>
       )}
     </div>
   );
@@ -556,25 +556,25 @@ export function VenueWorkspace(props: {
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Breadcrumb" className="text-[13.5px] text-[#7C889B]">
-        <button onClick={onBack} className="inline-flex items-center gap-1.5 hover:text-white"><ArrowLeft size={14} /> Overview</button>
-        <span className="mx-1.5" aria-hidden>/</span><span className="text-[#C9D2DE]">Venues</span>
-        <span className="mx-1.5" aria-hidden>/</span><span className="text-[#C9D2DE]">{v.label}</span>
+      <nav aria-label="Breadcrumb" className="text-[13.5px] text-[var(--fd-text3)]">
+        <button onClick={onBack} className="inline-flex items-center gap-1.5 hover:text-[var(--fd-strong)]"><ArrowLeft size={14} /> Overview</button>
+        <span className="mx-1.5" aria-hidden>/</span><span className="text-[var(--fd-text-soft)]">Venues</span>
+        <span className="mx-1.5" aria-hidden>/</span><span className="text-[var(--fd-text-soft)]">{v.label}</span>
       </nav>
 
-      <section className="relative overflow-hidden rounded-2xl border bg-[#111827] p-5 sm:p-6" style={{ borderColor: `color-mix(in srgb, ${hex} ${live ? 35 : 18}%, transparent)` }}>
+      <section className="relative overflow-hidden rounded-2xl border bg-[var(--fd-surface)] p-5 sm:p-6" style={{ borderColor: `color-mix(in srgb, ${hex} ${live ? 35 : 18}%, transparent)` }}>
         <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(720px 240px at 0% 0%, color-mix(in srgb, ${hex} ${live ? 18 : 8}%, transparent), transparent 70%)` }} />
         <div className="relative flex flex-wrap items-center gap-5">
-          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-[28px] font-bold" style={live ? { background: hex, color: "#071018" } : { background: `color-mix(in srgb, ${hex} 14%, transparent)`, color: `color-mix(in srgb, ${hex} 60%, #9AA6B8)` }} aria-hidden>
+          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-[28px] font-bold" style={live ? { background: hex, color: "#071018" } : { background: `color-mix(in srgb, ${hex} 14%, transparent)`, color: `color-mix(in srgb, ${hex} 60%, var(--fd-text2))` }} aria-hidden>
             {v.label.slice(0, 1)}
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[28px] font-bold tracking-tight text-white sm:text-[32px]">{v.label}</h1>
+              <h1 className="text-[28px] font-bold tracking-tight text-[var(--fd-strong)] sm:text-[32px]">{v.label}</h1>
               {live ? <Badge tone="green" dot>Connected</Badge> : suspended ? <Badge tone="red" dot>Suspended</Badge> : <Badge tone="amber" dot>Adapter pending</Badge>}
               <Badge>{ROLE_LABEL[v.role].toLowerCase()}</Badge>
             </div>
-            <p className="mt-1.5 text-[15px] text-[#9AA6B8]">
+            <p className="mt-1.5 text-[15px] text-[var(--fd-text2)]">
               {({ POLYMARKET: "Main venue · Polygon · USDC order book", MANIFOLD: "Play money · zero-risk test ground", LIMITLESS: "Crypto order book on Base · USDC", KALSHI: "CFTC-regulated US exchange · USD", AZURO: "On-chain sports betting · EVM", DRIFT_BET: "Solana prediction markets" } as Record<string, string>)[v.id]}
             </p>
           </div>
@@ -587,7 +587,7 @@ export function VenueWorkspace(props: {
             <button className={btn.secondary} onClick={onCycle} disabled={busy !== null || !live}><Play size={16} /> Run robot cycle</button>
             <button
               className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-[14.5px] font-semibold transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
-              style={{ background: live ? hex : "#253247", color: live ? "#071018" : "#9AA6B8" }}
+              style={{ background: live ? hex : "var(--fd-border2)", color: live ? "#071018" : "var(--fd-text2)" }}
               disabled={!live}
               title={live ? undefined : "Robots can't be created here until the adapter is live"}
               onClick={() => onCreateRobot(v.id)}
@@ -599,7 +599,7 @@ export function VenueWorkspace(props: {
       </section>
 
       {!live && (
-        <div role="note" className="rounded-2xl border px-5 py-4 text-[14.5px] leading-relaxed text-[#E8EDF5]" style={{ borderColor: suspended ? "rgba(255,82,104,0.35)" : "rgba(255,181,71,0.35)", background: suspended ? "rgba(255,82,104,0.08)" : "rgba(255,181,71,0.08)" }}>
+        <div role="note" className="rounded-2xl border px-5 py-4 text-[14.5px] leading-relaxed text-[var(--fd-text)]" style={{ borderColor: suspended ? "rgba(255,82,104,0.35)" : "rgba(255,181,71,0.35)", background: suspended ? "rgba(255,82,104,0.08)" : "rgba(255,181,71,0.08)" }}>
           {suspended
             ? "This venue has been offline since the April 2026 exploit, so no adapter was built. The venue stays listed so the lineup never changes silently; a replacement for this slot is waiting on a founder decision."
             : "The adapter is built but not verified yet: it goes live once its contract test passes against recorded market data. Until then there is no market data here and robot creation is disabled."}
@@ -639,7 +639,7 @@ export function VenueWorkspace(props: {
                       <tr key={m.id} className={`${trow} cursor-pointer`} onClick={() => onOpenMarket(m.id)}>
                         <td className={`${td} max-w-[320px]`}>
                           <div className="truncate font-medium">{m.question}</div>
-                          <div className="mt-0.5 text-[12.5px] text-[#7C889B]">
+                          <div className="mt-0.5 text-[12.5px] text-[var(--fd-text3)]">
                             <span className="capitalize">{m.category}</span>
                             {m.closeDate ? ` · closes ${new Date(m.closeDate).toLocaleDateString("en-US", { day: "numeric", month: "short" })}` : ""}
                             {m.eventKey ? " · event cluster" : ""}{m.ambiguityFlag ? " · flagged" : ""}
@@ -647,13 +647,13 @@ export function VenueWorkspace(props: {
                         </td>
                         <td className={td}>
                           <div className="flex items-center gap-2.5">
-                            <span className="fd-num w-10 font-semibold text-white">{m.yesPriceCents ?? "—"}¢</span>
-                            <span className="h-1.5 w-16 overflow-hidden rounded-full bg-white/[0.07]" aria-hidden><span className="block h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, m.yesPriceCents ?? 0))}%`, background: hex }} /></span>
+                            <span className="fd-num w-10 font-semibold text-[var(--fd-strong)]">{m.yesPriceCents ?? "—"}¢</span>
+                            <span className="h-1.5 w-16 overflow-hidden rounded-full bg-[color:var(--fd-ink)]/[0.07]" aria-hidden><span className="block h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, m.yesPriceCents ?? 0))}%`, background: hex }} /></span>
                           </div>
                         </td>
-                        <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{m.noPriceCents ?? "—"}¢</td>
-                        <td className={`${td} fd-num text-right ${thin ? "text-[#FFC266]" : "text-[#C9D2DE]"}`} title={thin ? "Below the venue minimum: entries are refused" : undefined}>{m.yesTouchDepthCents != null ? money(m.yesTouchDepthCents) : "—"}</td>
-                        <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{money(m.volumeCents, { compact: true })}</td>
+                        <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{m.noPriceCents ?? "—"}¢</td>
+                        <td className={`${td} fd-num text-right ${thin ? "text-[var(--fd-amber-text)]" : "text-[var(--fd-text-soft)]"}`} title={thin ? "Below the venue minimum: entries are refused" : undefined}>{m.yesTouchDepthCents != null ? money(m.yesTouchDepthCents) : "—"}</td>
+                        <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{money(m.volumeCents, { compact: true })}</td>
                         <td className={`${td} text-right`}>
                           <button className={btn.small} onClick={(e) => { e.stopPropagation(); onTrade(m); }} disabled={m.ambiguityFlag || !live}>Trade</button>
                         </td>
@@ -667,7 +667,7 @@ export function VenueWorkspace(props: {
         </Panel>
 
         <div className="flex flex-col gap-5">
-          <Panel title={`Robots on ${v.label}`} action={<span className="text-[13px] text-[#7C889B]">{vRobots.length} scoped</span>}>
+          <Panel title={`Robots on ${v.label}`} action={<span className="text-[13px] text-[var(--fd-text3)]">{vRobots.length} scoped</span>}>
             {vRobots.length === 0 ? (
               <EmptyState compact title="No robots here yet" body={live ? "Create one pre-scoped to this venue." : "Robots can be scoped here once the adapter is live."} />
             ) : (
@@ -676,16 +676,16 @@ export function VenueWorkspace(props: {
                   const rp = robotPnl.get(r.name);
                   return (
                     <li key={r.id}>
-                      <button onClick={() => onOpenRobot(r.id)} className="w-full rounded-xl border border-[#1E2A3D] bg-[#0D121C] p-3.5 text-left transition-colors hover:border-[#253247]">
+                      <button onClick={() => onOpenRobot(r.id)} className="w-full rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-3.5 text-left transition-colors hover:border-[var(--fd-border2)]">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-[15px] font-semibold text-white">{r.name}</span>
+                          <span className="truncate text-[15px] font-semibold text-[var(--fd-strong)]">{r.name}</span>
                           <span className={`fd-num text-[14px] font-semibold ${toneText[toneOf(rp?.pnl)]}`}>{rp?.pnl != null ? money(rp.pnl, { sign: true }) : "—"}</span>
                         </div>
-                        <div className="mt-1.5 flex items-center justify-between gap-2 text-[13px] text-[#9AA6B8]">
+                        <div className="mt-1.5 flex items-center justify-between gap-2 text-[13px] text-[var(--fd-text2)]">
                           <span className="truncate">{FAMILY_LABEL[r.family] ?? r.family} · v{r.activeVersion}</span>
                           {robotStatusBadge(r.status)}
                         </div>
-                        <div className="fd-num mt-2 text-[12.5px] text-[#7C889B]">{money(r.allocatedCents)} allocated · cap {money(r.maxPositionCents)} · ≤ {r.maxOpenPositions} open</div>
+                        <div className="fd-num mt-2 text-[12.5px] text-[var(--fd-text3)]">{money(r.allocatedCents)} allocated · cap {money(r.maxPositionCents)} · ≤ {r.maxOpenPositions} open</div>
                       </button>
                     </li>
                   );
@@ -714,10 +714,10 @@ export function VenueWorkspace(props: {
                 return (
                   <tr key={p.id} className={trow}>
                     <td className={`${td} max-w-[320px] truncate`}>{p.market?.question}</td>
-                    <td className={`${td} text-[#C9D2DE]`}>{p.robot?.name}</td>
+                    <td className={`${td} text-[var(--fd-text-soft)]`}>{p.robot?.name}</td>
                     <td className={td}><Badge tone={p.side === "YES" ? "green" : "red"}>{p.side}</Badge></td>
                     <td className={`${td} fd-num text-right`}>{money(p.sizeCents)}</td>
-                    <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{p.avgPriceCents}¢ → {mark != null ? `${mark}¢` : "—"}</td>
+                    <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{p.avgPriceCents}¢ → {mark != null ? `${mark}¢` : "—"}</td>
                     <td className={`${td} fd-num text-right font-semibold ${toneText[toneOf(p.unrealizedCents)]}`}>{p.unrealizedCents != null ? money(p.unrealizedCents, { sign: true }) : "—"}</td>
                   </tr>
                 );
@@ -735,7 +735,7 @@ export function VenueWorkspace(props: {
               <tbody>
                 {vOrders.map((o) => (
                   <tr key={o.id} className={trow}>
-                    <td className={`${td} max-w-[240px] truncate`}>{o.market?.question}{o.robot ? <span className="text-[#7C889B]"> · {o.robot.name}</span> : null}</td>
+                    <td className={`${td} max-w-[240px] truncate`}>{o.market?.question}{o.robot ? <span className="text-[var(--fd-text3)]"> · {o.robot.name}</span> : null}</td>
                     <td className={td}><Badge tone={o.side.includes("YES") ? "green" : "red"}>{o.side.replace("_", " ")}</Badge></td>
                     <td className={`${td} fd-num text-right`}>{money(o.sizeCents)}</td>
                     <td className={td}>{orderStateBadge(o.state)}</td>
@@ -775,7 +775,7 @@ export function TraceRow({ t }: { t: TraceDTO }) {
   return (
     <div className={`border-b py-2.5 last:border-0 ${c.border}`}>
       <button onClick={() => setOpen((o) => !o)} className="flex w-full flex-wrap items-center gap-2 text-left" aria-expanded={open}>
-        <span className={`rounded px-2 py-0.5 text-[12px] font-bold ${t.decision === "TRADE" ? `${c.bright} bg-[#2583FF]/10` : `${c.text3} bg-[#161F2D]`}`}>{t.decision}</span>
+        <span className={`rounded px-2 py-0.5 text-[12px] font-bold ${t.decision === "TRADE" ? `${c.bright} bg-[#2583FF]/10` : `${c.text3} bg-[var(--fd-elevated)]`}`}>{t.decision}</span>
         <ModelChip modelKey={t.modelKey} provenance={t.provenance} />
         <span className={`text-[14px] font-semibold ${c.text}`}>{t.robot?.name}</span>
         {t.market?.venue && <VenueBadge venue={t.market.venue} withLabel={false} />}
@@ -801,7 +801,7 @@ export function TraceDetail({ t }: { t: TraceDTO }) {
     </div>
   );
   return (
-    <div className="mt-2 rounded-xl border border-[#1E2A3D] bg-[#0D121C] p-4">
+    <div className="mt-2 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-4">
       <div className="grid grid-cols-1 gap-x-6 gap-y-1 md:grid-cols-2">
         <div>
           <div className={`mb-2 text-[13px] font-semibold uppercase tracking-wider ${c.text3}`}>Model & provenance</div>
@@ -811,8 +811,8 @@ export function TraceDetail({ t }: { t: TraceDTO }) {
           {prov?.estimatorVersion && row("estimator version", <span className={mono}>{prov.estimatorVersion}</span>)}
           {prov?.latencyMs != null && row("latency", `${prov.latencyMs} ms`)}
           {prov?.cache && row("cache", prov.cache === "HIT" ? "HIT (cached, zero cost)" : prov.cache)}
-          {row("screening", <span className={prov?.screening === "FLAGGED" ? "text-[#FF5268]" : "text-[#00D69A]"}>{prov?.screening ?? "—"}{prov?.screeningReasons?.length ? ` — ${prov.screeningReasons.join("; ")}` : ""}</span>)}
-          {prov?.fallbackFrom && row("fallback from", <span className="text-[#F0B252]">{prov.fallbackFrom}</span>)}
+          {row("screening", <span className={prov?.screening === "FLAGGED" ? "text-[var(--fd-red-text)]" : "text-[var(--fd-green-text)]"}>{prov?.screening ?? "—"}{prov?.screeningReasons?.length ? ` — ${prov.screeningReasons.join("; ")}` : ""}</span>)}
+          {prov?.fallbackFrom && row("fallback from", <span className="text-[var(--fd-amber-text)]">{prov.fallbackFrom}</span>)}
           {prov?.costCents != null && row("AI cost", fmtCents(prov.costCents))}
           {prov?.evidenceHash && row("evidence hash", <span className={mono} title={prov.evidenceHash}>{prov.evidenceHash.slice(0, 18)}…</span>)}
         </div>
@@ -822,7 +822,7 @@ export function TraceDetail({ t }: { t: TraceDTO }) {
           {checks.map((ck, i) => (
             <div key={i} className="py-1">
               <div className="flex items-center gap-2">
-                <span className={`rounded px-1 py-px text-[12px] font-bold ${ck.passed ? "text-[#00D69A] bg-[#00D69A]/10" : "text-[#FF5268] bg-[#FF5268]/10"}`}>{ck.passed ? "PASS" : "FAIL"}</span>
+                <span className={`rounded px-1 py-px text-[12px] font-bold ${ck.passed ? "text-[var(--fd-green-text)] bg-[#00D69A]/10" : "text-[var(--fd-red-text)] bg-[#FF5268]/10"}`}>{ck.passed ? "PASS" : "FAIL"}</span>
                 <span className={`text-[13.5px] font-semibold ${c.text}`}>{ck.check}</span>
               </div>
               <div className={`ml-1 border-l pl-2 text-[13px] ${c.text3}`} style={{ borderColor: ck.passed ? "#1D4A3C" : "#4A1D25" }}>{ck.detail}</div>
@@ -894,12 +894,12 @@ function ModelChip({ modelKey, provenance }: { modelKey?: string | null; provena
     <span
       title={`${modelKey}${cache ? " · cache " + cache : ""}${flagged ? " · A-06 screening FLAGGED" : ""}`}
       className={`rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide ${
-        isAI ? `text-[#C9A6FF] bg-[#C9A6FF]/10` : `${c.text3} bg-[#161F2D]`
+        isAI ? `text-[var(--fd-purple-text)] bg-[var(--fd-purple-text)]/10` : `${c.text3} bg-[var(--fd-elevated)]`
       }`}
     >
       {label}
-      {cache === "HIT" && <span className="text-[#00D69A]"> ·C</span>}
-      {flagged && <span className="text-[#FF5268]"> ·A-06</span>}
+      {cache === "HIT" && <span className="text-[var(--fd-green-text)]"> ·C</span>}
+      {flagged && <span className="text-[var(--fd-red-text)]"> ·A-06</span>}
     </span>
   );
 }

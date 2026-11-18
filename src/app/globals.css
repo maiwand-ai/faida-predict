@@ -123,29 +123,68 @@
 }
 
 /* ── FAIDA Predict brand layer (derived from the logo gradient) ── */
-:root {
-  /* FAIDA Predict design tokens (global redesign) */
+:root,
+:root[data-theme="dark"] {
+  /* FAIDA Predict design tokens: dark theme (default) */
+  color-scheme: dark;
   --fd-bg: #080B12;
   --fd-bg2: #0D121C;
   --fd-surface: #111827;
   --fd-elevated: #161F2D;
-  --fd-border: #253247;
-  --fd-border-soft: #1A2333;
+  --fd-hover: #1C2740;
+  --fd-line: #1A2333;
+  --fd-border: #1E2A3D;
+  --fd-border2: #253247;
+  --fd-ink: #FFFFFF;           /* overlay tint for hovers and soft fills */
+  --fd-strong: #FFFFFF;        /* headings and key figures */
   --fd-text: #E8EDF5;
+  --fd-text-soft: #C9D2DE;
   --fd-text2: #9AA6B8;
   --fd-text3: #7C889B;
+  --fd-green-text: #3BE6B0;
+  --fd-red-text: #FF7A8B;
+  --fd-amber-text: #FFC266;
+  --fd-blue-text: #6AA9FF;
+  --fd-purple-text: #B9A2FF;
+  --fd-cyan-text: #4FE6F0;
+  --fd-green-soft-text: #C9F5E6;
+  --fd-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.8);
   --fd-accent: #2583FF;
-  --fd-accent-bright: #08D9E8;
-  --fd-accent-deep: #1A5FD0;
-  --fd-on-accent: #04101F;
   --fd-gain: #00D69A;
   --fd-loss: #FF5268;
   --fd-warn: #FFB547;
   --fd-ai: #9B7BFF;
-  --fd-paper: #FFB547;
 }
 
-body { background: var(--fd-bg); }
+:root[data-theme="light"] {
+  /* light theme: same accents and venue colors, light surfaces, darker text tints */
+  color-scheme: light;
+  --fd-bg: #F3F5F9;
+  --fd-bg2: #F7F9FC;
+  --fd-surface: #FFFFFF;
+  --fd-elevated: #EEF2F7;
+  --fd-hover: #E4EAF2;
+  --fd-line: #EDF0F5;
+  --fd-border: #E1E6EE;
+  --fd-border2: #CCD4DF;
+  --fd-ink: #0F172A;
+  --fd-strong: #0B1220;
+  --fd-text: #111A2C;
+  --fd-text-soft: #334155;
+  --fd-text2: #4B5A70;
+  --fd-text3: #5F6E84;
+  --fd-green-text: #047857;
+  --fd-red-text: #C8102E;
+  --fd-amber-text: #A15C07;
+  --fd-blue-text: #1D5FD1;
+  --fd-purple-text: #6A45DB;
+  --fd-cyan-text: #0B7680;
+  --fd-green-soft-text: #065F46;
+  --fd-shadow: 0 12px 30px -18px rgba(15, 23, 42, 0.25);
+}
+
+body { background: var(--fd-bg); color: var(--fd-text); }
+
 
 /* visible keyboard focus everywhere (a11y) */
 :where(button, a, input, select, textarea, [role="tab"], [tabindex]):focus-visible {
@@ -164,7 +203,7 @@ body { background: var(--fd-bg); }
 
 .fd-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
 .fd-scroll::-webkit-scrollbar-track { background: transparent; }
-.fd-scroll::-webkit-scrollbar-thumb { background: #253247; border-radius: 4px; }
+.fd-scroll::-webkit-scrollbar-thumb { background: var(--fd-border2); border-radius: 4px; }
 .fd-scroll::-webkit-scrollbar-thumb:hover { background: #2583FF; }
 
 /* ── Venue color identity (B13) ──────────────────────────────────────────────
@@ -201,8 +240,8 @@ body { background: var(--fd-bg); }
   background-color: color-mix(in srgb, var(--vc) 82%, white);
 }
 .vc-btn:disabled {
-  background-color: color-mix(in srgb, var(--vc) 35%, #161F2D);
-  color: color-mix(in srgb, var(--vc) 55%, #7C889B);
+  background-color: color-mix(in srgb, var(--vc) 35%, var(--fd-elevated));
+  color: color-mix(in srgb, var(--vc) 55%, var(--fd-text3));
   cursor: not-allowed;
 }
 /* venue card on the dashboard grid — the whole card leans into the venue hue */
@@ -211,7 +250,7 @@ body { background: var(--fd-bg); }
 }
 .venue-card:hover {
   border-color: color-mix(in srgb, var(--vc) 60%, transparent);
-  background-color: color-mix(in srgb, var(--vc) 9%, #111827);
+  background-color: color-mix(in srgb, var(--vc) 9%, var(--fd-surface));
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--vc) 22%, transparent),
     0 10px 32px -16px color-mix(in srgb, var(--vc) 55%, transparent);

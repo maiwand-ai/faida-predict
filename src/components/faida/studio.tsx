@@ -164,7 +164,7 @@ export function StudioView(props: {
   const isLibrary = tab === "library";
 
   const summary: Array<[string, ReactNode]> = [
-    ["Name", name.trim() || <span className="text-[#7C889B]">Not set</span>],
+    ["Name", name.trim() || <span className="text-[var(--fd-text3)]">Not set</span>],
     ["Venue", <VenueTag key="v" venue={venue} />],
     ["Strategy", FAMILY_LABEL[family] ?? family],
     ["Template", appliedTemplate?.label ?? "Custom"],
@@ -207,7 +207,7 @@ export function StudioView(props: {
 
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-[250px_minmax(0,1fr)_320px]">
             {/* progress */}
-            <nav aria-label="Robot creation steps" className="h-fit rounded-2xl border border-[#1E2A3D] bg-[#111827] p-2.5">
+            <nav aria-label="Robot creation steps" className="h-fit rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-2.5">
               <ol className="flex gap-1 overflow-x-auto xl:flex-col">
                 {STEPS.map((s) => {
                   const on = s.id === step;
@@ -217,12 +217,12 @@ export function StudioView(props: {
                       <button
                         onClick={() => (s.id === 1 || nameOk ? setStep(s.id) : setStep(1))}
                         aria-current={on ? "step" : undefined}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${on ? "bg-[#2583FF]/14" : "hover:bg-white/[0.03]"}`}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${on ? "bg-[#2583FF]/14" : "hover:bg-[color:var(--fd-ink)]/[0.03]"}`}
                       >
-                        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-bold ${on ? "bg-[#2583FF] text-white" : done ? "bg-[#00D69A]/15 text-[#3BE6B0]" : "bg-white/[0.05] text-[#7C889B]"}`}>
+                        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-bold ${on ? "bg-[#2583FF] text-white" : done ? "bg-[#00D69A]/15 text-[var(--fd-green-text)]" : "bg-[color:var(--fd-ink)]/[0.05] text-[var(--fd-text3)]"}`}>
                           {done ? <CheckCircle2 size={16} /> : s.id}
                         </span>
-                        <span className={`whitespace-nowrap text-[14.5px] ${on ? "font-semibold text-white" : "text-[#9AA6B8]"}`}>{s.label}</span>
+                        <span className={`whitespace-nowrap text-[14.5px] ${on ? "font-semibold text-[var(--fd-strong)]" : "text-[var(--fd-text2)]"}`}>{s.label}</span>
                       </button>
                     </li>
                   );
@@ -234,12 +234,12 @@ export function StudioView(props: {
             <div className="flex min-w-0 flex-col gap-5">
               {step === 1 && (
                 <Panel title="1. Robot identity" subtitle="Name your robot, or start from a template that fills in every step">
-                  <label className="block text-[14px] font-medium text-[#C9D2DE]" htmlFor="robot-name">Robot name</label>
-                  <input id="robot-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Senate Edge" className="mt-2 h-12 w-full rounded-xl border border-[#253247] bg-[#0D121C] px-4 text-[16px] text-white placeholder:text-[#7C889B]" aria-invalid={!nameOk && name.length > 0} />
-                  {!nameOk && <p className="mt-1.5 text-[13px] text-[#7C889B]">At least two characters.</p>}
-                  <h3 className="mb-3 mt-7 text-[15px] font-semibold text-white">Start from a template</h3>
+                  <label className="block text-[14px] font-medium text-[var(--fd-text-soft)]" htmlFor="robot-name">Robot name</label>
+                  <input id="robot-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Senate Edge" className="mt-2 h-12 w-full rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-bg2)] px-4 text-[16px] text-[var(--fd-strong)] placeholder:text-[var(--fd-text3)]" aria-invalid={!nameOk && name.length > 0} />
+                  {!nameOk && <p className="mt-1.5 text-[13px] text-[var(--fd-text3)]">At least two characters.</p>}
+                  <h3 className="mb-3 mt-7 text-[15px] font-semibold text-[var(--fd-strong)]">Start from a template</h3>
                   {templates.length === 0 ? (
-                    <p className="text-[14px] text-[#9AA6B8]">No templates available right now. Continue to configure from scratch.</p>
+                    <p className="text-[14px] text-[var(--fd-text2)]">No templates available right now. Continue to configure from scratch.</p>
                   ) : (
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       {templates.map((t) => (
@@ -247,14 +247,14 @@ export function StudioView(props: {
                           key={t.id}
                           onClick={() => applyTemplate(t)}
                           disabled={!t.venueLive}
-                          className="rounded-2xl border border-[#1E2A3D] bg-[#0D121C] p-4 text-left transition-colors enabled:hover:border-[#2583FF]/60 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-4 text-left transition-colors enabled:hover:border-[#2583FF]/60 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <span className="text-[15.5px] font-semibold text-white">{t.label}</span>
+                            <span className="text-[15.5px] font-semibold text-[var(--fd-strong)]">{t.label}</span>
                             <Badge tone={t.riskProfile === "CONSERVATIVE" ? "green" : t.riskProfile === "AGGRESSIVE" ? "red" : "blue"}>{t.riskProfile.toLowerCase()}</Badge>
                           </div>
-                          <p className="mt-1.5 text-[13.5px] leading-relaxed text-[#9AA6B8]">{t.thesis}</p>
-                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[12.5px] text-[#7C889B]">
+                          <p className="mt-1.5 text-[13.5px] leading-relaxed text-[var(--fd-text2)]">{t.thesis}</p>
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[12.5px] text-[var(--fd-text3)]">
                             <VenueTag venue={t.venue} />
                             <span>edge ≥ {t.strategy.minEdgePts} pts</span>
                             <span>· {money(t.capital.allocatedCents)}</span>
@@ -264,7 +264,7 @@ export function StudioView(props: {
                       ))}
                     </div>
                   )}
-                  <p className="mt-4 text-[13px] text-[#7C889B]">Templates are starting points, not performance promises. Each robot still earns its own evidence.</p>
+                  <p className="mt-4 text-[13px] text-[var(--fd-text3)]">Templates are starting points, not performance promises. Each robot still earns its own evidence.</p>
                 </Panel>
               )}
 
@@ -282,13 +282,13 @@ export function StudioView(props: {
                           disabled={!live}
                           aria-pressed={on}
                           className="rounded-2xl border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                          style={{ borderColor: on ? v.hex : "#1E2A3D", background: on ? `color-mix(in srgb, ${v.hex} 10%, #0D121C)` : "#0D121C" }}
+                          style={{ borderColor: on ? v.hex : "var(--fd-border)", background: on ? `color-mix(in srgb, ${v.hex} 10%, var(--fd-bg2))` : "var(--fd-bg2)" }}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="flex items-center gap-2.5 text-[16px] font-semibold text-white"><span className="h-3 w-3 rounded-full" style={{ background: v.hex }} />{v.label}</span>
+                            <span className="flex items-center gap-2.5 text-[16px] font-semibold text-[var(--fd-strong)]"><span className="h-3 w-3 rounded-full" style={{ background: v.hex }} />{v.label}</span>
                             {live ? <Badge tone="green" dot>Live</Badge> : <Badge tone={v.id === "DRIFT_BET" ? "red" : "amber"}>{v.id === "DRIFT_BET" ? "Suspended" : "Coming soon"}</Badge>}
                           </div>
-                          <p className="mt-2 text-[13.5px] text-[#9AA6B8]">{live ? `${st?.markets ?? 0} markets synced · ${st?.robotsTotal ?? 0} robots` : "Robot creation is disabled until the adapter is live."}</p>
+                          <p className="mt-2 text-[13.5px] text-[var(--fd-text2)]">{live ? `${st?.markets ?? 0} markets synced · ${st?.robotsTotal ?? 0} robots` : "Robot creation is disabled until the adapter is live."}</p>
                         </button>
                       );
                     })}
@@ -306,18 +306,18 @@ export function StudioView(props: {
                         const disabled = f.id === "ARBITRAGE";
                         return (
                           <button key={f.id} onClick={() => setFamily(f.id)} disabled={disabled} aria-pressed={on}
-                            className={`rounded-2xl border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${on ? "border-[#2583FF] bg-[#2583FF]/[0.08]" : "border-[#1E2A3D] bg-[#0D121C] enabled:hover:border-[#253247]"}`}>
+                            className={`rounded-2xl border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${on ? "border-[#2583FF] bg-[#2583FF]/[0.08]" : "border-[var(--fd-border)] bg-[var(--fd-bg2)] enabled:hover:border-[var(--fd-border2)]"}`}>
                             <div className="flex items-center justify-between gap-2">
-                              <span className="text-[16px] font-semibold text-white">{f.label}</span>
+                              <span className="text-[16px] font-semibold text-[var(--fd-strong)]">{f.label}</span>
                               <Badge tone={info.tone}>{info.risk}</Badge>
                             </div>
-                            <p className="mt-1.5 text-[13.5px] text-[#9AA6B8]">{f.desc}</p>
+                            <p className="mt-1.5 text-[13.5px] text-[var(--fd-text2)]">{f.desc}</p>
                             <dl className="mt-3 grid grid-cols-1 gap-1.5 text-[13px]">
-                              <div><dt className="inline text-[#7C889B]">Best for: </dt><dd className="inline text-[#C9D2DE]">{info.when}</dd></div>
-                              <div><dt className="inline text-[#7C889B]">Entry: </dt><dd className="inline text-[#C9D2DE]">{info.entry}</dd></div>
-                              <div><dt className="inline text-[#7C889B]">Exit: </dt><dd className="inline text-[#C9D2DE]">{info.exit}</dd></div>
-                              <div><dt className="inline text-[#7C889B]">Suggested capital: </dt><dd className="fd-num inline text-[#C9D2DE]">{info.capital}</dd></div>
-                              <div><dt className="inline text-[#7C889B]">Venues: </dt><dd className="inline text-[#C9D2DE]">{disabled ? "Planned" : "All live venues"}</dd></div>
+                              <div><dt className="inline text-[var(--fd-text3)]">Best for: </dt><dd className="inline text-[var(--fd-text-soft)]">{info.when}</dd></div>
+                              <div><dt className="inline text-[var(--fd-text3)]">Entry: </dt><dd className="inline text-[var(--fd-text-soft)]">{info.entry}</dd></div>
+                              <div><dt className="inline text-[var(--fd-text3)]">Exit: </dt><dd className="inline text-[var(--fd-text-soft)]">{info.exit}</dd></div>
+                              <div><dt className="inline text-[var(--fd-text3)]">Suggested capital: </dt><dd className="fd-num inline text-[var(--fd-text-soft)]">{info.capital}</dd></div>
+                              <div><dt className="inline text-[var(--fd-text3)]">Venues: </dt><dd className="inline text-[var(--fd-text-soft)]">{disabled ? "Planned" : "All live venues"}</dd></div>
                             </dl>
                           </button>
                         );
@@ -330,13 +330,13 @@ export function StudioView(props: {
                     ) : (
                       <ul className="flex flex-col gap-2">
                         {venueMarkets.slice(0, 6).map((m) => (
-                          <li key={m.id} className="flex items-center gap-3 rounded-xl border border-[#1A2333] bg-[#0D121C] px-4 py-3">
+                          <li key={m.id} className="flex items-center gap-3 rounded-xl border border-[var(--fd-line)] bg-[var(--fd-bg2)] px-4 py-3">
                             <span className="h-8 w-1 rounded-full" style={{ background: vhex }} aria-hidden />
-                            <span className="min-w-0 flex-1 truncate text-[14.5px] text-white">{m.question}</span>
-                            <span className="fd-num rounded-lg bg-[#00D69A]/12 px-2 py-1 text-[13px] font-semibold text-[#3BE6B0]">{m.yesPriceCents ?? "—"}%</span>
+                            <span className="min-w-0 flex-1 truncate text-[14.5px] text-[var(--fd-strong)]">{m.question}</span>
+                            <span className="fd-num rounded-lg bg-[#00D69A]/12 px-2 py-1 text-[13px] font-semibold text-[var(--fd-green-text)]">{m.yesPriceCents ?? "—"}%</span>
                           </li>
                         ))}
-                        {venueMarkets.length > 6 && <li className="text-[13px] text-[#7C889B]">+ {venueMarkets.length - 6} more markets</li>}
+                        {venueMarkets.length > 6 && <li className="text-[13px] text-[var(--fd-text3)]">+ {venueMarkets.length - 6} more markets</li>}
                       </ul>
                     )}
                   </Panel>
@@ -372,7 +372,7 @@ export function StudioView(props: {
                   <SliderRow label="Minimum edge at entry (confidence threshold)" value={`${minEdge} pts`} help="Model estimate minus market price, net of fees. Entries below this edge are refused.">
                     <Slider value={[minEdge]} onValueChange={(v) => setMinEdge(v[0])} min={1} max={25} step={1} aria-label="Minimum edge" />
                   </SliderRow>
-                  <div className="mt-5 rounded-xl border border-[#2583FF]/25 bg-[#2583FF]/[0.06] p-4 text-[14px] leading-relaxed text-[#C9D2DE]">
+                  <div className="mt-5 rounded-xl border border-[#2583FF]/25 bg-[#2583FF]/[0.06] p-4 text-[14px] leading-relaxed text-[var(--fd-text-soft)]">
                     Edge alone never places a trade. Every entry also passes the risk checks: data freshness, book depth, exposure caps, daily loss and drawdown stops.
                   </div>
                 </Panel>
@@ -448,15 +448,15 @@ export function StudioView(props: {
                   <button className={`${btn.primary} mt-6 h-12 w-full text-[15.5px]`} disabled={!nameOk || saving} onClick={submit}>
                     <Save size={17} /> {saving ? "Saving…" : "Save robot as paper draft"}
                   </button>
-                  {!nameOk && <p className="mt-2 text-[13px] text-[#FFC266]">Add a robot name in step 1 first.</p>}
-                  <p className="mt-2 text-[13px] text-[#7C889B]">Saving never activates live trading. Live stays locked until the edge gate, backtest, paper session and your recorded consent all pass.</p>
+                  {!nameOk && <p className="mt-2 text-[13px] text-[var(--fd-amber-text)]">Add a robot name in step 1 first.</p>}
+                  <p className="mt-2 text-[13px] text-[var(--fd-text3)]">Saving never activates live trading. Live stays locked until the edge gate, backtest, paper session and your recorded consent all pass.</p>
                 </Panel>
               )}
 
-              <div className="sticky bottom-[72px] z-10 flex flex-wrap items-center gap-2.5 rounded-2xl border border-[#1E2A3D] bg-[#0D121C]/95 p-3 backdrop-blur md:bottom-3">
+              <div className="sticky bottom-[72px] z-10 flex flex-wrap items-center gap-2.5 rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-bg2)]/95 p-3 backdrop-blur md:bottom-3">
                 <button className={btn.secondary} onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1}><ArrowLeft size={16} /> Previous</button>
                 <button className={btn.ghost} onClick={submit} disabled={!nameOk || saving} title="Save the current configuration as a paper draft"><Save size={16} /> Save draft</button>
-                <span className="ml-auto text-[13px] text-[#7C889B]">Step {step} of {STEPS.length}</span>
+                <span className="ml-auto text-[13px] text-[var(--fd-text3)]">Step {step} of {STEPS.length}</span>
                 {step < 9 ? (
                   <>
                     <button className={btn.ghost} onClick={() => (nameOk ? setStep(9) : setStep(1))}>Review robot</button>
@@ -469,18 +469,18 @@ export function StudioView(props: {
             </div>
 
             {/* summary */}
-            <aside className="h-fit rounded-2xl border border-[#1E2A3D] bg-[#111827] p-5 xl:sticky xl:top-20">
+            <aside className="h-fit rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-5 xl:sticky xl:top-20">
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-[16px] font-semibold text-white">Configuration summary</h2>
+                <h2 className="text-[16px] font-semibold text-[var(--fd-strong)]">Configuration summary</h2>
                 <Badge tone="amber" dot>Paper</Badge>
               </div>
               {summary.map(([k, v]) => <KV key={k} k={k} v={v} />)}
-              <div className="mt-4 flex items-center gap-2 rounded-xl bg-white/[0.03] p-3 text-[13px] text-[#9AA6B8]"><Lock size={15} /> Live activation is locked behind the safety gates.</div>
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-[color:var(--fd-ink)]/[0.03] p-3 text-[13px] text-[var(--fd-text2)]"><Lock size={15} /> Live activation is locked behind the safety gates.</div>
             </aside>
           </div>
 
           <Panel title="Strategy Library" subtitle="Versions and backtests for your existing robots" action={<button className={btn.small} onClick={() => onTab?.("library")}><FlaskConical size={14} /> Open library</button>}>
-            <p className="text-[14px] text-[#9AA6B8]">Tune an existing robot by creating a new strategy version, then backtest it against recorded prices before activating it.</p>
+            <p className="text-[14px] text-[var(--fd-text2)]">Tune an existing robot by creating a new strategy version, then backtest it against recorded prices before activating it.</p>
           </Panel>
         </>
       )}
@@ -492,41 +492,41 @@ function SliderRow({ label, value, help, children }: { label: string; value: str
   return (
     <div>
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <span className="text-[14.5px] font-medium text-[#C9D2DE]">{label}</span>
-        <span className="fd-num text-[16px] font-semibold text-white">{value}</span>
+        <span className="text-[14.5px] font-medium text-[var(--fd-text-soft)]">{label}</span>
+        <span className="fd-num text-[16px] font-semibold text-[var(--fd-strong)]">{value}</span>
       </div>
       {children}
-      {help && <p className="mt-2 text-[13px] text-[#7C889B]">{help}</p>}
+      {help && <p className="mt-2 text-[13px] text-[var(--fd-text3)]">{help}</p>}
     </div>
   );
 }
 
 function InfoCard({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-[#1E2A3D] bg-[#0D121C] p-4">
-      <div className="flex items-center gap-2 text-[14.5px] font-semibold text-white"><span className="text-[#2583FF]">{icon}</span>{title}</div>
-      <p className="mt-2 text-[13.5px] leading-relaxed text-[#9AA6B8]">{children}</p>
+    <div className="rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-4">
+      <div className="flex items-center gap-2 text-[14.5px] font-semibold text-[var(--fd-strong)]"><span className="text-[var(--fd-blue-text)]">{icon}</span>{title}</div>
+      <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--fd-text2)]">{children}</p>
     </div>
   );
 }
 
 function GateRow({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-[#1E2A3D] bg-[#0D121C] p-3">
-      <Lock size={16} className="text-[#7C889B]" />
-      <div><div className="text-[14px] font-medium text-white">{title}</div><div className="text-[12.5px] text-[#7C889B]">{body}</div></div>
+    <div className="flex items-center gap-3 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-3">
+      <Lock size={16} className="text-[var(--fd-text3)]" />
+      <div><div className="text-[14px] font-medium text-[var(--fd-strong)]">{title}</div><div className="text-[12.5px] text-[var(--fd-text3)]">{body}</div></div>
     </div>
   );
 }
 
 function GuidedStep({ done, n, title, body, action }: { done: boolean; n: number; title: string; body: string; action?: ReactNode }) {
   return (
-    <div className={`flex flex-col gap-2 rounded-2xl border p-4 ${done ? "border-[#00D69A]/35 bg-[#00D69A]/[0.05]" : "border-[#1E2A3D] bg-[#0D121C]"}`}>
+    <div className={`flex flex-col gap-2 rounded-2xl border p-4 ${done ? "border-[#00D69A]/35 bg-[#00D69A]/[0.05]" : "border-[var(--fd-border)] bg-[var(--fd-bg2)]"}`}>
       <div className="flex items-center gap-2.5">
-        <span className={`grid h-7 w-7 place-items-center rounded-full text-[13px] font-bold ${done ? "bg-[#00D69A]/20 text-[#3BE6B0]" : "bg-white/[0.06] text-[#9AA6B8]"}`}>{done ? "✓" : n}</span>
-        <span className="text-[15px] font-semibold text-white">{title}</span>
+        <span className={`grid h-7 w-7 place-items-center rounded-full text-[13px] font-bold ${done ? "bg-[#00D69A]/20 text-[var(--fd-green-text)]" : "bg-[color:var(--fd-ink)]/[0.06] text-[var(--fd-text2)]"}`}>{done ? "✓" : n}</span>
+        <span className="text-[15px] font-semibold text-[var(--fd-strong)]">{title}</span>
       </div>
-      <p className="text-[13.5px] text-[#9AA6B8]">{body}</p>
+      <p className="text-[13.5px] text-[var(--fd-text2)]">{body}</p>
       {action}
     </div>
   );

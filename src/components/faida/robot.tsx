@@ -160,7 +160,7 @@ export function RobotDetail(props: {
                 <td className={`${td} fd-num text-right`}>{mark != null ? `${mark}¢` : "—"}</td>
                 <td className={`${td} fd-num text-right`}>{money(p.sizeCents)}</td>
                 <td className={`${td} fd-num text-right font-semibold ${toneText[toneOf(p.unrealizedCents)]}`}>{p.unrealizedCents != null ? money(p.unrealizedCents, { sign: true }) : "—"}</td>
-                <td className={`${td} text-[#C9D2DE]`}>{ago(p.openedAt)}</td>
+                <td className={`${td} text-[var(--fd-text-soft)]`}>{ago(p.openedAt)}</td>
               </tr>
             );
           })}
@@ -178,12 +178,12 @@ export function RobotDetail(props: {
         <tbody>
           {orders.map((o) => (
             <tr key={o.id} className={trow}>
-              <td className={`${td} fd-num whitespace-nowrap text-[#C9D2DE]`}>{new Date(o.createdAt).toISOString().replace("T", " ").slice(5, 19)}</td>
+              <td className={`${td} fd-num whitespace-nowrap text-[var(--fd-text-soft)]`}>{new Date(o.createdAt).toISOString().replace("T", " ").slice(5, 19)}</td>
               <td className={`${td} max-w-[320px] truncate`}>{o.market?.question}</td>
               <td className={td}><Badge tone={o.side.includes("YES") ? "green" : "red"}>{o.side.replace("_", " ")}</Badge></td>
               <td className={`${td} fd-num text-right`}>{o.priceCents}¢</td>
               <td className={`${td} fd-num text-right`}>{money(o.sizeCents)}</td>
-              <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{money(o.feeCents)}</td>
+              <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{money(o.feeCents)}</td>
               <td className={td}>{orderStateBadge(o.state)}</td>
             </tr>
           ))}
@@ -205,14 +205,14 @@ export function RobotDetail(props: {
     <div className="flex flex-col gap-6">
       {/* header */}
       <div className="flex flex-col gap-3">
-        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-[13.5px] text-[#7C889B]">
-          <button onClick={onBack} className="inline-flex items-center gap-1.5 hover:text-white"><ArrowLeft size={14} /> {onBackLabel}</button>
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-[13.5px] text-[var(--fd-text3)]">
+          <button onClick={onBack} className="inline-flex items-center gap-1.5 hover:text-[var(--fd-strong)]"><ArrowLeft size={14} /> {onBackLabel}</button>
           <span aria-hidden>/</span>
-          <button onClick={() => onOpenVenue(robot.venue)} className="hover:text-white">{VENUE_LABEL[robot.venue] ?? robot.venue}</button>
+          <button onClick={() => onOpenVenue(robot.venue)} className="hover:text-[var(--fd-strong)]">{VENUE_LABEL[robot.venue] ?? robot.venue}</button>
           <span aria-hidden>/</span>
-          <span className="text-[#C9D2DE]">{robot.name}</span>
+          <span className="text-[var(--fd-text-soft)]">{robot.name}</span>
         </nav>
-        <div className="relative overflow-hidden rounded-2xl border border-[#1E2A3D] bg-[#111827] p-5 sm:p-6">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-5 sm:p-6">
           <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(600px 200px at 0% 0%, color-mix(in srgb, ${hex} 14%, transparent), transparent 70%)` }} />
           <div className="relative flex flex-wrap items-center gap-4">
             <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl" style={{ background: `color-mix(in srgb, ${hex} 20%, transparent)`, color: hex, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${hex} 40%, transparent)` }} aria-hidden>
@@ -220,11 +220,11 @@ export function RobotDetail(props: {
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-[26px] font-bold tracking-tight text-white sm:text-[28px]">{robot.name}</h1>
+                <h1 className="text-[26px] font-bold tracking-tight text-[var(--fd-strong)] sm:text-[28px]">{robot.name}</h1>
                 {robotStatusBadge(robot.status)}
                 {robot.status !== "PAPER_ONLY" && <Badge tone="amber" dot>{robot.paperMode ? "Paper" : robot.mode}</Badge>}
               </div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-[#9AA6B8]">
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-[var(--fd-text2)]">
                 <VenueTag venue={robot.venue} />
                 <span>{FAMILY_LABEL[robot.family] ?? robot.family}</span>
                 <span>Strategy v{robot.activeVersion}</span>
@@ -241,7 +241,7 @@ export function RobotDetail(props: {
             </div>
           </div>
           {robot.statusReason && (
-            <div className="relative mt-4 rounded-xl border border-[#FFB547]/35 bg-[#FFB547]/10 px-4 py-2.5 text-[14px] text-[#FFD9A0]">Status note: {robot.statusReason}</div>
+            <div className="relative mt-4 rounded-xl border border-[#FFB547]/35 bg-[#FFB547]/10 px-4 py-2.5 text-[14px] text-[var(--fd-amber-text)]">Status note: {robot.statusReason}</div>
           )}
         </div>
       </div>
@@ -266,7 +266,7 @@ export function RobotDetail(props: {
             <Panel title="Realized P&L" subtitle="Cumulative ledger flow of this robot's orders (30 days, UTC)">
               <AreaChart data={perf.flow.map((f) => ({ x: f.day.slice(5), y: f.cumCents / 100 }))} hex={hex} height={260} format={(v) => `$${v.toFixed(0)}`} emptyTitle="No realized P&L yet" emptyBody="The curve starts with this robot's first fill." />
             </Panel>
-            <Panel title="Recent decisions" action={<button className="text-[14px] font-semibold text-[#6AA9FF] hover:underline" onClick={() => setTab("decisions")}>View journal</button>}>
+            <Panel title="Recent decisions" action={<button className="text-[14px] font-semibold text-[var(--fd-blue-text)] hover:underline" onClick={() => setTab("decisions")}>View journal</button>}>
               {journalList(traces.slice(0, 5), false)}
             </Panel>
             <Panel title="Current positions" pad={false}>{positionsTable}</Panel>
@@ -310,7 +310,7 @@ export function RobotDetail(props: {
                 <div className="h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={perf.flow.map((f) => ({ day: f.day.slice(5), y: f.netCents / 100 }))} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                      <CartesianGrid stroke="#1A2333" vertical={false} />
+                      <CartesianGrid stroke="var(--fd-line)" vertical={false} />
                       <XAxis dataKey="day" tick={{ fill: T.text3, fontSize: 12 }} tickLine={false} axisLine={false} minTickGap={24} />
                       <YAxis tick={{ fill: T.text3, fontSize: 12 }} tickLine={false} axisLine={false} width={52} tickFormatter={(v) => `$${v}`} />
                       <Tooltip contentStyle={{ background: T.elevated, border: `1px solid ${T.borderStrong}`, borderRadius: 12, color: T.text }} formatter={(v: number) => [`$${v.toFixed(2)}`, "P&L"]} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
@@ -355,7 +355,7 @@ export function RobotDetail(props: {
                   {versions.map((v) => (
                     <tr key={v.id} className={trow}>
                       <td className={`${td} fd-num font-semibold`}>v{v.version}</td>
-                      <td className={`${td} text-[#C9D2DE]`}>{ago(v.createdAt)}</td>
+                      <td className={`${td} text-[var(--fd-text-soft)]`}>{ago(v.createdAt)}</td>
                       <td className={`${td} fd-num text-right`}>{v.orderCount}</td>
                       <td className={td}>{v.isActive ? <Badge tone="green" dot>Active</Badge> : <Badge>Inactive</Badge>}</td>
                     </tr>
@@ -373,17 +373,17 @@ export function RobotDetail(props: {
             <EmptyState compact title="No model estimates yet" body="Estimates appear when this robot evaluates markets." />
           ) : (
             <div className="flex flex-col gap-3">
-              <p className="text-[13.5px] text-[#9AA6B8]">Estimates are probabilities, not guarantees.</p>
+              <p className="text-[13.5px] text-[var(--fd-text2)]">Estimates are probabilities, not guarantees.</p>
               {aiTraces.slice(0, 30).map((t) => (
-                <div key={t.id} className="rounded-xl border border-[#1E2A3D] bg-[#0D121C] p-4">
+                <div key={t.id} className="rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-4">
                   <div className="flex flex-wrap items-center gap-3">
                     <Badge tone="purple">Model estimate</Badge>
-                    <span className="fd-num text-[18px] font-semibold text-[#B9A2FF]">{t.modelEstimatePct?.toFixed(1)}%</span>
-                    <span className="text-[14px] text-[#9AA6B8]">vs. market <span className="fd-num text-white">{t.marketPriceCents}¢</span></span>
-                    <span className={`fd-num text-[14px] font-semibold ${(t.edgeNetPct ?? 0) > 0 ? "text-[#3BE6B0]" : "text-[#9AA6B8]"}`}>edge {t.edgeNetPct != null ? `${t.edgeNetPct > 0 ? "+" : ""}${t.edgeNetPct.toFixed(1)}` : "—"} pts</span>
-                    <span className="fd-num ml-auto text-[12.5px] text-[#7C889B]">{t.modelKey ?? "baseline"} · {ago(t.createdAt)}</span>
+                    <span className="fd-num text-[18px] font-semibold text-[var(--fd-purple-text)]">{t.modelEstimatePct?.toFixed(1)}%</span>
+                    <span className="text-[14px] text-[var(--fd-text2)]">vs. market <span className="fd-num text-[var(--fd-strong)]">{t.marketPriceCents}¢</span></span>
+                    <span className={`fd-num text-[14px] font-semibold ${(t.edgeNetPct ?? 0) > 0 ? "text-[var(--fd-green-text)]" : "text-[var(--fd-text2)]"}`}>edge {t.edgeNetPct != null ? `${t.edgeNetPct > 0 ? "+" : ""}${t.edgeNetPct.toFixed(1)}` : "—"} pts</span>
+                    <span className="fd-num ml-auto text-[12.5px] text-[var(--fd-text3)]">{t.modelKey ?? "baseline"} · {ago(t.createdAt)}</span>
                   </div>
-                  <div className="mt-2 truncate text-[14px] text-[#C9D2DE]">{t.market?.question}</div>
+                  <div className="mt-2 truncate text-[14px] text-[var(--fd-text-soft)]">{t.market?.question}</div>
                 </div>
               ))}
             </div>
@@ -405,13 +405,13 @@ export function RobotDetail(props: {
             <GatePanel gate={gate} />
             <Panel title="Warnings">
               {robot.status === "PAUSED_BY_RISK" || robot.statusReason || positions.length >= robot.maxOpenPositions ? (
-                <ul className="flex flex-col gap-2 text-[14px] text-[#C9D2DE]">
+                <ul className="flex flex-col gap-2 text-[14px] text-[var(--fd-text-soft)]">
                   {robot.status === "PAUSED_BY_RISK" && <li className="flex gap-2"><Badge tone="red">Critical</Badge> Paused by the risk engine. Review before resuming.</li>}
                   {robot.statusReason && <li className="flex gap-2"><Badge tone="amber">Note</Badge> {robot.statusReason}</li>}
                   {positions.length >= robot.maxOpenPositions && <li className="flex gap-2"><Badge tone="amber">Limit</Badge> At the maximum number of open positions; new entries are refused.</li>}
                 </ul>
               ) : (
-                <div className="flex items-center gap-2 text-[14px] text-[#C9F5E6]"><CheckCircle2 size={18} className="text-[#00D69A]" /> No risk warnings for this robot.</div>
+                <div className="flex items-center gap-2 text-[14px] text-[var(--fd-green-soft-text)]"><CheckCircle2 size={18} className="text-[var(--fd-green-text)]" /> No risk warnings for this robot.</div>
               )}
             </Panel>
           </div>
@@ -426,18 +426,18 @@ export function RobotDetail(props: {
               <tbody>
                 {orders.map((o) => (
                   <tr key={o.id} className={trow}>
-                    <td className={`${td} fd-num whitespace-nowrap text-[#C9D2DE]`}>{new Date(o.createdAt).toISOString().replace("T", " ").slice(0, 19)}</td>
-                    <td className={`${td} fd-num text-[#C9D2DE]`}>{o.id.slice(-10)}</td>
+                    <td className={`${td} fd-num whitespace-nowrap text-[var(--fd-text-soft)]`}>{new Date(o.createdAt).toISOString().replace("T", " ").slice(0, 19)}</td>
+                    <td className={`${td} fd-num text-[var(--fd-text-soft)]`}>{o.id.slice(-10)}</td>
                     <td className={td}>{o.state === "FILLED" ? <Badge tone="green">Accepted</Badge> : o.state === "REJECTED" ? <Badge tone="red">Rejected</Badge> : o.state === "UNKNOWN" || o.state === "RECONCILING" ? <Badge tone="amber">Unresolved</Badge> : orderStateBadge(o.state)}</td>
                     <td className={`${td} fd-num text-right`}>{money(o.sizeCents)} @ {o.priceCents}¢</td>
                     <td className={`${td} fd-num text-right`}>{money(o.filledCents)}</td>
-                    <td className={`${td} max-w-[360px] text-[#9AA6B8]`}>{o.stateReason ?? "—"}</td>
+                    <td className={`${td} max-w-[360px] text-[var(--fd-text2)]`}>{o.stateReason ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
             </TableWrap>
           )}
-          <div className="border-t border-[#1A2333] px-5 py-3 text-[13px] text-[#7C889B]">Latest 15 orders. Unresolved orders are reconciled automatically on the next cycle, or from Trading › Execution Monitor.</div>
+          <div className="border-t border-[var(--fd-line)] px-5 py-3 text-[13px] text-[var(--fd-text3)]">Latest 15 orders. Unresolved orders are reconciled automatically on the next cycle, or from Trading › Execution Monitor.</div>
         </Panel>
       )}
 
@@ -453,7 +453,7 @@ export function RobotDetail(props: {
             <KV k="Daily loss stop" v={`${robot.dailyLossStopPct}%`} mono />
             <KV k="Drawdown stop" v={`${robot.drawdownStopPct}%`} mono />
             <KV k="Created" v={new Date(robot.createdAt).toUTCString().replace(" GMT", " UTC")} />
-            <p className="mt-3 text-[13px] text-[#7C889B]">Capital and stop limits are fixed when a robot is created. Strategy parameters change through new versions in the Strategy Library.</p>
+            <p className="mt-3 text-[13px] text-[var(--fd-text3)]">Capital and stop limits are fixed when a robot is created. Strategy parameters change through new versions in the Strategy Library.</p>
           </Panel>
           <Panel title="Controls">
             <div className="flex flex-col gap-3">
@@ -472,17 +472,17 @@ export function RobotDetail(props: {
 function GatePanel({ gate }: { gate: RobotDetailDTO["gate"] }) {
   const passed = gate?.checks.filter((c) => c.passed).length ?? 0;
   return (
-    <Panel title="Path to live trading" action={<span className="fd-num text-[14px] text-[#9AA6B8]">{gate ? `${passed}/${gate.checks.length}` : "—"}</span>}>
+    <Panel title="Path to live trading" action={<span className="fd-num text-[14px] text-[var(--fd-text2)]">{gate ? `${passed}/${gate.checks.length}` : "—"}</span>}>
       {!gate ? (
-        <p className="text-[14px] text-[#9AA6B8]">Edge gate report unavailable.</p>
+        <p className="text-[14px] text-[var(--fd-text2)]">Edge gate report unavailable.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {gate.checks.map((ck) => (
             <li key={ck.check} className="flex items-start gap-3">
-              {ck.passed ? <CheckCircle2 size={19} className="mt-0.5 shrink-0 text-[#00D69A]" /> : <XCircle size={19} className="mt-0.5 shrink-0 text-[#7C889B]" />}
+              {ck.passed ? <CheckCircle2 size={19} className="mt-0.5 shrink-0 text-[var(--fd-green-text)]" /> : <XCircle size={19} className="mt-0.5 shrink-0 text-[var(--fd-text3)]" />}
               <div className="min-w-0">
-                <div className="text-[14.5px] font-medium text-white">{GATE_LABEL[ck.check] ?? ck.check.replace(/_/g, " ").toLowerCase()}</div>
-                <div className="text-[13px] leading-snug text-[#9AA6B8]">{ck.detail}</div>
+                <div className="text-[14.5px] font-medium text-[var(--fd-strong)]">{GATE_LABEL[ck.check] ?? ck.check.replace(/_/g, " ").toLowerCase()}</div>
+                <div className="text-[13px] leading-snug text-[var(--fd-text2)]">{ck.detail}</div>
               </div>
             </li>
           ))}
@@ -499,9 +499,9 @@ function Usage({ label, value, max, detail }: { label: string; value: number; ma
   const p = max > 0 ? (value / max) * 100 : 0;
   return (
     <div>
-      <div className="mb-1.5 flex justify-between text-[14px]"><span className="text-[#C9D2DE]">{label}</span><span className="fd-num font-semibold text-white">{pct(p, 0)}</span></div>
+      <div className="mb-1.5 flex justify-between text-[14px]"><span className="text-[var(--fd-text-soft)]">{label}</span><span className="fd-num font-semibold text-[var(--fd-strong)]">{pct(p, 0)}</span></div>
       <Bar value={value} max={max || 1} warnAt={80} label={label} />
-      <div className="mt-1.5 text-[12.5px] text-[#7C889B]">{detail}</div>
+      <div className="mt-1.5 text-[12.5px] text-[var(--fd-text3)]">{detail}</div>
     </div>
   );
 }
@@ -511,15 +511,15 @@ function JournalItem({ t, withDetail }: { t: RobotDetailDTO["traces"][number]; w
   const checks = (() => { try { return JSON.parse(t.riskChecks) as Array<{ passed: boolean }>; } catch { return []; } })();
   const passed = checks.filter((c) => c.passed).length;
   return (
-    <li className="rounded-xl border border-[#1E2A3D] bg-[#0D121C]">
+    <li className="rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)]">
       <button className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left" onClick={() => withDetail && setOpen((o) => !o)} aria-expanded={withDetail ? open : undefined}>
-        <span className="fd-num w-[74px] shrink-0 text-[12.5px] text-[#7C889B]">{new Date(t.createdAt).toISOString().slice(11, 19)}</span>
+        <span className="fd-num w-[74px] shrink-0 text-[12.5px] text-[var(--fd-text3)]">{new Date(t.createdAt).toISOString().slice(11, 19)}</span>
         {decisionBadge(t.decision)}
-        <span className="min-w-[160px] flex-1 truncate text-[14.5px] font-medium text-white">{t.market?.question ?? "—"}</span>
-        {t.modelEstimatePct != null && <span className="fd-num text-[13px] text-[#B9A2FF]">conf. {t.modelEstimatePct.toFixed(0)}%</span>}
-        {checks.length > 0 && <span className={`text-[13px] ${passed === checks.length ? "text-[#3BE6B0]" : "text-[#FFC266]"}`}>{passed}/{checks.length} checks</span>}
+        <span className="min-w-[160px] flex-1 truncate text-[14.5px] font-medium text-[var(--fd-strong)]">{t.market?.question ?? "—"}</span>
+        {t.modelEstimatePct != null && <span className="fd-num text-[13px] text-[var(--fd-purple-text)]">conf. {t.modelEstimatePct.toFixed(0)}%</span>}
+        {checks.length > 0 && <span className={`text-[13px] ${passed === checks.length ? "text-[var(--fd-green-text)]" : "text-[var(--fd-amber-text)]"}`}>{passed}/{checks.length} checks</span>}
       </button>
-      <div className="px-4 pb-3 text-[13.5px] leading-relaxed text-[#9AA6B8]">{t.reason}</div>
+      <div className="px-4 pb-3 text-[13.5px] leading-relaxed text-[var(--fd-text2)]">{t.reason}</div>
       {open && <div className="px-4 pb-4"><TraceDetail t={t} /></div>}
     </li>
   );

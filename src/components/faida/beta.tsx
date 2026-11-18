@@ -159,7 +159,7 @@ function OperatorBeta({ onToast }: { onToast: (t: { title: string; description?:
         <div className={`px-4 pt-3 text-[13px] font-bold tracking-[0.15em] ${c.text3}`}>
           EXIT BAR (BETA_PHASE75 §4) {exitBar ? `· ${exitBar.summary.pass}/${exitBar.summary.total} PASS · ${exitBar.summary.verdict}` : ""}
         </div>
-        <div className="divide-y" style={{ borderColor: "#1E2A3D" }}>
+        <div className="divide-y" style={{ borderColor: "var(--fd-border)" }}>
           {exitBar?.items.map((i) => (
             <div key={i.id} className="flex items-start gap-3 px-4 py-2.5">
               <span className={`mt-0.5 rounded px-1.5 py-0.5 text-[12px] font-bold ${STATUS_TONE[i.status] ?? c.text3}`}>{i.status}</span>
@@ -238,7 +238,7 @@ function OperatorBeta({ onToast }: { onToast: (t: { title: string; description?:
               </tr></thead>
               <tbody>
                 {cohort?.members.map((m) => (
-                  <tr key={m.id} className="border-t" style={{ borderColor: "#1E2A3D" }}>
+                  <tr key={m.id} className="border-t" style={{ borderColor: "var(--fd-border)" }}>
                     <td className={`py-1.5 pr-3 ${c.text}`}>{m.email}</td>
                     <td className={`py-1.5 pr-3 ${c.text2}`}>{m.track}</td>
                     <td className={`py-1.5 pr-3 ${c.text3}`}>R{m.round}</td>
