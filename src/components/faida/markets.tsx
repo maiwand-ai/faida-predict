@@ -44,8 +44,8 @@ type MarketWithMeta = MarketDTO & { createdAt?: string };
 function probabilityBar(p: number | null, hex: string) {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="fd-num w-11 text-[14px] font-semibold text-white">{p != null ? `${p}%` : "—"}</span>
-      <span className="h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.07]" aria-hidden>
+      <span className="fd-num w-11 text-[14px] font-semibold text-[var(--fd-strong)]">{p != null ? `${p}%` : "—"}</span>
+      <span className="h-1.5 w-20 overflow-hidden rounded-full bg-[color:var(--fd-ink)]/[0.07]" aria-hidden>
         <span className="block h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, p ?? 0))}%`, background: hex }} />
       </span>
     </div>
@@ -53,11 +53,11 @@ function probabilityBar(p: number | null, hex: string) {
 }
 
 function change(v: number | null | undefined) {
-  if (v == null) return <span className="text-[#7C889B]">—</span>;
-  if (v === 0) return <span className="fd-num text-[#9AA6B8]">0¢</span>;
+  if (v == null) return <span className="text-[var(--fd-text3)]">—</span>;
+  if (v === 0) return <span className="fd-num text-[var(--fd-text2)]">0¢</span>;
   const up = v > 0;
   return (
-    <span className={`fd-num inline-flex items-center gap-0.5 font-semibold ${up ? "text-[#00D69A]" : "text-[#FF5268]"}`}>
+    <span className={`fd-num inline-flex items-center gap-0.5 font-semibold ${up ? "text-[var(--fd-green-text)]" : "text-[var(--fd-red-text)]"}`}>
       {up ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
       {up ? "+" : ""}{v}¢
     </span>
@@ -161,13 +161,13 @@ export function MarketsView(props: {
   const sortBtn = (key: string, label: string, align: "left" | "right" = "left") => (
     <button
       onClick={() => { setSort((s) => (s?.key === key ? { key, dir: (s.dir * -1) as 1 | -1 } : { key, dir: -1 })); setPage(0); }}
-      className={`inline-flex items-center gap-1 uppercase hover:text-white ${align === "right" ? "justify-end" : ""}`}
+      className={`inline-flex items-center gap-1 uppercase hover:text-[var(--fd-strong)] ${align === "right" ? "justify-end" : ""}`}
       aria-label={`Sort by ${label}`}
     >
       {label}{sort?.key === key ? (sort.dir === -1 ? " ↓" : " ↑") : ""}
     </button>
   );
-  const sel = "h-10 rounded-xl border border-[#253247] bg-[#111827] px-3 text-[14px] text-[#E8EDF5]";
+  const sel = "h-10 rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-surface)] px-3 text-[14px] text-[var(--fd-text)]";
   const liveVenues = VENUES.filter((v) => v.adapter === "LIVE");
 
   return (
@@ -200,12 +200,12 @@ export function MarketsView(props: {
               const vol = inCat.reduce((a, m) => a + (m.volumeCents ?? 0), 0);
               const venues = [...new Set(inCat.map((m) => m.venue))];
               return (
-                <button key={cat} onClick={() => { setCategory(cat); onTab("all"); }} className="rounded-2xl border border-[#1E2A3D] bg-[#111827] p-5 text-left transition-colors hover:border-[#2583FF]/50">
+                <button key={cat} onClick={() => { setCategory(cat); onTab("all"); }} className="rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-5 text-left transition-colors hover:border-[#2583FF]/50">
                   <div className="flex items-center justify-between">
-                    <span className="text-[17px] font-semibold capitalize text-white">{cat}</span>
+                    <span className="text-[17px] font-semibold capitalize text-[var(--fd-strong)]">{cat}</span>
                     <Badge tone="blue">{n} markets</Badge>
                   </div>
-                  <div className="mt-3 text-[14px] text-[#9AA6B8]">Volume <span className="fd-num font-semibold text-white">{money(vol, { compact: true })}</span></div>
+                  <div className="mt-3 text-[14px] text-[var(--fd-text2)]">Volume <span className="fd-num font-semibold text-[var(--fd-strong)]">{money(vol, { compact: true })}</span></div>
                   <div className="mt-3 flex flex-wrap gap-1.5">{venues.map((v) => <VenueTag key={v} venue={v} />)}</div>
                 </button>
               );
@@ -214,9 +214,9 @@ export function MarketsView(props: {
         )
       ) : (
         <Panel pad={false}>
-          <div className="flex flex-wrap items-center gap-2.5 border-b border-[#1A2333] p-4">
+          <div className="flex flex-wrap items-center gap-2.5 border-b border-[var(--fd-line)] p-4">
             <label className="sr-only" htmlFor="mkt-q">Search markets</label>
-            <input id="mkt-q" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search markets…" className={`${sel} min-w-[200px] flex-1 placeholder:text-[#7C889B]`} />
+            <input id="mkt-q" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Search markets…" className={`${sel} min-w-[200px] flex-1 placeholder:text-[var(--fd-text3)]`} />
             <label className="sr-only" htmlFor="f-venue">Venue</label>
             <select id="f-venue" className={sel} value={venue} onChange={(e) => { setVenue(e.target.value); setPage(0); }}>
               <option value="ALL">All venues</option>
@@ -294,26 +294,26 @@ export function MarketsView(props: {
                             onClick={(e) => { e.stopPropagation(); wl.toggle(m.id); }}
                             aria-label={watched ? "Remove from watchlist" : "Add to watchlist"}
                             aria-pressed={watched}
-                            className={`grid h-9 w-9 place-items-center rounded-lg ${watched ? "text-[#FFB547]" : "text-[#7C889B] hover:text-white"}`}
+                            className={`grid h-9 w-9 place-items-center rounded-lg ${watched ? "text-[var(--fd-amber-text)]" : "text-[var(--fd-text3)] hover:text-[var(--fd-strong)]"}`}
                           >
                             <Star size={17} fill={watched ? "currentColor" : "none"} />
                           </button>
                         </td>
                         <td className={`${td} max-w-[380px]`}>
                           <div className="truncate font-medium">{m.question}</div>
-                          <div className="mt-0.5 flex items-center gap-2 text-[12.5px] text-[#7C889B]">
+                          <div className="mt-0.5 flex items-center gap-2 text-[12.5px] text-[var(--fd-text3)]">
                             <span className="capitalize">{m.category}</span>
                             {m.ambiguityFlag && <Badge tone="amber">Flagged</Badge>}
                           </div>
                         </td>
                         <td className={td}><VenueTag venue={m.venue} /></td>
-                        <td className={`${td} fd-num font-semibold text-[#3BE6B0]`}>{m.yesPriceCents ?? "—"}¢</td>
-                        <td className={`${td} fd-num text-[#FF8A9A]`}>{m.noPriceCents ?? "—"}¢</td>
+                        <td className={`${td} fd-num font-semibold text-[var(--fd-green-text)]`}>{m.yesPriceCents ?? "—"}¢</td>
+                        <td className={`${td} fd-num text-[var(--fd-red-text)]`}>{m.noPriceCents ?? "—"}¢</td>
                         <td className={td}>{probabilityBar(m.yesPriceCents, hex)}</td>
                         <td className={td}>{change(m.change24hCents)}</td>
-                        <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{money(m.volumeCents, { compact: true })}</td>
-                        <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{money(m.liquidityCents, { compact: true })}</td>
-                        <td className={`${td} whitespace-nowrap text-[#C9D2DE]`}>{m.closeDate ? shortDate(m.closeDate) : "—"}</td>
+                        <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{money(m.volumeCents, { compact: true })}</td>
+                        <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{money(m.liquidityCents, { compact: true })}</td>
+                        <td className={`${td} whitespace-nowrap text-[var(--fd-text-soft)]`}>{m.closeDate ? shortDate(m.closeDate) : "—"}</td>
                         <td className={`${td} text-right`}>
                           <button
                             className={btn.small}
@@ -329,9 +329,9 @@ export function MarketsView(props: {
                   })}
                 </tbody>
               </TableWrap>
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#1A2333] px-4 py-3 text-[13.5px] text-[#9AA6B8]">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--fd-line)] px-4 py-3 text-[13.5px] text-[var(--fd-text2)]">
                 <span>
-                  Showing <span className="fd-num text-white">{cur * PAGE + 1}–{Math.min(rows.length, cur * PAGE + PAGE)}</span> of <span className="fd-num text-white">{rows.length}</span>
+                  Showing <span className="fd-num text-[var(--fd-strong)]">{cur * PAGE + 1}–{Math.min(rows.length, cur * PAGE + PAGE)}</span> of <span className="fd-num text-[var(--fd-strong)]">{rows.length}</span>
                 </span>
                 <div className="flex items-center gap-2">
                   <button className={btn.small} disabled={cur === 0} onClick={() => setPage(cur - 1)}>Previous</button>
@@ -421,7 +421,7 @@ export function MarketDetail(props: {
     <div className="flex flex-col gap-6">
       <PageHeader
         crumbs={
-          <button onClick={onBack} className="inline-flex items-center gap-1.5 hover:text-white"><ArrowLeft size={14} /> Markets</button>
+          <button onClick={onBack} className="inline-flex items-center gap-1.5 hover:text-[var(--fd-strong)]"><ArrowLeft size={14} /> Markets</button>
         }
         title={<span className="block max-w-[900px] text-[24px] leading-snug sm:text-[26px]">{m.question}</span>}
         badges={
@@ -434,12 +434,12 @@ export function MarketDetail(props: {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <StatBox label="Probability (YES)" value={m.yesPriceCents != null ? `${m.yesPriceCents}%` : "—"} hex={hex} sub={moveCents != null ? <>{change(moveCents)} <span className="text-[#7C889B]">· {range}</span></> : undefined} />
-        <StatBox label="YES price" value={m.yesPriceCents != null ? `${m.yesPriceCents}¢` : "—"} tone="text-[#3BE6B0]" />
-        <StatBox label="NO price" value={m.noPriceCents != null ? `${m.noPriceCents}¢` : "—"} tone="text-[#FF8A9A]" />
+        <StatBox label="Probability (YES)" value={m.yesPriceCents != null ? `${m.yesPriceCents}%` : "—"} hex={hex} sub={moveCents != null ? <>{change(moveCents)} <span className="text-[var(--fd-text3)]">· {range}</span></> : undefined} />
+        <StatBox label="YES price" value={m.yesPriceCents != null ? `${m.yesPriceCents}¢` : "—"} tone="text-[var(--fd-green-text)]" />
+        <StatBox label="NO price" value={m.noPriceCents != null ? `${m.noPriceCents}¢` : "—"} tone="text-[var(--fd-red-text)]" />
         <StatBox label="Volume" value={money(m.volumeCents, { compact: true })} />
         <StatBox label="Liquidity" value={money(m.liquidityCents, { compact: true })} />
-        <StatBox label="Resolves" value={m.closeDate ? shortDate(m.closeDate) : "—"} sub={<span className="text-[#7C889B]">updated {ago(m.updatedAt)}</span>} />
+        <StatBox label="Resolves" value={m.closeDate ? shortDate(m.closeDate) : "—"} sub={<span className="text-[var(--fd-text3)]">updated {ago(m.updatedAt)}</span>} />
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -462,7 +462,7 @@ export function MarketDetail(props: {
       </div>
 
       <Panel pad={false}>
-        <div className="border-b border-[#1A2333] p-3">
+        <div className="border-b border-[var(--fd-line)] p-3">
           <Tabs
             label="Market sections"
             value={tab}
@@ -482,14 +482,14 @@ export function MarketDetail(props: {
           {tab === "overview" && (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <div>
-                <h3 className="mb-2 text-[15px] font-semibold text-white">Resolution</h3>
-                <KV k="Resolution source" v={m.resolutionSource ?? <span className="text-[#7C889B]">Not provided by the venue</span>} />
+                <h3 className="mb-2 text-[15px] font-semibold text-[var(--fd-strong)]">Resolution</h3>
+                <KV k="Resolution source" v={m.resolutionSource ?? <span className="text-[var(--fd-text3)]">Not provided by the venue</span>} />
                 <KV k="Resolution date" v={m.closeDate ? new Date(m.closeDate).toUTCString().replace(" GMT", " UTC") : "—"} />
                 <KV k="Ambiguity check" v={m.ambiguityFlag ? <Badge tone="amber">Flagged: trading blocked until reviewed</Badge> : <Badge tone="green">Clear</Badge>} />
                 <KV k="Status" v={closed ? "Closed" : "Open for trading"} />
               </div>
               <div>
-                <h3 className="mb-2 text-[15px] font-semibold text-white">Market data</h3>
+                <h3 className="mb-2 text-[15px] font-semibold text-[var(--fd-strong)]">Market data</h3>
                 <KV k="Venue" v={def?.label ?? m.venue} />
                 <KV k="Venue market id" v={m.venueSymbol} mono />
                 <KV k="Data source" v={<Badge tone={m.dataSource.endsWith("_LIVE") || m.dataSource.endsWith("_SYNC") ? "cyan" : "amber"}>{m.dataSource.replace(/_/g, " ").toLowerCase()}</Badge>} />
@@ -508,9 +508,9 @@ export function MarketDetail(props: {
                 <tbody>
                   {[...data.ticks].reverse().slice(0, 200).map((t, i) => (
                     <tr key={i} className={trow}>
-                      <td className={`${td} fd-num text-[#C9D2DE]`}>{new Date(t.capturedAt).toISOString().replace("T", " ").slice(0, 19)}</td>
-                      <td className={`${td} fd-num text-[#3BE6B0]`}>{t.yesCents}¢</td>
-                      <td className={`${td} fd-num text-[#FF8A9A]`}>{t.noCents}¢</td>
+                      <td className={`${td} fd-num text-[var(--fd-text-soft)]`}>{new Date(t.capturedAt).toISOString().replace("T", " ").slice(0, 19)}</td>
+                      <td className={`${td} fd-num text-[var(--fd-green-text)]`}>{t.yesCents}¢</td>
+                      <td className={`${td} fd-num text-[var(--fd-red-text)]`}>{t.noCents}¢</td>
                       <td className={td}><Badge>{t.source.replace(/_/g, " ").toLowerCase()}</Badge></td>
                     </tr>
                   ))}
@@ -521,13 +521,13 @@ export function MarketDetail(props: {
           {tab === "book" && (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <div>
-                <h3 className="mb-2 text-[15px] font-semibold text-white">Top of book at last sync</h3>
+                <h3 className="mb-2 text-[15px] font-semibold text-[var(--fd-strong)]">Top of book at last sync</h3>
                 <KV k="YES best ask" v={m.yesPriceCents != null ? `${m.yesPriceCents}¢` : "—"} mono />
                 <KV k="Depth at YES ask" v={m.yesTouchDepthCents != null ? money(m.yesTouchDepthCents) : "Not captured"} mono />
                 <KV k="NO best ask" v={m.noPriceCents != null ? `${m.noPriceCents}¢` : "—"} mono />
                 <KV k="Depth at NO ask" v={m.noTouchDepthCents != null ? money(m.noTouchDepthCents) : "Not captured"} mono />
               </div>
-              <div className="rounded-2xl border border-dashed border-[#253247] p-5 text-[14px] leading-relaxed text-[#9AA6B8]">
+              <div className="rounded-2xl border border-dashed border-[var(--fd-border2)] p-5 text-[14px] leading-relaxed text-[var(--fd-text2)]">
                 FAIDA stores the top of the book (best price and the notional available there) on each sync. That is what the risk engine
                 checks before an entry. The full depth ladder is not streamed, so it isn&apos;t shown here.
               </div>
@@ -546,12 +546,12 @@ export function MarketDetail(props: {
             ) : (
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {data.related.map((rm) => (
-                  <button key={rm.id} onClick={() => onOpenMarket(rm.id)} className="flex items-center justify-between gap-4 rounded-xl border border-[#1E2A3D] bg-[#0D121C] p-4 text-left transition-colors hover:border-[#2583FF]/50">
+                  <button key={rm.id} onClick={() => onOpenMarket(rm.id)} className="flex items-center justify-between gap-4 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-4 text-left transition-colors hover:border-[#2583FF]/50">
                     <span className="min-w-0">
-                      <span className="block truncate text-[14.5px] font-medium text-white">{rm.question}</span>
-                      <span className="mt-1 block text-[12.5px] text-[#7C889B]">{rm.relation === "SAME_EVENT" ? "Same event cluster" : `Same category · ${rm.category}`}</span>
+                      <span className="block truncate text-[14.5px] font-medium text-[var(--fd-strong)]">{rm.question}</span>
+                      <span className="mt-1 block text-[12.5px] text-[var(--fd-text3)]">{rm.relation === "SAME_EVENT" ? "Same event cluster" : `Same category · ${rm.category}`}</span>
                     </span>
-                    <span className="fd-num shrink-0 rounded-lg bg-[#00D69A]/12 px-2.5 py-1 text-[14px] font-semibold text-[#3BE6B0]">{rm.yesPriceCents ?? "—"}%</span>
+                    <span className="fd-num shrink-0 rounded-lg bg-[#00D69A]/12 px-2.5 py-1 text-[14px] font-semibold text-[var(--fd-green-text)]">{rm.yesPriceCents ?? "—"}%</span>
                   </button>
                 ))}
               </div>
@@ -562,14 +562,14 @@ export function MarketDetail(props: {
               <EmptyState compact title="No model estimates for this market yet" body="When a robot evaluates this market, its probability estimate, the model that produced it and the edge versus the market price are recorded here." />
             ) : (
               <div className="flex flex-col gap-3">
-                <p className="text-[13.5px] text-[#9AA6B8]">Estimates are model outputs, not guarantees. They are shown next to the market price they were compared against.</p>
+                <p className="text-[13.5px] text-[var(--fd-text2)]">Estimates are model outputs, not guarantees. They are shown next to the market price they were compared against.</p>
                 {data.traces.filter((t) => t.modelEstimatePct != null).map((t) => (
-                  <div key={t.id} className="grid grid-cols-2 gap-3 rounded-xl border border-[#1E2A3D] bg-[#0D121C] p-4 sm:grid-cols-5">
-                    <div><div className="text-[12.5px] text-[#7C889B]">Model estimate</div><div className="fd-num text-[18px] font-semibold text-[#B9A2FF]">{t.modelEstimatePct?.toFixed(1)}%</div></div>
-                    <div><div className="text-[12.5px] text-[#7C889B]">Market price</div><div className="fd-num text-[18px] font-semibold text-white">{t.marketPriceCents ?? "—"}¢</div></div>
-                    <div><div className="text-[12.5px] text-[#7C889B]">Net edge</div><div className={`fd-num text-[18px] font-semibold ${(t.edgeNetPct ?? 0) > 0 ? "text-[#3BE6B0]" : "text-[#9AA6B8]"}`}>{t.edgeNetPct != null ? `${t.edgeNetPct > 0 ? "+" : ""}${t.edgeNetPct.toFixed(1)} pts` : "—"}</div></div>
-                    <div><div className="text-[12.5px] text-[#7C889B]">Model</div><div className="fd-num truncate text-[13.5px] text-[#C9D2DE]">{t.modelKey ?? "baseline"}</div></div>
-                    <div><div className="text-[12.5px] text-[#7C889B]">When</div><div className="text-[13.5px] text-[#C9D2DE]">{ago(t.createdAt)}</div></div>
+                  <div key={t.id} className="grid grid-cols-2 gap-3 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-4 sm:grid-cols-5">
+                    <div><div className="text-[12.5px] text-[var(--fd-text3)]">Model estimate</div><div className="fd-num text-[18px] font-semibold text-[var(--fd-purple-text)]">{t.modelEstimatePct?.toFixed(1)}%</div></div>
+                    <div><div className="text-[12.5px] text-[var(--fd-text3)]">Market price</div><div className="fd-num text-[18px] font-semibold text-[var(--fd-strong)]">{t.marketPriceCents ?? "—"}¢</div></div>
+                    <div><div className="text-[12.5px] text-[var(--fd-text3)]">Net edge</div><div className={`fd-num text-[18px] font-semibold ${(t.edgeNetPct ?? 0) > 0 ? "text-[var(--fd-green-text)]" : "text-[var(--fd-text2)]"}`}>{t.edgeNetPct != null ? `${t.edgeNetPct > 0 ? "+" : ""}${t.edgeNetPct.toFixed(1)} pts` : "—"}</div></div>
+                    <div><div className="text-[12.5px] text-[var(--fd-text3)]">Model</div><div className="fd-num truncate text-[13.5px] text-[var(--fd-text-soft)]">{t.modelKey ?? "baseline"}</div></div>
+                    <div><div className="text-[12.5px] text-[var(--fd-text3)]">When</div><div className="text-[13.5px] text-[var(--fd-text-soft)]">{ago(t.createdAt)}</div></div>
                   </div>
                 ))}
               </div>
@@ -583,16 +583,16 @@ export function MarketDetail(props: {
                 {data.positions.filter((p) => p.status === "OPEN").map((p) => (
                   <div key={p.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-[#2583FF]/30 bg-[#2583FF]/[0.06] px-4 py-3 text-[14px]">
                     <Badge tone="blue">Open position</Badge>
-                    <button className="font-semibold text-white hover:underline" onClick={() => p.robot && onOpenRobot(p.robot.id)}>{p.robot?.name ?? "Manual"}</button>
-                    <span className="text-[#9AA6B8]">{p.side} · {money(p.sizeCents)} @ {p.avgPriceCents}¢</span>
+                    <button className="font-semibold text-[var(--fd-strong)] hover:underline" onClick={() => p.robot && onOpenRobot(p.robot.id)}>{p.robot?.name ?? "Manual"}</button>
+                    <span className="text-[var(--fd-text2)]">{p.side} · {money(p.sizeCents)} @ {p.avgPriceCents}¢</span>
                   </div>
                 ))}
                 {data.traces.map((t) => (
-                  <div key={t.id} className="flex flex-wrap items-start gap-3 rounded-xl border border-[#1E2A3D] bg-[#0D121C] px-4 py-3">
-                    <span className="fd-num w-[86px] shrink-0 pt-0.5 text-[12.5px] text-[#7C889B]">{new Date(t.createdAt).toISOString().slice(11, 19)}</span>
+                  <div key={t.id} className="flex flex-wrap items-start gap-3 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] px-4 py-3">
+                    <span className="fd-num w-[86px] shrink-0 pt-0.5 text-[12.5px] text-[var(--fd-text3)]">{new Date(t.createdAt).toISOString().slice(11, 19)}</span>
                     {decisionBadge(t.decision)}
-                    <button className="font-semibold text-white hover:underline" onClick={() => t.robot && onOpenRobot(t.robot.id)}>{t.robot?.name}</button>
-                    <span className="min-w-[200px] flex-1 text-[14px] text-[#9AA6B8]">{t.reason}</span>
+                    <button className="font-semibold text-[var(--fd-strong)] hover:underline" onClick={() => t.robot && onOpenRobot(t.robot.id)}>{t.robot?.name}</button>
+                    <span className="min-w-[200px] flex-1 text-[14px] text-[var(--fd-text2)]">{t.reason}</span>
                   </div>
                 ))}
               </div>
@@ -606,9 +606,9 @@ export function MarketDetail(props: {
 
 function StatBox({ label, value, sub, hex, tone }: { label: string; value: ReactNode; sub?: ReactNode; hex?: string; tone?: string }) {
   return (
-    <div className="rounded-2xl border border-[#1E2A3D] bg-[#111827] p-4">
-      <div className="text-[13px] text-[#9AA6B8]">{label}</div>
-      <div className={`fd-num mt-1.5 text-[24px] font-semibold ${tone ?? "text-white"}`} style={hex ? { color: hex } : undefined}>{value}</div>
+    <div className="rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-4">
+      <div className="text-[13px] text-[var(--fd-text2)]">{label}</div>
+      <div className={`fd-num mt-1.5 text-[24px] font-semibold ${tone ?? "text-[var(--fd-strong)]"}`} style={hex ? { color: `color-mix(in srgb, ${hex} 70%, var(--fd-strong))` } : undefined}>{value}</div>
       {sub && <div className="mt-1 text-[13px]">{sub}</div>}
     </div>
   );
@@ -633,7 +633,7 @@ export function OrdersTable({ orders, onOpenMarket }: { orders: OrderRowDTO[]; o
       <tbody>
         {orders.map((o) => (
           <tr key={o.id} className={trow}>
-            <td className={`${td} fd-num whitespace-nowrap text-[#C9D2DE]`}>{new Date(o.createdAt).toISOString().replace("T", " ").slice(5, 19)}</td>
+            <td className={`${td} fd-num whitespace-nowrap text-[var(--fd-text-soft)]`}>{new Date(o.createdAt).toISOString().replace("T", " ").slice(5, 19)}</td>
             <td className={`${td} max-w-[300px]`}>
               {onOpenMarket ? (
                 <button className="block w-full truncate text-left hover:underline" onClick={() => onOpenMarket(o.marketId)}>{o.market?.question ?? o.marketId}</button>
@@ -644,10 +644,10 @@ export function OrdersTable({ orders, onOpenMarket }: { orders: OrderRowDTO[]; o
             <td className={td}><Badge tone={o.side.includes("YES") ? "green" : "red"}>{o.side.replace("_", " ")}</Badge></td>
             <td className={`${td} fd-num text-right`}>{o.priceCents}¢</td>
             <td className={`${td} fd-num text-right`}>{money(o.sizeCents)}</td>
-            <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{money(o.filledCents)}</td>
-            <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{money(o.feeCents)}</td>
+            <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{money(o.filledCents)}</td>
+            <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{money(o.feeCents)}</td>
             <td className={td}>{orderStateBadge(o.state)}</td>
-            <td className={`${td} text-[#C9D2DE]`}>{o.robot?.name ?? "Manual"}</td>
+            <td className={`${td} text-[var(--fd-text-soft)]`}>{o.robot?.name ?? "Manual"}</td>
           </tr>
         ))}
       </tbody>
@@ -680,7 +680,7 @@ function TicketBody({ market, t, disabledReason, busy, onSubmit }: { market: Mar
         onClick={() => t.pick(s)}
         aria-pressed={on}
         className={`flex h-14 flex-col items-center justify-center rounded-xl border text-[15px] font-semibold transition-colors ${
-          on ? (yes ? "border-[#00D69A] bg-[#00D69A]/15 text-[#3BE6B0]" : "border-[#FF5268] bg-[#FF5268]/15 text-[#FF7A8B]") : "border-[#253247] bg-[#0D121C] text-[#9AA6B8] hover:text-white"
+          on ? (yes ? "border-[#00D69A] bg-[#00D69A]/15 text-[var(--fd-green-text)]" : "border-[#FF5268] bg-[#FF5268]/15 text-[var(--fd-red-text)]") : "border-[var(--fd-border2)] bg-[var(--fd-bg2)] text-[var(--fd-text2)] hover:text-[var(--fd-strong)]"
         }`}
       >
         {label}
@@ -688,7 +688,7 @@ function TicketBody({ market, t, disabledReason, busy, onSubmit }: { market: Mar
       </button>
     );
   };
-  const inp = "fd-num mt-1.5 h-11 w-full rounded-xl border border-[#253247] bg-[#0D121C] px-3 text-[15px] text-white";
+  const inp = "fd-num mt-1.5 h-11 w-full rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-bg2)] px-3 text-[15px] text-[var(--fd-strong)]";
   const rr = t.sizeCents > 0 && t.profitCents > 0 ? (t.profitCents / t.sizeCents).toFixed(2) : "—";
   return (
     <div className="flex flex-col gap-4">
@@ -697,32 +697,32 @@ function TicketBody({ market, t, disabledReason, busy, onSubmit }: { market: Mar
         {sideBtn("BUY_NO", "Buy NO", market.noPriceCents)}
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <label className="text-[13px] text-[#9AA6B8]">
+        <label className="text-[13px] text-[var(--fd-text2)]">
           Limit price (¢)
           <input type="number" min={1} max={99} value={t.price} onChange={(e) => t.setPrice(parseInt(e.target.value || "0", 10))} className={inp} />
         </label>
-        <label className="text-[13px] text-[#9AA6B8]">
+        <label className="text-[13px] text-[var(--fd-text2)]">
           Order size ($)
           <input inputMode="decimal" value={t.sizeDollars} onChange={(e) => t.setSizeDollars(e.target.value.replace(/[^0-9.]/g, ""))} className={inp} />
         </label>
       </div>
       <div className="flex gap-2">
         {[10, 25, 50, 100].map((v) => (
-          <button key={v} onClick={() => t.setSizeDollars(String(v))} className="fd-num h-9 flex-1 rounded-lg border border-[#253247] bg-[#0D121C] text-[13px] text-[#C9D2DE] hover:text-white">${v}</button>
+          <button key={v} onClick={() => t.setSizeDollars(String(v))} className="fd-num h-9 flex-1 rounded-lg border border-[var(--fd-border2)] bg-[var(--fd-bg2)] text-[13px] text-[var(--fd-text-soft)] hover:text-[var(--fd-strong)]">${v}</button>
         ))}
       </div>
-      <div className="rounded-xl bg-[#0D121C] p-4">
+      <div className="rounded-xl bg-[var(--fd-bg2)] p-4">
         <KV k="Estimated cost" v={money(t.sizeCents)} mono />
         <KV k="Fees" v={t.feeCents != null ? `${money(t.feeCents)} · ${t.feeBps} bps` : "Not reported by venue"} mono />
         <KV k="Contracts" v={t.shares ? t.shares.toFixed(2) : "—"} mono />
         <KV k="Payout if correct" v={t.valid ? money(t.payoutCents) : "—"} mono />
-        <KV k="Potential profit" v={t.valid ? <span className={t.profitCents >= 0 ? "text-[#3BE6B0]" : "text-[#FF7A8B]"}>{money(t.profitCents, { sign: true })}</span> : "—"} mono />
+        <KV k="Potential profit" v={t.valid ? <span className={t.profitCents >= 0 ? "text-[var(--fd-green-text)]" : "text-[var(--fd-red-text)]"}>{money(t.profitCents, { sign: true })}</span> : "—"} mono />
         <KV k="Reward / risk" v={rr === "—" ? "—" : `${rr} : 1`} mono />
       </div>
       <button className={btn.primary + " h-12 text-[15.5px]"} disabled={!t.valid || busy !== null || !!disabledReason} onClick={onSubmit}>
         Place paper order
       </button>
-      <p className="text-[12.5px] leading-relaxed text-[#7C889B]">
+      <p className="text-[12.5px] leading-relaxed text-[var(--fd-text3)]">
         {disabledReason ?? "Paper order: no real money moves. Eligibility and risk checks still apply; robot entries additionally need the edge gate."}
       </p>
     </div>
@@ -767,10 +767,10 @@ function TradeDialogInner({ market, onClose, onPlace, busy }: { market: MarketDT
       : null;
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto border-[#253247] bg-[#111827] text-[#E8EDF5] sm:max-w-[460px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto border-[var(--fd-border2)] bg-[var(--fd-surface)] text-[var(--fd-text)] sm:max-w-[460px]">
         <DialogHeader>
           <DialogTitle className="text-[18px]">Paper order</DialogTitle>
-          <DialogDescription className="text-[14px] text-[#9AA6B8]">{market.question}</DialogDescription>
+          <DialogDescription className="text-[14px] text-[var(--fd-text2)]">{market.question}</DialogDescription>
         </DialogHeader>
         <div className="-mt-1 flex items-center gap-2"><VenueTag venue={market.venue} /><Badge tone="amber" dot>Paper</Badge></div>
         <TicketBody

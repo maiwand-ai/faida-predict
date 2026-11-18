@@ -12,15 +12,15 @@ import { Inbox } from "lucide-react";
 import { VENUES, venueColor } from "@/lib/venues";
 
 export const T = {
-  bg: "#080B12",
-  bg2: "#0D121C",
-  card: "#111827",
-  elevated: "#161F2D",
-  border: "#1E2A3D",
-  borderStrong: "#253247",
-  text: "#E8EDF5",
-  text2: "#9AA6B8",
-  text3: "#7C889B",
+  bg: "var(--fd-bg)",
+  bg2: "var(--fd-bg2)",
+  card: "var(--fd-surface)",
+  elevated: "var(--fd-elevated)",
+  border: "var(--fd-border)",
+  borderStrong: "var(--fd-border2)",
+  text: "var(--fd-text)",
+  text2: "var(--fd-text2)",
+  text3: "var(--fd-text3)",
   blue: "#2583FF",
   cyan: "#08D9E8",
   green: "#00D69A",
@@ -55,9 +55,9 @@ export function toneOf(v: number | null | undefined): "gain" | "loss" | "flat" {
 }
 
 export const toneText: Record<string, string> = {
-  gain: "text-[#00D69A]",
-  loss: "text-[#FF5268]",
-  flat: "text-[#9AA6B8]",
+  gain: "text-[var(--fd-green-text)]",
+  loss: "text-[var(--fd-red-text)]",
+  flat: "text-[var(--fd-text2)]",
 };
 
 export function ago(iso: string | null | undefined, now = Date.now()): string {
@@ -94,14 +94,14 @@ export function Panel(props: {
 }) {
   const { title, icon, action, subtitle, children, className = "", bodyClassName = "", pad = true, style } = props;
   return (
-    <section className={`min-w-0 rounded-2xl border border-[#1E2A3D] bg-[#111827] ${className}`} style={style}>
+    <section className={`min-w-0 rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] ${className}`} style={style}>
       {(title || action) && (
         <header className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
           <div className="flex min-w-0 items-center gap-2.5">
-            {icon && <span className="text-[#2583FF]" aria-hidden>{icon}</span>}
+            {icon && <span className="text-[var(--fd-blue-text)]" aria-hidden>{icon}</span>}
             <div className="min-w-0">
-              {title && <h2 className="truncate text-[17px] font-semibold text-[#E8EDF5]">{title}</h2>}
-              {subtitle && <p className="mt-0.5 text-[13px] text-[#7C889B]">{subtitle}</p>}
+              {title && <h2 className="truncate text-[17px] font-semibold text-[var(--fd-text)]">{title}</h2>}
+              {subtitle && <p className="mt-0.5 text-[13px] text-[var(--fd-text3)]">{subtitle}</p>}
             </div>
           </div>
           {action}
@@ -116,7 +116,7 @@ export function PageHeader(props: { icon?: ReactNode; iconHex?: string; title: R
   const { icon, iconHex = T.blue, title, subtitle, actions, crumbs, badges } = props;
   return (
     <div className="flex flex-col gap-3">
-      {crumbs && <nav aria-label="Breadcrumb" className="text-[13px] text-[#7C889B]">{crumbs}</nav>}
+      {crumbs && <nav aria-label="Breadcrumb" className="text-[13px] text-[var(--fd-text3)]">{crumbs}</nav>}
       <div className="flex flex-wrap items-center gap-4">
         {icon && (
           <span
@@ -129,10 +129,10 @@ export function PageHeader(props: { icon?: ReactNode; iconHex?: string; title: R
         )}
         <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-[26px] font-bold tracking-tight text-white sm:text-[28px]">{title}</h1>
+            <h1 className="text-[26px] font-bold tracking-tight text-[var(--fd-strong)] sm:text-[28px]">{title}</h1>
             {badges}
           </div>
-          {subtitle && <p className="mt-1 text-[15px] text-[#9AA6B8]">{subtitle}</p>}
+          {subtitle && <p className="mt-1 text-[15px] text-[var(--fd-text2)]">{subtitle}</p>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2.5">{actions}</div>}
       </div>
@@ -164,17 +164,17 @@ export function Metric(props: {
   title?: string;
 }) {
   const { label, value, sub, tone = "text", icon, hex = T.blue, spark, title } = props;
-  const color = tone === "text" ? "text-white" : toneText[tone];
+  const color = tone === "text" ? "text-[var(--fd-strong)]" : toneText[tone];
   return (
-    <div className="relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-2xl border border-[#1E2A3D] bg-[#111827] p-4" title={title}>
+    <div className="relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-4" title={title}>
       <div className="flex items-center gap-2.5">
         {icon && <IconTile hex={hex} size={34}>{icon}</IconTile>}
-        <span className="text-[13.5px] font-medium text-[#9AA6B8]">{label}</span>
+        <span className="text-[13.5px] font-medium text-[var(--fd-text2)]">{label}</span>
       </div>
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
           <div className={`fd-num truncate text-[19px] font-semibold leading-tight sm:text-[24px] ${color}`}>{value}</div>
-          {sub && <div className="mt-1 text-[13px] text-[#7C889B]">{sub}</div>}
+          {sub && <div className="mt-1 text-[13px] text-[var(--fd-text3)]">{sub}</div>}
         </div>
         {spark && spark.length >= 2 && <Sparkline values={spark} hex={hex} />}
       </div>
@@ -206,13 +206,13 @@ export function Sparkline({ values, hex = T.blue, w = 96, h = 36 }: { values: nu
 
 // ── badges ────────────────────────────────────────────────────────────────
 const badgeTone: Record<string, string> = {
-  green: "bg-[#00D69A]/12 text-[#3BE6B0] ring-[#00D69A]/25",
-  amber: "bg-[#FFB547]/12 text-[#FFC266] ring-[#FFB547]/25",
-  red: "bg-[#FF5268]/12 text-[#FF7A8B] ring-[#FF5268]/25",
-  blue: "bg-[#2583FF]/14 text-[#6AA9FF] ring-[#2583FF]/30",
-  cyan: "bg-[#08D9E8]/12 text-[#4FE6F0] ring-[#08D9E8]/25",
-  purple: "bg-[#9B7BFF]/14 text-[#B9A2FF] ring-[#9B7BFF]/30",
-  neutral: "bg-white/[0.05] text-[#B4BECC] ring-white/10",
+  green: "bg-[#00D69A]/12 text-[var(--fd-green-text)] ring-[#00D69A]/25",
+  amber: "bg-[#FFB547]/12 text-[var(--fd-amber-text)] ring-[#FFB547]/25",
+  red: "bg-[#FF5268]/12 text-[var(--fd-red-text)] ring-[#FF5268]/25",
+  blue: "bg-[#2583FF]/14 text-[var(--fd-blue-text)] ring-[#2583FF]/30",
+  cyan: "bg-[#08D9E8]/12 text-[var(--fd-cyan-text)] ring-[#08D9E8]/25",
+  purple: "bg-[#9B7BFF]/14 text-[var(--fd-purple-text)] ring-[#9B7BFF]/30",
+  neutral: "bg-[color:var(--fd-ink)]/[0.05] text-[var(--fd-text-soft)] ring-[color:var(--fd-ink)]/10",
 };
 
 export function Badge({ tone = "neutral", dot, children, title }: { tone?: keyof typeof badgeTone | string; dot?: boolean; children: ReactNode; title?: string }) {
@@ -260,7 +260,7 @@ export function VenueTag({ venue }: { venue: string }) {
   return (
     <span
       className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[12.5px] font-semibold"
-      style={{ background: `color-mix(in srgb, ${hex} ${live ? 15 : 8}%, transparent)`, color: live ? hex : `color-mix(in srgb, ${hex} 55%, #9AA6B8)` }}
+      style={{ background: `color-mix(in srgb, ${hex} ${live ? 15 : 8}%, transparent)`, color: live ? `color-mix(in srgb, ${hex} 70%, var(--fd-strong))` : `color-mix(in srgb, ${hex} 55%, var(--fd-text2))` }}
       title={def?.label ?? venue}
     >
       <span className="h-2 w-2 rounded-full" style={{ background: hex, opacity: live ? 1 : 0.5 }} aria-hidden />
@@ -290,11 +290,11 @@ export function Tabs<T extends string>({ tabs, value, onChange, size = "md", lab
             onClick={() => onChange(t.id)}
             className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
               size === "sm" ? "px-3 py-1.5 text-[13.5px]" : "px-4 py-2.5 text-[14.5px]"
-            } ${on ? "bg-[#2583FF]/15 text-white ring-1 ring-inset ring-[#2583FF]/40" : "text-[#9AA6B8] hover:bg-white/[0.04] hover:text-white"}`}
+            } ${on ? "bg-[#2583FF]/15 text-[var(--fd-strong)] ring-1 ring-inset ring-[#2583FF]/40" : "text-[var(--fd-text2)] hover:bg-[color:var(--fd-ink)]/[0.04] hover:text-[var(--fd-strong)]"}`}
           >
             {t.label}
             {t.count != null && (
-              <span className={`fd-num rounded-md px-1.5 py-0.5 text-[11.5px] ${on ? "bg-[#2583FF]/25 text-white" : "bg-white/[0.06] text-[#9AA6B8]"}`}>{t.count}</span>
+              <span className={`fd-num rounded-md px-1.5 py-0.5 text-[11.5px] ${on ? "bg-[#2583FF]/25 text-[var(--fd-strong)]" : "bg-[color:var(--fd-ink)]/[0.06] text-[var(--fd-text2)]"}`}>{t.count}</span>
             )}
           </button>
         );
@@ -305,13 +305,13 @@ export function Tabs<T extends string>({ tabs, value, onChange, size = "md", lab
 
 export function Segmented<T extends string>({ options, value, onChange, label }: { options: Array<{ id: T; label: string }>; value: T; onChange: (v: T) => void; label?: string }) {
   return (
-    <div role="group" aria-label={label} className="inline-flex rounded-xl bg-[#0D121C] p-1 ring-1 ring-inset ring-[#1E2A3D]">
+    <div role="group" aria-label={label} className="inline-flex rounded-xl bg-[var(--fd-bg2)] p-1 ring-1 ring-inset ring-[var(--fd-border)]">
       {options.map((o) => (
         <button
           key={o.id}
           aria-pressed={o.id === value}
           onClick={() => onChange(o.id)}
-          className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${o.id === value ? "bg-[#2583FF] text-white" : "text-[#9AA6B8] hover:text-white"}`}
+          className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${o.id === value ? "bg-[#2583FF] text-white" : "text-[var(--fd-text2)] hover:text-[var(--fd-strong)]"}`}
         >
           {o.label}
         </button>
@@ -324,18 +324,18 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
 export function EmptyState({ icon, title, body, action, compact }: { icon?: ReactNode; title: string; body?: ReactNode; action?: ReactNode; compact?: boolean }) {
   return (
     <div className={`flex flex-col items-center justify-center text-center ${compact ? "gap-2 py-8" : "gap-3 py-14"}`}>
-      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/[0.04] text-[#7C889B]" aria-hidden>
+      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[color:var(--fd-ink)]/[0.04] text-[var(--fd-text3)]" aria-hidden>
         {icon ?? <Inbox size={22} />}
       </span>
-      <div className="text-[16px] font-semibold text-[#E8EDF5]">{title}</div>
-      {body && <div className="max-w-md text-[14px] leading-relaxed text-[#9AA6B8]">{body}</div>}
+      <div className="text-[16px] font-semibold text-[var(--fd-text)]">{title}</div>
+      {body && <div className="max-w-md text-[14px] leading-relaxed text-[var(--fd-text2)]">{body}</div>}
       {action}
     </div>
   );
 }
 
 export function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-xl bg-[#161F2D] ${className}`} />;
+  return <div className={`animate-pulse rounded-xl bg-[var(--fd-elevated)] ${className}`} />;
 }
 
 export function PageSkeleton() {
@@ -349,9 +349,9 @@ export function PageSkeleton() {
 }
 
 // ── tables ────────────────────────────────────────────────────────────────
-export const th = "px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wider text-[#7C889B] whitespace-nowrap";
-export const td = "px-4 py-3.5 text-[14px] text-[#E8EDF5]";
-export const trow = "border-t border-[#1A2333] transition-colors hover:bg-white/[0.025]";
+export const th = "px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wider text-[var(--fd-text3)] whitespace-nowrap";
+export const td = "px-4 py-3.5 text-[14px] text-[var(--fd-text)]";
+export const trow = "border-t border-[var(--fd-line)] transition-colors hover:bg-[color:var(--fd-ink)]/[0.025]";
 
 export function TableWrap({ children, minWidth = 720 }: { children: ReactNode; minWidth?: number }) {
   return (
@@ -364,10 +364,10 @@ export function TableWrap({ children, minWidth = 720 }: { children: ReactNode; m
 // ── buttons ───────────────────────────────────────────────────────────────
 export const btn = {
   primary: "inline-flex items-center justify-center gap-2 rounded-xl bg-[#2583FF] px-4 h-11 text-[14.5px] font-semibold text-white transition-colors hover:bg-[#3D92FF] disabled:cursor-not-allowed disabled:opacity-45",
-  secondary: "inline-flex items-center justify-center gap-2 rounded-xl border border-[#253247] bg-[#161F2D] px-4 h-11 text-[14.5px] font-medium text-[#E8EDF5] transition-colors hover:bg-[#1C2740] disabled:cursor-not-allowed disabled:opacity-45",
-  ghost: "inline-flex items-center justify-center gap-2 rounded-xl px-3 h-10 text-[14px] font-medium text-[#9AA6B8] transition-colors hover:bg-white/[0.05] hover:text-white disabled:opacity-45",
-  danger: "inline-flex items-center justify-center gap-2 rounded-xl border border-[#FF5268]/45 bg-[#FF5268]/10 px-4 h-11 text-[14.5px] font-semibold text-[#FF7A8B] transition-colors hover:bg-[#FF5268]/18 disabled:cursor-not-allowed disabled:opacity-45",
-  small: "inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#253247] bg-[#161F2D] px-3 h-9 text-[13px] font-medium text-[#E8EDF5] transition-colors hover:bg-[#1C2740] disabled:cursor-not-allowed disabled:opacity-45",
+  secondary: "inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-elevated)] px-4 h-11 text-[14.5px] font-medium text-[var(--fd-text)] transition-colors hover:bg-[var(--fd-hover)] disabled:cursor-not-allowed disabled:opacity-45",
+  ghost: "inline-flex items-center justify-center gap-2 rounded-xl px-3 h-10 text-[14px] font-medium text-[var(--fd-text2)] transition-colors hover:bg-[color:var(--fd-ink)]/[0.05] hover:text-[var(--fd-strong)] disabled:opacity-45",
+  danger: "inline-flex items-center justify-center gap-2 rounded-xl border border-[#FF5268]/45 bg-[#FF5268]/10 px-4 h-11 text-[14.5px] font-semibold text-[var(--fd-red-text)] transition-colors hover:bg-[#FF5268]/18 disabled:cursor-not-allowed disabled:opacity-45",
+  small: "inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--fd-border2)] bg-[var(--fd-elevated)] px-3 h-9 text-[13px] font-medium text-[var(--fd-text)] transition-colors hover:bg-[var(--fd-hover)] disabled:cursor-not-allowed disabled:opacity-45",
 };
 
 // ── progress ──────────────────────────────────────────────────────────────
@@ -375,7 +375,7 @@ export function Bar({ value, max = 100, hex = T.blue, warnAt, label }: { value: 
   const p = Math.max(0, Math.min(100, (value / (max || 1)) * 100));
   const color = warnAt != null && p >= warnAt ? (p >= 95 ? T.red : T.amber) : hex;
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.06]" role="progressbar" aria-valuenow={Math.round(p)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
+    <div className="h-2 w-full overflow-hidden rounded-full bg-[color:var(--fd-ink)]/[0.06]" role="progressbar" aria-valuenow={Math.round(p)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
       <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${Math.max(p, value > 0 ? 2 : 0)}%`, background: color }} />
     </div>
   );
@@ -410,7 +410,7 @@ export function AreaChart(props: {
               <stop offset="100%" stopColor={hex} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke="#1A2333" vertical={false} />
+          <CartesianGrid stroke="var(--fd-line)" vertical={false} />
           <XAxis dataKey="x" tick={{ fill: T.text3, fontSize: 12 }} tickLine={false} axisLine={false} minTickGap={36} />
           <YAxis tick={{ fill: T.text3, fontSize: 12 }} tickLine={false} axisLine={false} width={64} tickFormatter={format} domain={domain ?? ["auto", "auto"]} />
           <Tooltip
@@ -430,8 +430,8 @@ export function Donut({ segments, center, size = 180 }: { segments: Array<{ labe
   const total = segments.reduce((a, s) => a + s.value, 0);
   if (total <= 0) {
     return (
-      <div className="grid place-items-center rounded-full border-[14px] border-white/[0.05]" style={{ width: size, height: size }}>
-        <span className="px-4 text-center text-[13px] text-[#7C889B]">Nothing allocated</span>
+      <div className="grid place-items-center rounded-full border-[14px] border-[color:var(--fd-ink)]/[0.05]" style={{ width: size, height: size }}>
+        <span className="px-4 text-center text-[13px] text-[var(--fd-text3)]">Nothing allocated</span>
       </div>
     );
   }
@@ -454,11 +454,11 @@ export function LegendRow({ hex, label, value, sub }: { hex: string; label: Reac
     <div className="flex items-center justify-between gap-3 py-1.5">
       <span className="flex min-w-0 items-center gap-2.5">
         <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: hex }} aria-hidden />
-        <span className="truncate text-[14px] text-[#C9D2DE]">{label}</span>
+        <span className="truncate text-[14px] text-[var(--fd-text-soft)]">{label}</span>
       </span>
       <span className="text-right">
-        <span className="fd-num text-[14px] font-semibold text-white">{value}</span>
-        {sub && <span className="ml-2 text-[12.5px] text-[#7C889B]">{sub}</span>}
+        <span className="fd-num text-[14px] font-semibold text-[var(--fd-strong)]">{value}</span>
+        {sub && <span className="ml-2 text-[12.5px] text-[var(--fd-text3)]">{sub}</span>}
       </span>
     </div>
   );
@@ -466,9 +466,9 @@ export function LegendRow({ hex, label, value, sub }: { hex: string; label: Reac
 
 export function KV({ k, v, mono }: { k: ReactNode; v: ReactNode; mono?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-t border-[#1A2333] py-2.5 first:border-t-0">
-      <span className="shrink-0 text-[14px] text-[#9AA6B8]">{k}</span>
-      <span className={`text-right text-[14px] text-[#E8EDF5] ${mono ? "fd-num" : ""}`}>{v}</span>
+    <div className="flex items-baseline justify-between gap-4 border-t border-[var(--fd-line)] py-2.5 first:border-t-0">
+      <span className="shrink-0 text-[14px] text-[var(--fd-text2)]">{k}</span>
+      <span className={`text-right text-[14px] text-[var(--fd-text)] ${mono ? "fd-num" : ""}`}>{v}</span>
     </div>
   );
 }

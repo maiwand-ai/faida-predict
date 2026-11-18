@@ -264,9 +264,9 @@ export default function FaidaApp() {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#080B12] text-[#E8EDF5]" style={{ fontFamily: "var(--font-inter)" }}>
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-[#2583FF] focus:px-3 focus:py-2 focus:text-white">Skip to content</a>
-      <aside className={`sticky top-0 hidden h-screen shrink-0 border-r border-[#1A2333] bg-[#0D121C] transition-[width] duration-200 md:block ${collapsed ? "w-[76px]" : "w-[268px]"}`}>
+    <div className="flex min-h-screen bg-[var(--fd-bg)] text-[var(--fd-text)]" style={{ fontFamily: "var(--font-inter)" }}>
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-[#2583FF] focus:px-3 focus:py-2 focus:text-[var(--fd-strong)]">Skip to content</a>
+      <aside className={`sticky top-0 hidden h-screen shrink-0 border-r border-[var(--fd-line)] bg-[var(--fd-bg2)] transition-[width] duration-200 md:block ${collapsed ? "w-[76px]" : "w-[268px]"}`}>
         {sidebar(false)}
       </aside>
       <NavDrawer open={drawerOpen} onOpenChange={setDrawerOpen}>{sidebar(true)}</NavDrawer>
@@ -276,9 +276,9 @@ export default function FaidaApp() {
 
         {mode === "PAUSED" && (
           <div role="alert" className="flex flex-wrap items-center gap-3 border-b border-[#FF5268]/40 bg-[#FF5268]/10 px-4 py-3 sm:px-8">
-            <span className="text-[14.5px] font-semibold text-[#FF7A8B]">Emergency pause is on.</span>
-            <span className="text-[14px] text-[#E8EDF5]/80">Robot cycles and new orders are refused until you resume. Reason: {dash?.control?.pause.reason ?? "manual pause"}</span>
-            <button onClick={() => post("/api/control", { action: "RESUME" }, "Platform resumed")} disabled={busy !== null} className="ml-auto h-9 rounded-lg border border-[#FF5268]/50 px-3 text-[14px] font-semibold text-[#FF7A8B] hover:bg-[#FF5268]/15 disabled:opacity-50">
+            <span className="text-[14.5px] font-semibold text-[var(--fd-red-text)]">Emergency pause is on.</span>
+            <span className="text-[14px] text-[var(--fd-text)]/80">Robot cycles and new orders are refused until you resume. Reason: {dash?.control?.pause.reason ?? "manual pause"}</span>
+            <button onClick={() => post("/api/control", { action: "RESUME" }, "Platform resumed")} disabled={busy !== null} className="ml-auto h-9 rounded-lg border border-[#FF5268]/50 px-3 text-[14px] font-semibold text-[var(--fd-red-text)] hover:bg-[#FF5268]/15 disabled:opacity-50">
               Resume
             </button>
           </div>
@@ -473,11 +473,11 @@ export default function FaidaApp() {
             />
           )}
         </main>
-        <footer className="hidden border-t border-[#1A2333] px-8 py-3.5 text-[13px] text-[#7C889B] md:flex md:flex-wrap md:items-center md:justify-between md:gap-3">
-          <span>FAIDA Predict · Intelligent. Transparent. Controlled. <span className="ml-2 rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[11.5px] tracking-wide">PHASE 10</span></span>
+        <footer className="hidden border-t border-[var(--fd-line)] px-8 py-3.5 text-[13px] text-[var(--fd-text3)] md:flex md:flex-wrap md:items-center md:justify-between md:gap-3">
+          <span>FAIDA Predict · Intelligent. Transparent. Controlled. <span className="ml-2 rounded-md bg-[color:var(--fd-ink)]/[0.05] px-1.5 py-0.5 text-[11.5px] tracking-wide">PHASE 10</span></span>
           <span className="flex flex-wrap items-center gap-4">
             <span>{mode === "LIVE" ? "Live trading active within pilot ceilings" : "No real money moves in paper mode"}</span>
-            <span>Robots active: <span className="fd-num text-[#C9D2DE]">{dash?.robots.filter((r) => r.status === "RUNNING" || r.status === "PAPER_ONLY").length ?? 0}</span></span>
+            <span>Robots active: <span className="fd-num text-[var(--fd-text-soft)]">{dash?.robots.filter((r) => r.status === "RUNNING" || r.status === "PAPER_ONLY").length ?? 0}</span></span>
           </span>
         </footer>
       </div>

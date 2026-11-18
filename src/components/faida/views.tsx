@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge, btn, EmptyState, KV, Metric, money, orderStateBadge, PageHeader, PageSkeleton, Panel, T, Tabs, TableWrap, td, th, toneOf, toneText, trow, VenueTag } from "./ds";
 import { TradeDialog } from "./markets";
+import { useTheme, type ThemePref } from "./theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -67,8 +68,8 @@ function Pager({ page, total, onPage }: { page: number; total: number; onPage: (
   const pages = Math.max(1, Math.ceil(total / PAGE));
   if (total <= PAGE) return null;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#1A2333] px-4 py-3 text-[13.5px] text-[#9AA6B8]">
-      <span>Showing <span className="fd-num text-white">{page * PAGE + 1}–{Math.min(total, page * PAGE + PAGE)}</span> of <span className="fd-num text-white">{total}</span></span>
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--fd-line)] px-4 py-3 text-[13.5px] text-[var(--fd-text2)]">
+      <span>Showing <span className="fd-num text-[var(--fd-strong)]">{page * PAGE + 1}–{Math.min(total, page * PAGE + PAGE)}</span> of <span className="fd-num text-[var(--fd-strong)]">{total}</span></span>
       <div className="flex items-center gap-2">
         <button className={btn.small} disabled={page === 0} onClick={() => onPage(page - 1)}>Previous</button>
         <span className="fd-num">{page + 1} / {pages}</span>
@@ -128,7 +129,7 @@ export function TradingView(props: {
     .sort(byTime);
   const posRows = positions.filter((p) => match(`${p.market?.question ?? ""} ${p.robot?.name ?? ""}`, p.market?.venue, p.side)).sort(byTime);
   const ledgerRows = ledger.filter((l) => !q.trim() || `${l.type} ${l.memo ?? ""}`.toLowerCase().includes(q.trim().toLowerCase())).sort(byTime);
-  const sel = "h-10 rounded-xl border border-[#253247] bg-[#111827] px-3 text-[14px] text-[#E8EDF5]";
+  const sel = "h-10 rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-surface)] px-3 text-[14px] text-[var(--fd-text)]";
   const pageSlice = <T,>(rows: T[]) => rows.slice(page * PAGE, page * PAGE + PAGE);
 
   const exportCurrent = () => {
@@ -138,9 +139,9 @@ export function TradingView(props: {
   };
 
   const filters = tab !== "execution" && (
-    <div className="flex flex-wrap items-center gap-2.5 border-b border-[#1A2333] p-4">
+    <div className="flex flex-wrap items-center gap-2.5 border-b border-[var(--fd-line)] p-4">
       <label className="sr-only" htmlFor="t-q">Search</label>
-      <input id="t-q" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder={tab === "ledger" ? "Search ledger…" : "Search market, robot or order id…"} className={`${sel} min-w-[220px] flex-1 placeholder:text-[#7C889B]`} />
+      <input id="t-q" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder={tab === "ledger" ? "Search ledger…" : "Search market, robot or order id…"} className={`${sel} min-w-[220px] flex-1 placeholder:text-[var(--fd-text3)]`} />
       {tab !== "ledger" && (
         <>
           <label className="sr-only" htmlFor="t-v">Venue</label>
@@ -216,7 +217,7 @@ export function TradingView(props: {
                       <tr key={p.id} className={`${trow} cursor-pointer`} onClick={() => setDetail(p)}>
                         <td className={`${td} max-w-[320px] truncate`}>{p.market?.question}</td>
                         <td className={td}>{p.market?.venue ? <VenueTag venue={p.market.venue} /> : "—"}</td>
-                        <td className={`${td} text-[#C9D2DE]`}>{p.robot?.name ?? "Manual"}</td>
+                        <td className={`${td} text-[var(--fd-text-soft)]`}>{p.robot?.name ?? "Manual"}</td>
                         <td className={td}><Badge tone={p.side === "YES" ? "green" : "red"}>{p.side}</Badge></td>
                         <td className={`${td} fd-num text-right`}>{p.avgPriceCents}¢</td>
                         <td className={`${td} fd-num text-right`}>{mark != null ? `${mark}¢` : "—"}</td>
@@ -245,16 +246,16 @@ export function TradingView(props: {
                 <tbody>
                   {pageSlice(orderRows).map((o) => (
                     <tr key={o.id} className={trow}>
-                      <td className={`${td} fd-num whitespace-nowrap text-[#C9D2DE]`}>{new Date(o.createdAt).toISOString().replace("T", " ").slice(5, 19)}</td>
+                      <td className={`${td} fd-num whitespace-nowrap text-[var(--fd-text-soft)]`}>{new Date(o.createdAt).toISOString().replace("T", " ").slice(5, 19)}</td>
                       <td className={`${td} max-w-[280px]`}><button className="block w-full truncate text-left hover:underline" onClick={() => onOpenMarket(o.marketId)}>{o.market?.question ?? o.marketId}</button></td>
                       <td className={td}>{o.market?.venue ? <VenueTag venue={o.market.venue} /> : "—"}</td>
                       <td className={td}><Badge tone={o.side.includes("YES") ? "green" : "red"}>{o.side.replace("_", " ")}</Badge></td>
                       <td className={`${td} fd-num text-right`}>{o.priceCents}¢</td>
                       <td className={`${td} fd-num text-right`}>{money(o.sizeCents)}</td>
-                      <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{money(o.filledCents)}</td>
-                      <td className={`${td} fd-num text-right text-[#C9D2DE]`}>{money(o.feeCents)}</td>
+                      <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{money(o.filledCents)}</td>
+                      <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{money(o.feeCents)}</td>
                       <td className={td} title={o.stateReason ?? undefined}>{orderStateBadge(o.state)}</td>
-                      <td className={`${td} text-[#C9D2DE]`}>{o.robot?.name ?? "Manual"}</td>
+                      <td className={`${td} text-[var(--fd-text-soft)]`}>{o.robot?.name ?? "Manual"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -275,11 +276,11 @@ export function TradingView(props: {
                 <tbody>
                   {pageSlice(ledgerRows).map((l) => (
                     <tr key={l.id} className={trow}>
-                      <td className={`${td} fd-num whitespace-nowrap text-[#C9D2DE]`}>{new Date(l.createdAt).toISOString().replace("T", " ").slice(0, 19)}</td>
+                      <td className={`${td} fd-num whitespace-nowrap text-[var(--fd-text-soft)]`}>{new Date(l.createdAt).toISOString().replace("T", " ").slice(0, 19)}</td>
                       <td className={td}><Badge tone={l.type === "DEPOSIT" ? "cyan" : l.type === "FEE" ? "amber" : "neutral"}>{l.type.toLowerCase()}</Badge></td>
-                      <td className={`${td} fd-num text-right font-semibold ${l.amountCents < 0 ? "text-[#FF7A8B]" : "text-[#3BE6B0]"}`}>{money(l.amountCents, { sign: true })}</td>
+                      <td className={`${td} fd-num text-right font-semibold ${l.amountCents < 0 ? "text-[var(--fd-red-text)]" : "text-[var(--fd-green-text)]"}`}>{money(l.amountCents, { sign: true })}</td>
                       <td className={`${td} fd-num text-right`}>{money(l.balanceAfterCents)}</td>
-                      <td className={`${td} max-w-[420px] truncate text-[#9AA6B8]`}>{l.memo}</td>
+                      <td className={`${td} max-w-[420px] truncate text-[var(--fd-text2)]`}>{l.memo}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -301,11 +302,11 @@ export function TradingView(props: {
                 <tbody>
                   {[...unresolved, ...orders.filter((o) => o.state === "REJECTED")].map((o) => (
                     <tr key={o.id} className={trow}>
-                      <td className={`${td} fd-num whitespace-nowrap text-[#C9D2DE]`}>{new Date(o.createdAt).toISOString().replace("T", " ").slice(5, 19)}</td>
-                      <td className={`${td} fd-num text-[#C9D2DE]`}>{o.id.slice(-10)}</td>
+                      <td className={`${td} fd-num whitespace-nowrap text-[var(--fd-text-soft)]`}>{new Date(o.createdAt).toISOString().replace("T", " ").slice(5, 19)}</td>
+                      <td className={`${td} fd-num text-[var(--fd-text-soft)]`}>{o.id.slice(-10)}</td>
                       <td className={`${td} max-w-[260px] truncate`}>{o.market?.question}</td>
                       <td className={td}>{orderStateBadge(o.state)}</td>
-                      <td className={`${td} max-w-[300px] text-[#9AA6B8]`}>{o.stateReason ?? "—"}</td>
+                      <td className={`${td} max-w-[300px] text-[var(--fd-text2)]`}>{o.stateReason ?? "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -314,10 +315,10 @@ export function TradingView(props: {
           </Panel>
           <Panel title="Reconciliation" subtitle="Resolve orders whose venue response was lost">
             <button className={`${btn.primary} w-full`} disabled={!hasUnknown || busy !== null} onClick={onReconcile}>Run reconciliation pass</button>
-            <p className="mt-2 text-[13px] text-[#7C889B]">{hasUnknown ? `${unresolved.length} order(s) waiting.` : "Nothing pending."}</p>
-            <div className="mt-6 border-t border-[#1A2333] pt-5">
-              <h3 className="text-[14.5px] font-semibold text-white">Failure drill</h3>
-              <p className="mt-1 text-[13px] text-[#9AA6B8]">Creates a synthetic paper order whose acknowledgement is lost, so you can watch reconciliation resolve it.</p>
+            <p className="mt-2 text-[13px] text-[var(--fd-text3)]">{hasUnknown ? `${unresolved.length} order(s) waiting.` : "Nothing pending."}</p>
+            <div className="mt-6 border-t border-[var(--fd-line)] pt-5">
+              <h3 className="text-[14.5px] font-semibold text-[var(--fd-strong)]">Failure drill</h3>
+              <p className="mt-1 text-[13px] text-[var(--fd-text2)]">Creates a synthetic paper order whose acknowledgement is lost, so you can watch reconciliation resolve it.</p>
               <label className="sr-only" htmlFor="drill-m">Market for the drill</label>
               <select id="drill-m" className={`${sel} mt-3 w-full`} value={drillMarket} onChange={(e) => setDrillMarket(e.target.value)}>
                 <option value="">Choose a market…</option>
@@ -330,9 +331,9 @@ export function TradingView(props: {
       )}
 
       <Sheet open={!!detail} onOpenChange={(v) => !v && setDetail(null)}>
-        <SheetContent side="right" className="w-full border-[#1A2333] bg-[#111827] text-[#E8EDF5] sm:max-w-[440px]">
+        <SheetContent side="right" className="w-full border-[var(--fd-line)] bg-[var(--fd-surface)] text-[var(--fd-text)] sm:max-w-[440px]">
           <SheetHeader>
-            <SheetTitle className="text-[18px] text-white">Position details</SheetTitle>
+            <SheetTitle className="text-[18px] text-[var(--fd-strong)]">Position details</SheetTitle>
           </SheetHeader>
           {detail && (
             <div className="flex flex-col gap-4 px-4 pb-6">
@@ -393,6 +394,7 @@ export function SettingsView(props: {
   const [keyDrafts, setKeyDrafts] = useState<Record<string, string>>({});
   const [modelDrafts, setModelDrafts] = useState<Record<string, string>>({});
   const [confirmCountry, setConfirmCountry] = useState<EligibilityRuleDTO | null>(null);
+  const theme = useTheme();
   useEffect(() => { props.onOpenRisk(); }, []);
   if (!riskView || !dash) return <PageSkeleton />;
 
@@ -401,18 +403,18 @@ export function SettingsView(props: {
     { key: "DRAWDOWN_STOP_PCT", label: "Total drawdown stop", help: "Trading stops once the balance falls this far from its peak.", max: riskView.platformMax.DRAWDOWN_STOP_PCT ?? 30, unit: "%", val: riskView.effective.drawdownStopPct },
     { key: "PER_EVENT_EXPOSURE_PCT", label: "Per-event exposure cap", help: "Maximum share of allocation in related markets of one event.", max: riskView.platformMax.PER_EVENT_EXPOSURE_PCT ?? 50, unit: "%", val: riskView.effective.perEventExposurePct },
   ];
-  const inp = "h-11 rounded-xl border border-[#253247] bg-[#0D121C] px-3 text-[14.5px] text-white placeholder:text-[#7C889B]";
+  const inp = "h-11 rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-bg2)] px-3 text-[14.5px] text-[var(--fd-strong)] placeholder:text-[var(--fd-text3)]";
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader icon={<SettingsIcon size={24} />} title="Settings" subtitle="Account, custody, trading modes, risk limits, AI providers and compliance" />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <nav aria-label="Settings sections" className="h-fit rounded-2xl border border-[#1E2A3D] bg-[#111827] p-2">
+        <nav aria-label="Settings sections" className="h-fit rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-2">
           <ul className="flex gap-1 overflow-x-auto lg:flex-col">
             {SETTINGS_TABS.map((t) => (
               <li key={t.id} className="shrink-0">
                 <button onClick={() => onTab(t.id)} aria-current={tab === t.id ? "page" : undefined}
-                  className={`w-full whitespace-nowrap rounded-xl px-3.5 py-2.5 text-left text-[14.5px] transition-colors ${tab === t.id ? "bg-[#2583FF]/14 font-semibold text-white" : "text-[#9AA6B8] hover:bg-white/[0.04] hover:text-white"}`}>
+                  className={`w-full whitespace-nowrap rounded-xl px-3.5 py-2.5 text-left text-[14.5px] transition-colors ${tab === t.id ? "bg-[#2583FF]/14 font-semibold text-[var(--fd-strong)]" : "text-[var(--fd-text2)] hover:bg-[color:var(--fd-ink)]/[0.04] hover:text-[var(--fd-strong)]"}`}>
                   {t.label}
                 </button>
               </li>
@@ -430,8 +432,19 @@ export function SettingsView(props: {
                 <KV k="Paper balance" v={money(dash.balanceCents)} mono />
                 <KV k="Robots" v={`${dash.robots.length} configured`} />
               </Panel>
+              <Panel title="Appearance" subtitle="Saved in this browser">
+                <div role="radiogroup" aria-label="Theme" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  {([["dark", "Dark", "Default trading-terminal look"], ["light", "Light", "Bright surfaces for daylight"], ["system", "System", "Follow this device's setting"]] as Array<[ThemePref, string, string]>).map(([id, label, desc]) => (
+                    <button key={id} role="radio" aria-checked={theme.pref === id} onClick={() => theme.setPref(id)}
+                      className={`rounded-2xl border p-4 text-left transition-colors ${theme.pref === id ? "border-[#2583FF] bg-[#2583FF]/[0.08]" : "border-[var(--fd-border)] bg-[var(--fd-bg2)] hover:border-[var(--fd-border2)]"}`}>
+                      <div className="text-[15.5px] font-semibold text-[var(--fd-strong)]">{label}</div>
+                      <div className="mt-1 text-[13.5px] text-[var(--fd-text2)]">{desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </Panel>
               <Panel title="Where things live">
-                <p className="text-[14px] leading-relaxed text-[#9AA6B8]">Beginner settings sit at the top of each section; advanced options (model governance, API keys, compliance) are in their own tabs. Sensitive changes ask for confirmation.</p>
+                <p className="text-[14px] leading-relaxed text-[var(--fd-text2)]">Beginner settings sit at the top of each section; advanced options (model governance, API keys, compliance) are in their own tabs. Sensitive changes ask for confirmation.</p>
               </Panel>
             </>
           )}
@@ -442,7 +455,7 @@ export function SettingsView(props: {
               <KV k="Email" v={me?.email ?? dash.user.email} mono />
               <KV k="Role" v={<Badge tone={me?.role === "OPERATOR" ? "blue" : "green"}>{(me?.role ?? "member").toLowerCase()}</Badge>} />
               <KV k="Country" v={dash.user.country} />
-              <KV k="Session" v={me?.via === "FOUNDER_FALLBACK" ? <span className="text-[#FFC266]">Not signed in (local fallback)</span> : "Signed in"} />
+              <KV k="Session" v={me?.via === "FOUNDER_FALLBACK" ? <span className="text-[var(--fd-amber-text)]">Not signed in (local fallback)</span> : "Signed in"} />
             </Panel>
           )}
 
@@ -451,7 +464,7 @@ export function SettingsView(props: {
               <KV k="Wallet address" v={dash.wallet ? `${dash.wallet.address.slice(0, 12)}…${dash.wallet.address.slice(-6)}` : "No wallet linked"} mono />
               <KV k="Signing model" v={dash.wallet?.signingModel ?? "—"} mono />
               <KV k="Kalshi credential" v="Asymmetric API key (RSA or Ed25519)" />
-              <p className="mt-4 text-[14px] leading-relaxed text-[#9AA6B8]">
+              <p className="mt-4 text-[14px] leading-relaxed text-[var(--fd-text2)]">
                 The platform stores your wallet address only. Signing keys are injected at runtime for each process, redacted everywhere and never written to the database.
                 Wallet signing (Polymarket) and API-key signing (Kalshi) are separate paths. Every real send stays behind the live-trading gates.
               </p>
@@ -467,9 +480,9 @@ export function SettingsView(props: {
                   { id: "LIVE", title: "Live", tone: "red", body: "Real orders within pilot ceilings. Requires consent, a passing edge gate, a signer and the arm switch." },
                   { id: "PAUSED", title: "Emergency pause", tone: "red", body: "Every robot cycle and new order is refused until you resume." },
                 ].map((m) => (
-                  <div key={m.id} className={`rounded-2xl border p-4 ${mode === m.id ? "border-[#2583FF] bg-[#2583FF]/[0.07]" : "border-[#1E2A3D] bg-[#0D121C]"}`}>
-                    <div className="flex items-center justify-between"><span className="text-[15.5px] font-semibold text-white">{m.title}</span>{mode === m.id && <Badge tone={m.tone} dot>Current</Badge>}</div>
-                    <p className="mt-2 text-[13.5px] leading-relaxed text-[#9AA6B8]">{m.body}</p>
+                  <div key={m.id} className={`rounded-2xl border p-4 ${mode === m.id ? "border-[#2583FF] bg-[#2583FF]/[0.07]" : "border-[var(--fd-border)] bg-[var(--fd-bg2)]"}`}>
+                    <div className="flex items-center justify-between"><span className="text-[15.5px] font-semibold text-[var(--fd-strong)]">{m.title}</span>{mode === m.id && <Badge tone={m.tone} dot>Current</Badge>}</div>
+                    <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--fd-text2)]">{m.body}</p>
                   </div>
                 ))}
               </div>
@@ -484,15 +497,15 @@ export function SettingsView(props: {
                 {riskRows.map((r) => (
                   <div key={r.key}>
                     <div className="mb-3 flex items-baseline justify-between gap-3">
-                      <span className="text-[15px] font-medium text-white">{r.label}</span>
-                      <span className="fd-num text-[15px] font-semibold text-white">{r.val}{r.unit} <span className="text-[13px] font-normal text-[#7C889B]">max {r.max}{r.unit}</span></span>
+                      <span className="text-[15px] font-medium text-[var(--fd-strong)]">{r.label}</span>
+                      <span className="fd-num text-[15px] font-semibold text-[var(--fd-strong)]">{r.val}{r.unit} <span className="text-[13px] font-normal text-[var(--fd-text3)]">max {r.max}{r.unit}</span></span>
                     </div>
                     <Slider value={[r.val]} min={1} max={r.max} step={1} onValueCommit={(v) => props.onSaveRisk(r.key, v[0])} onValueChange={() => undefined} aria-label={r.label} />
-                    <p className="mt-2 text-[13px] text-[#7C889B]">{r.help}</p>
+                    <p className="mt-2 text-[13px] text-[var(--fd-text3)]">{r.help}</p>
                   </div>
                 ))}
                 <KV k="AI monthly budget" v={`${money(riskView.effective.aiMonthlyBudgetCents)} (platform max ${money(riskView.platformMax.AI_MONTHLY_BUDGET_CENTS ?? 20000)})`} mono />
-                <p className="text-[13px] text-[#7C889B]">Research pauses at 100% of the AI budget; risk management keeps running.</p>
+                <p className="text-[13px] text-[var(--fd-text3)]">Research pauses at 100% of the AI budget; risk management keeps running.</p>
               </div>
             </Panel>
           )}
@@ -501,12 +514,12 @@ export function SettingsView(props: {
             <Panel title="AI providers" subtitle="Any provider key works. The highest-priority enabled provider is used; without one, robots use the deterministic baseline. Keys are stored server-side and only ever shown masked.">
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 {dash.providers.map((p: ProviderDTO) => (
-                  <div key={p.id} className="rounded-2xl border border-[#1E2A3D] bg-[#0D121C] p-4">
+                  <div key={p.id} className="rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-[15.5px] font-semibold text-white">{p.name}</span>
+                      <span className="text-[15.5px] font-semibold text-[var(--fd-strong)]">{p.name}</span>
                       <Switch checked={p.enabled} onCheckedChange={(v) => props.onSaveProvider({ id: p.id, enabled: v })} aria-label={`Enable ${p.name}`} />
                     </div>
-                    <div className="mt-1.5 text-[13px] text-[#9AA6B8]">{p.hasKey ? <>Key <span className="fd-num">{p.keyMasked}</span></> : "No key yet"}{p.baseUrl ? ` · ${p.baseUrl}` : ""}</div>
+                    <div className="mt-1.5 text-[13px] text-[var(--fd-text2)]">{p.hasKey ? <>Key <span className="fd-num">{p.keyMasked}</span></> : "No key yet"}{p.baseUrl ? ` · ${p.baseUrl}` : ""}</div>
                     <div className="mt-3 flex flex-col gap-2">
                       <label className="sr-only" htmlFor={`m-${p.id}`}>Model</label>
                       <input id={`m-${p.id}`} className={inp} placeholder={p.name === "OPENAI_COMPATIBLE" ? "Model name (required)" : p.model} value={modelDrafts[p.id] ?? ""} onChange={(e) => setModelDrafts((d) => ({ ...d, [p.id]: e.target.value }))} />
@@ -518,7 +531,7 @@ export function SettingsView(props: {
                       {p.name === "OPENAI_COMPATIBLE" && (
                         <input className={inp} placeholder="Base URL (e.g. https://api.example.com/v1)" defaultValue={p.baseUrl ?? ""} onBlur={(e) => props.onSaveProvider({ id: p.id, baseUrl: e.target.value })} aria-label="Base URL" />
                       )}
-                      <div className="text-[12.5px] text-[#7C889B]">Budget <span className="fd-num">{money(p.monthlyBudgetCents)}</span> · spent <span className="fd-num">{money(p.spentCents)}</span> · priority {p.priority}</div>
+                      <div className="text-[12.5px] text-[var(--fd-text3)]">Budget <span className="fd-num">{money(p.monthlyBudgetCents)}</span> · spent <span className="fd-num">{money(p.spentCents)}</span> · priority {p.priority}</div>
                     </div>
                   </div>
                 ))}
@@ -542,7 +555,7 @@ export function SettingsView(props: {
 
           {tab === "security" && (
             <Panel title="Security">
-              <KV k="Sign-in" v={me?.via === "FOUNDER_FALLBACK" ? <span className="text-[#FFC266]">Not signed in</span> : "Password + session token"} />
+              <KV k="Sign-in" v={me?.via === "FOUNDER_FALLBACK" ? <span className="text-[var(--fd-amber-text)]">Not signed in</span> : "Password + session token"} />
               <KV k="Session storage" v="Hashed opaque token, httpOnly cookie, 14-day expiry" />
               <KV k="Signing keys" v="Never stored; injected at runtime" />
               <KV k="AI provider keys" v="Stored server-side, never returned (masked only)" />
@@ -564,7 +577,7 @@ export function SettingsView(props: {
                         <td className={td}><VenueTag venue={v.id} /></td>
                         <td className={td}>{v.adapter === "LIVE" ? <Badge tone="green" dot>Live</Badge> : <Badge tone={v.id === "DRIFT_BET" ? "red" : "amber"}>{v.id === "DRIFT_BET" ? "Suspended" : "Pending"}</Badge>}</td>
                         <td className={`${td} fd-num text-right`}>{dash.venues.find((s) => s.venue === v.id)?.markets ?? 0}</td>
-                        <td className={`${td} text-[#C9D2DE]`}>{v.id === "KALSHI" ? "API key" : v.id === "MANIFOLD" ? "Public API" : v.id === "DRIFT_BET" ? "—" : "Wallet"}</td>
+                        <td className={`${td} text-[var(--fd-text-soft)]`}>{v.id === "KALSHI" ? "API key" : v.id === "MANIFOLD" ? "Public API" : v.id === "DRIFT_BET" ? "—" : "Wallet"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -582,7 +595,7 @@ export function SettingsView(props: {
                 <div className="fd-scroll flex max-h-[320px] flex-wrap gap-2 overflow-y-auto">
                   {eligibility.map((r) => (
                     <button key={r.id} onClick={() => setConfirmCountry(r)} title={r.reason ?? "No reason recorded"}
-                      className={`rounded-xl border px-3 py-2 text-[14px] font-semibold transition-colors ${r.allowed ? "border-[#00D69A]/40 bg-[#00D69A]/10 text-[#3BE6B0]" : "border-[#FF5268]/40 bg-[#FF5268]/10 text-[#FF7A8B]"}`}>
+                      className={`rounded-xl border px-3 py-2 text-[14px] font-semibold transition-colors ${r.allowed ? "border-[#00D69A]/40 bg-[#00D69A]/10 text-[var(--fd-green-text)]" : "border-[#FF5268]/40 bg-[#FF5268]/10 text-[var(--fd-red-text)]"}`}>
                       {r.country} · {r.allowed ? "allowed" : "blocked"}
                     </button>
                   ))}
@@ -594,10 +607,10 @@ export function SettingsView(props: {
       </div>
 
       <Dialog open={!!confirmCountry} onOpenChange={(v) => !v && setConfirmCountry(null)}>
-        <DialogContent className="border-[#253247] bg-[#111827] text-[#E8EDF5] sm:max-w-[420px]">
+        <DialogContent className="border-[var(--fd-border2)] bg-[var(--fd-surface)] text-[var(--fd-text)] sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>{confirmCountry?.allowed ? "Block" : "Allow"} {confirmCountry?.country}?</DialogTitle>
-            <DialogDescription className="text-[#9AA6B8]">This changes who can trade from {confirmCountry?.country}. Sanctioned jurisdictions are refused by the server regardless.</DialogDescription>
+            <DialogDescription className="text-[var(--fd-text2)]">This changes who can trade from {confirmCountry?.country}. Sanctioned jurisdictions are refused by the server regardless.</DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2">
             <button className={btn.secondary} onClick={() => setConfirmCountry(null)}>Cancel</button>
@@ -618,7 +631,7 @@ function ModelRegistryCard({ probability, onAction }: { probability: Probability
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className={`text-[15px] font-semibold`}>Model registry — calibration, promotion & demotion (A-01/A-03)</div>
-        <Button size="sm" variant="outline" className="border-[#253247] bg-[#161F2D] text-[#E8EDF5] text-[13px] hover:bg-[#1C2740]"
+        <Button size="sm" variant="outline" className="border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[var(--fd-text)] text-[13px] hover:bg-[var(--fd-hover)]"
           onClick={() => onAction({ action: "RECOMPUTE" }, "Calibration recomputed")}>
           Recompute calibration
         </Button>
@@ -633,27 +646,27 @@ function ModelRegistryCard({ probability, onAction }: { probability: Probability
           {prob.models.map((m: ModelRowDTO) => {
             const cal = m.calibration;
             const statusCls =
-              m.status === "ACTIVE" ? `text-[#00D69A] bg-[#00D69A]/10`
-              : m.status === "DEMOTED" ? `text-[#FF5268] bg-[#FF5268]/10`
-              : m.status === "RETIRED" ? `${c.text3} bg-[#161F2D]`
-              : `text-[#FFB547] bg-[#FFB547]/10`;
+              m.status === "ACTIVE" ? `text-[var(--fd-green-text)] bg-[#00D69A]/10`
+              : m.status === "DEMOTED" ? `text-[var(--fd-red-text)] bg-[#FF5268]/10`
+              : m.status === "RETIRED" ? `${c.text3} bg-[var(--fd-elevated)]`
+              : `text-[var(--fd-amber-text)] bg-[#FFB547]/10`;
             return (
               <div key={m.key} className={`rounded-lg border p-3 ${c.border}`}>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`rounded px-1.5 py-0.5 text-[11.5px] font-bold ${statusCls}`}>{m.status}</span>
                   <span className={`text-[14px] font-semibold ${mono} ${c.text}`}>{m.key}</span>
-                  <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.text3} bg-[#161F2D]`}>{m.kind}</span>
-                  {cal && cal.eligible && m.status !== "ACTIVE" && <span className="rounded bg-[#00D69A]/10 px-1.5 py-0.5 text-[11px] font-bold text-[#00D69A]">promotion-ready</span>}
-                  {cal && cal.demote && m.status === "ACTIVE" && <span className="rounded bg-[#FF5268]/10 px-1.5 py-0.5 text-[11px] font-bold text-[#FF5268]">demotion warranted</span>}
+                  <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.text3} bg-[var(--fd-elevated)]`}>{m.kind}</span>
+                  {cal && cal.eligible && m.status !== "ACTIVE" && <span className="rounded bg-[#00D69A]/10 px-1.5 py-0.5 text-[11px] font-bold text-[var(--fd-green-text)]">promotion-ready</span>}
+                  {cal && cal.demote && m.status === "ACTIVE" && <span className="rounded bg-[#FF5268]/10 px-1.5 py-0.5 text-[11px] font-bold text-[var(--fd-red-text)]">demotion warranted</span>}
                   <div className="ml-auto flex gap-2">
                     {m.status !== "ACTIVE" && (
-                      <Button size="sm" variant="outline" className="h-7 border-[#253247] bg-[#161F2D] px-2 text-[12.5px] text-[#E8EDF5] hover:bg-[#1C2740]"
+                      <Button size="sm" variant="outline" className="h-7 border-[var(--fd-border2)] bg-[var(--fd-elevated)] px-2 text-[12.5px] text-[var(--fd-text)] hover:bg-[var(--fd-hover)]"
                         onClick={() => onAction({ action: "PROMOTE", modelKey: m.key }, `Promote ${m.key}`)}>
                         Promote
                       </Button>
                     )}
                     {m.status === "ACTIVE" && m.key !== prob.baseline.key && (
-                      <Button size="sm" variant="outline" className="h-7 border-[#FF5268]/40 bg-[#161F2D] px-2 text-[12.5px] text-[#FF5268] hover:bg-[#2A1A22]"
+                      <Button size="sm" variant="outline" className="h-7 border-[#FF5268]/40 bg-[var(--fd-elevated)] px-2 text-[12.5px] text-[var(--fd-red-text)] hover:bg-[#2A1A22]"
                         onClick={() => onAction({ action: "DEMOTE", modelKey: m.key, reason: "manual demotion from Settings" }, `Demote ${m.key}`)}>
                         Demote
                       </Button>
@@ -693,7 +706,7 @@ function GovernanceCard({ probability, onAction }: { probability: ProbabilityDTO
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className={`text-[15px] font-semibold`}>AI cost & latency governance (A-07)</div>
-        <Button size="sm" variant="outline" className="border-[#253247] bg-[#161F2D] text-[#E8EDF5] text-[13px] hover:bg-[#1C2740]"
+        <Button size="sm" variant="outline" className="border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[var(--fd-text)] text-[13px] hover:bg-[var(--fd-hover)]"
           onClick={() => onAction({ action: "CLEAR_CACHE" }, "Estimate cache cleared")}>
           Clear estimate cache
         </Button>
@@ -734,7 +747,7 @@ function GovernanceCard({ probability, onAction }: { probability: ProbabilityDTO
                     {fmtCents(p.spentCents)} / {fmtCents(p.monthlyBudgetCents)} · {p.budgetUsedPct}%
                   </span>
                 </div>
-                <div className={`mt-1 h-1.5 w-full rounded-full ${p.budgetUsedPct >= 100 ? "bg-[#FF5268]/30" : "bg-[#161F2D]"}`}>
+                <div className={`mt-1 h-1.5 w-full rounded-full ${p.budgetUsedPct >= 100 ? "bg-[#FF5268]/30" : "bg-[var(--fd-elevated)]"}`}>
                   <div
                     className={`h-1.5 rounded-full ${p.budgetUsedPct >= 100 ? "bg-[#FF5268]" : "bg-[#2583FF]"}`}
                     style={{ width: `${Math.min(100, p.budgetUsedPct)}%` }}
@@ -861,7 +874,7 @@ export function StrategyLab({ dash, onAfterChange }: { dash: DashboardDTO | null
       <div className="flex flex-wrap gap-2">
         {robots.map((r) => (
           <button key={r.id} onClick={() => setRobotId(r.id)}
-            className={`rounded-lg border px-3 py-1.5 text-[14px] font-semibold transition-colors ${active.id === r.id ? "border-[#2583FF] bg-[#2583FF]/10 " + c.text : `border-[#253247] bg-[#161F2D] ${c.text2} hover:bg-[#1C2740]`}`}>
+            className={`rounded-lg border px-3 py-1.5 text-[14px] font-semibold transition-colors ${active.id === r.id ? "border-[#2583FF] bg-[#2583FF]/10 " + c.text : `border-[var(--fd-border2)] bg-[var(--fd-elevated)] ${c.text2} hover:bg-[var(--fd-hover)]`}`}>
             {r.name} <span className={mono + " " + c.text3}>v{r.activeVersion}</span>
           </button>
         ))}
@@ -897,7 +910,7 @@ export function StrategyLab({ dash, onAfterChange }: { dash: DashboardDTO | null
                     </td>
                     <td className="py-1.5">
                       {!v.isActive && (
-                        <Button size="sm" variant="outline" className={`h-6 border-[#253247] bg-[#161F2D] px-2 text-[12px] ${c.text} hover:bg-[#1C2740]`} disabled={labBusy !== null} onClick={() => activate(v.id)}>
+                        <Button size="sm" variant="outline" className={`h-6 border-[var(--fd-border2)] bg-[var(--fd-elevated)] px-2 text-[12px] ${c.text} hover:bg-[var(--fd-hover)]`} disabled={labBusy !== null} onClick={() => activate(v.id)}>
                           Activate
                         </Button>
                       )}
@@ -1008,7 +1021,7 @@ function EquityCurve({ curve, baselineCents }: { curve: CurvePoint[]; baselineCe
   const up = vals[vals.length - 1] >= baselineCents;
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label="Backtest equity curve">
-      <line x1={pad} x2={w - pad} y1={y(baselineCents)} y2={y(baselineCents)} strokeDasharray="4 4" stroke="#253247" strokeWidth="1" />
+      <line x1={pad} x2={w - pad} y1={y(baselineCents)} y2={y(baselineCents)} strokeDasharray="4 4" stroke="var(--fd-border2)" strokeWidth="1" />
       <path d={path} fill="none" stroke={up ? "#00D69A" : "#FF5268"} strokeWidth="2" strokeLinejoin="round" />
     </svg>
   );
@@ -1112,20 +1125,20 @@ export function LiveTradingCard() {
 
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             <div className="flex gap-2">
-              <Input placeholder="0x… wallet address (registered address-only)" value={walletDraft} onChange={(e) => setWalletDraft(e.target.value)} className={`h-8 border-[#253247] bg-[#161F2D] text-[14px] ${c.text}`} />
-              <Button size="sm" variant="outline" className={`border-[#253247] bg-[#161F2D] text-[#E8EDF5] text-[13px] hover:bg-[#1C2740]`} disabled={!/^0x[a-fA-F0-9]{40}$/.test(walletDraft)}
+              <Input placeholder="0x… wallet address (registered address-only)" value={walletDraft} onChange={(e) => setWalletDraft(e.target.value)} className={`h-8 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[14px] ${c.text}`} />
+              <Button size="sm" variant="outline" className={`border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[var(--fd-text)] text-[13px] hover:bg-[var(--fd-hover)]`} disabled={!/^0x[a-fA-F0-9]{40}$/.test(walletDraft)}
                 onClick={() => act({ action: "REGISTER_WALLET", address: walletDraft }).then(() => setWalletDraft(""))}>
                 Register wallet
               </Button>
             </div>
             <div className="flex gap-2">
-              <Input placeholder={`type "${s.consent.phraseEcho}"`} value={confirmText} onChange={(e) => setConfirmText(e.target.value)} className={`h-8 border-[#253247] bg-[#161F2D] text-[14px] ${c.text}`} />
+              <Input placeholder={`type "${s.consent.phraseEcho}"`} value={confirmText} onChange={(e) => setConfirmText(e.target.value)} className={`h-8 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[14px] ${c.text}`} />
               {s.consent.consented ? (
                 <Button size="sm" variant="outline" className={`border-[#FF5268]/50 bg-[#FF5268]/10 ${c.loss} text-[13px] hover:bg-[#FF5268]/20`} onClick={() => act({}, "DELETE", "/api/consent")}>
                   Revoke consent
                 </Button>
               ) : (
-                <Button size="sm" variant="outline" className={`border-[#253247] bg-[#161F2D] text-[#E8EDF5] text-[13px] hover:bg-[#1C2740]`} disabled={confirmText !== s.consent.phraseEcho}
+                <Button size="sm" variant="outline" className={`border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[var(--fd-text)] text-[13px] hover:bg-[var(--fd-hover)]`} disabled={confirmText !== s.consent.phraseEcho}
                   onClick={() => act({ confirm: confirmText, walletAddress: walletDraft || s.custody.address, capsAcknowledged: true }, "POST", "/api/consent").then(() => setConfirmText(""))}>
                   Record consent
                 </Button>
@@ -1133,10 +1146,10 @@ export function LiveTradingCard() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" className={`border-[#253247] bg-[#161F2D] text-[#E8EDF5] text-[13px] hover:bg-[#1C2740]`} disabled={s.pilot.enabled || !s.consent.consented} onClick={() => act({ action: "ENABLE_PILOT" })}>
+            <Button size="sm" variant="outline" className={`border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[var(--fd-text)] text-[13px] hover:bg-[var(--fd-hover)]`} disabled={s.pilot.enabled || !s.consent.consented} onClick={() => act({ action: "ENABLE_PILOT" })}>
               Enable pilot
             </Button>
-            <Button size="sm" variant="outline" className={`border-[#253247] bg-[#161F2D] text-[#E8EDF5] text-[13px] hover:bg-[#1C2740]`} disabled={!s.pilot.enabled} onClick={() => act({ action: "DISABLE_PILOT" })}>
+            <Button size="sm" variant="outline" className={`border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[var(--fd-text)] text-[13px] hover:bg-[var(--fd-hover)]`} disabled={!s.pilot.enabled} onClick={() => act({ action: "DISABLE_PILOT" })}>
               Disable pilot
             </Button>
           </div>
@@ -1151,7 +1164,7 @@ export function LiveTradingCard() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`text-[14px] font-semibold ${c.text}`}>{g.robotName}</span>
                     <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${g.mode === "LIVE_PILOT" ? `${c.loss} bg-[#FF5268]/10` : `${c.paper} bg-[#FFB547]/10`}`}>{g.mode}</span>
-                    <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${g.ready ? `${c.gain} bg-[#00D69A]/10` : `${c.text3} bg-[#1C2740]`}`}>{g.ready ? "GATE READY" : `GATE CLOSED (${blocking.length})`}</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${g.ready ? `${c.gain} bg-[#00D69A]/10` : `${c.text3} bg-[var(--fd-hover)]`}`}>{g.ready ? "GATE READY" : `GATE CLOSED (${blocking.length})`}</span>
                     {g.dryRun && g.ready && <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.paper} bg-[#FFB547]/10`}>DRY-RUN (send SAFE)</span>}
                   </div>
                   {blocking.length > 0 && (
@@ -1162,12 +1175,12 @@ export function LiveTradingCard() {
                     </div>
                   )}
                   {blocking.length === 0 && g.mode !== "LIVE_PILOT" && (
-                    <Button size="sm" variant="outline" className={`mt-1.5 border-[#253247] bg-[#161F2D] text-[#E8EDF5] text-[12.5px] hover:bg-[#1C2740]`} onClick={() => act({ action: "SET_ROBOT_MODE", robotId: g.robotId, mode: "LIVE_PILOT" })}>
+                    <Button size="sm" variant="outline" className={`mt-1.5 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[var(--fd-text)] text-[12.5px] hover:bg-[var(--fd-hover)]`} onClick={() => act({ action: "SET_ROBOT_MODE", robotId: g.robotId, mode: "LIVE_PILOT" })}>
                       Flip to LIVE_PILOT
                     </Button>
                   )}
                   {g.mode === "LIVE_PILOT" && (
-                    <Button size="sm" variant="outline" className={`mt-1.5 border-[#253247] bg-[#161F2D] text-[#E8EDF5] text-[12.5px] hover:bg-[#1C2740]`} onClick={() => act({ action: "SET_ROBOT_MODE", robotId: g.robotId, mode: "PAPER" })}>
+                    <Button size="sm" variant="outline" className={`mt-1.5 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[var(--fd-text)] text-[12.5px] hover:bg-[var(--fd-hover)]`} onClick={() => act({ action: "SET_ROBOT_MODE", robotId: g.robotId, mode: "PAPER" })}>
                       Back to paper
                     </Button>
                   )}
@@ -1206,7 +1219,7 @@ export function NotificationsCard() {
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className={`text-[15px] font-semibold`}>Notification taxonomy & anti-storm (P-04)</div>
-        {d && <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.text3} bg-[#161F2D]`}>last 24h · {d.suppressedCount} absorbed</span>}
+        {d && <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.text3} bg-[var(--fd-elevated)]`}>last 24h · {d.suppressedCount} absorbed</span>}
       </div>
       <div className={`mb-3 text-[13.5px] ${c.text3}`}>
         Every notification goes through one taxonomy (family → severity, dedupe window, hourly cap, digest policy). CRITICAL is never capped — a kill-switch event always breaks through. Suppressed repeats are RECORDED (never silently dropped) and counted here.
@@ -1282,13 +1295,13 @@ export function ApiKeysCard() {
         Export your data (robots, orders, ledger, positions, traces — JSON/CSV, venue-labeled per B11). API keys are READ-ONLY by design: they authenticate /api/public/v1/* reads, no write surface exists. Plaintext is shown once and only its SHA-256 hash is stored (S-08 posture). Rate limit 60 req/min per key.
       </div>
       <div className="mb-3 flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" className={`h-8 border-[#253247] bg-[#161F2D] text-[13px] hover:bg-[#1C2740]`} onClick={() => window.open("/api/export?entity=all&format=json", "_blank")}>Export all (JSON)</Button>
-        <Button size="sm" variant="outline" className={`h-8 border-[#253247] bg-[#161F2D] text-[13px] hover:bg-[#1C2740]`} onClick={() => window.open("/api/export?entity=ledger&format=csv", "_blank")}>Export ledger (CSV)</Button>
-        <Button size="sm" variant="outline" className={`h-8 border-[#253247] bg-[#161F2D] text-[13px] hover:bg-[#1C2740]`} onClick={() => window.open("/api/export?entity=orders&format=csv", "_blank")}>Export orders (CSV)</Button>
+        <Button size="sm" variant="outline" className={`h-8 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[13px] hover:bg-[var(--fd-hover)]`} onClick={() => window.open("/api/export?entity=all&format=json", "_blank")}>Export all (JSON)</Button>
+        <Button size="sm" variant="outline" className={`h-8 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[13px] hover:bg-[var(--fd-hover)]`} onClick={() => window.open("/api/export?entity=ledger&format=csv", "_blank")}>Export ledger (CSV)</Button>
+        <Button size="sm" variant="outline" className={`h-8 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[13px] hover:bg-[var(--fd-hover)]`} onClick={() => window.open("/api/export?entity=orders&format=csv", "_blank")}>Export orders (CSV)</Button>
       </div>
       <div className="mb-3 flex gap-2">
-        <Input placeholder="key name (e.g. grafana-read)" value={name} onChange={(e) => setName(e.target.value)} className={`h-8 border-[#253247] bg-[#161F2D] text-[14px] ${c.text}`} />
-        <Button size="sm" variant="outline" className={`h-8 border-[#253247] bg-[#161F2D] text-[13px] hover:bg-[#1C2740]`} disabled={busy} onClick={create}>Create key</Button>
+        <Input placeholder="key name (e.g. grafana-read)" value={name} onChange={(e) => setName(e.target.value)} className={`h-8 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[14px] ${c.text}`} />
+        <Button size="sm" variant="outline" className={`h-8 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[13px] hover:bg-[var(--fd-hover)]`} disabled={busy} onClick={create}>Create key</Button>
       </div>
       {plaintext && (
         <div className={`mb-3 rounded-lg border border-[#FFB547]/40 bg-[#FFB547]/10 p-2.5 text-[13px] ${c.warn}`}>
@@ -1307,12 +1320,12 @@ export function ApiKeysCard() {
                 <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${k.status === "ACTIVE" ? `${c.gain} bg-[#00D69A]/10` : `${c.loss} bg-[#FF5268]/10`}`}>{k.status}</span>
                 <span className={`font-semibold ${c.text}`}>{k.name}</span>
                 <span className={`${mono} ${c.text2}`}>{k.prefix}…</span>
-                <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.text3} bg-[#161F2D]`}>{k.scope}</span>
+                <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.text3} bg-[var(--fd-elevated)]`}>{k.scope}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`text-[11.5px] ${c.text3}`}>{k.lastUsedAt ? `used ${new Date(k.lastUsedAt).toLocaleString()}` : "never used"}</span>
                 {k.status === "ACTIVE" && (
-                  <Button size="sm" variant="outline" className={`h-7 border-[#FF5268]/40 bg-[#161F2D] px-2 text-[12.5px] text-[#FF5268] hover:bg-[#2A1A22]`} onClick={() => revoke(k.id)}>Revoke</Button>
+                  <Button size="sm" variant="outline" className={`h-7 border-[#FF5268]/40 bg-[var(--fd-elevated)] px-2 text-[12.5px] text-[var(--fd-red-text)] hover:bg-[#2A1A22]`} onClick={() => revoke(k.id)}>Revoke</Button>
                 )}
               </div>
             </div>
@@ -1364,7 +1377,7 @@ export function ComplianceCard() {
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className={`text-[15px] font-semibold`}>Compliance ops — data retention (P-07)</div>
-        <Button size="sm" variant="outline" className={`h-8 border-[#253247] bg-[#161F2D] text-[13px] hover:bg-[#1C2740]`} disabled={busy} onClick={run}>{busy ? "Running…" : "Run retention now"}</Button>
+        <Button size="sm" variant="outline" className={`h-8 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[13px] hover:bg-[var(--fd-hover)]`} disabled={busy} onClick={run}>{busy ? "Running…" : "Run retention now"}</Button>
       </div>
       <div className={`mb-3 text-[13.5px] ${c.text3}`}>
         Ephemeral operational data is pruned after its window; financial truth (ledger, orders, fills, positions, reconciliation, retention runs) is NEVER pruned — append-only is the product. Every run is audited (RetentionRun) and notified (COMPLIANCE).
@@ -1379,7 +1392,7 @@ export function ComplianceCard() {
                 <div className="mt-1.5 flex items-center gap-2">
                   <Input type="number" min={p.bounds.min} max={p.bounds.max} defaultValue={p.days}
                     onBlur={(e) => { const v = Number(e.target.value); if (v && v !== p.days) setDays(p.key, v); }}
-                    className={`h-7 w-20 border-[#253247] bg-[#161F2D] text-[14px] ${c.text}`} />
+                    className={`h-7 w-20 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[14px] ${c.text}`} />
                   <span className={`text-[12px] ${c.text3}`}>days ({p.bounds.min}–{p.bounds.max})</span>
                 </div>
               </div>
@@ -1452,9 +1465,9 @@ export function MetricsCard() {
             {m.markets.freshness.map((f) => (
               <div key={f.venue} className={`flex flex-wrap items-center justify-between gap-2 text-[13px] ${c.text2}`}>
                 <span className="flex items-center gap-2">
-                  <span className={`inline-block h-2 w-2 rounded-full ${f.adapter === "LIVE" ? "bg-[#00D69A]" : "bg-[#55617E]"}`} />
+                  <span className={`inline-block h-2 w-2 rounded-full ${f.adapter === "LIVE" ? "bg-[#00D69A]" : "bg-[var(--fd-text3)]"}`} />
                   {f.label}
-                  <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.text3} bg-[#161F2D]`}>{f.adapter}</span>
+                  <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.text3} bg-[var(--fd-elevated)]`}>{f.adapter}</span>
                 </span>
                 <span className={mono}>
                   {f.markets} market{f.markets === 1 ? "" : "s"} · {f.lastSyncMinAgo != null ? `last sync ${f.lastSyncMinAgo}m ago` : "never synced"}
