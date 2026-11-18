@@ -1,9 +1,12 @@
 // Aggregated overview for the single-page dashboard.
-import { NextResponse } from "next/server";
+// Phase 10: request-scoped auth — robots/positions/traces scope to the acting
+// user; market counts and platform state stay shared.
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { getAutopilotState, getPauseState } from "@/lib/control";
 import { ensureAutopilotTimer } from "@/lib/engine/autopilot";
 import { VENUES } from "@/lib/venues";
+import { resolveAuth } from "@/lib/auth";
 
 // Unrealized P/L for one open position, mark-to-market on the venue's last
 // synced price. SAME formula as the risk engine (src/lib/risk.ts) so the
@@ -21,14 +24,15 @@ function positionPnl(p: {
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const user = await db.user.findUnique({ where: { email: "founder@faida.local" } });
-  if (!user) return NextResponse.json({ error: "not seeded" }, { status: 503 });
+export async function GET(req: NextRequest) {
+  const auth = await resolveAuth(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const user = auth.ctx.user;
   await ensureAutopilotTimer(); // self-heal the loop after a process restart
 
   const [robots, lastLedger, orders, positions, traces, notifications, marketCount, providers, riskRows, wallet, outboxPending, pause, autopilot, marketGroups, openAlerts] =
     await Promise.all([
-      db.robot.findMany({ orderBy: { createdAt: "asc" } }),
+      db.robot.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
       db.ledgerEntry.findMany({ where: { userId: user.id, mode: "PAPER" }, orderBy: { createdAt: "desc" }, take: 1 }),
       db.order.findMany({
         where: { userId: user.id, mode: "PAPER" },
@@ -37,7 +41,7 @@ export async function GET() {
         include: { market: { select: { question: true, venue: true } } },
       }),
       db.position.findMany({
-        where: { status: "OPEN" },
+        where: { status: "OPEN", robot: { userId: user.id } },
         include: {
           market: { select: { question: true, venue: true, yesPriceCents: true, noPriceCents: true, eventKey: true } },
           robot: { select: { name: true } },
@@ -47,6 +51,7 @@ export async function GET() {
       db.decisionTrace.findMany({
         orderBy: { createdAt: "desc" },
         take: 10,
+        where: { robot: { userId: user.id } },
         include: { robot: { select: { name: true } }, market: { select: { question: true, venue: true } } },
       }),
       db.notification.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 8 }),

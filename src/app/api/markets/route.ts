@@ -1,11 +1,12 @@
 // Market data: GET = cached list from DB (all venues); POST = sync live from
 // the adapter for the requested venue (P3.1). Every successful sync appends
 // MarketPriceTicks (A-05 recorder, <VENUE>_SYNC source).
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { getVenueAdapter } from "@/lib/venue/registry";
 import { isLiveVenue, VENUE_IDS, VENUE_LABEL } from "@/lib/venues";
 import { recordTick } from "@/lib/engine/cycle";
+import { resolveOperator } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,11 @@ export async function GET() {
   return NextResponse.json({ markets, compliance: "per-venue rows in src/lib/venue/types.ts (S-05)" });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  // Phase 10: OPERATOR-ONLY — platform-level mutation.
+  const auth = await resolveOperator(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   const body = (await req.json().catch(() => ({}))) as { venue?: string };
   const venue = (body.venue ?? "POLYMARKET").toUpperCase();
 

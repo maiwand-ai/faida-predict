@@ -101,8 +101,10 @@ def main():
 
     # K4 — CRITICAL notification + outbox event
     # Prisma SQLite stores DateTime as epoch ms — compare integers, not text datetimes
+    # (Phase 8 P-04 taxonomy moved the pause notification to family EXECUTION —
+    # uncapped CRITICAL; the query tracks the current taxonomy)
     cut_ms = int((time.time() - 300) * 1000)
-    notif = db("SELECT COUNT(*) FROM Notification WHERE severity='CRITICAL' AND family='SYSTEM' AND title LIKE '%kill switch%' AND createdAt > ?", (cut_ms,))[0][0]
+    notif = db("SELECT COUNT(*) FROM Notification WHERE severity='CRITICAL' AND family='EXECUTION' AND title LIKE '%kill switch%' AND createdAt > ?", (cut_ms,))[0][0]
     check("K4 CRITICAL notification emitted", notif >= 1, f"{notif} rows")
     outbox = db("SELECT COUNT(*) FROM OutboxEvent WHERE eventType='PLATFORM_PAUSED' AND createdAt > ?", (cut_ms,))[0][0]
     check("K4 PLATFORM_PAUSED outbox event", outbox >= 1, f"{outbox} rows")
@@ -124,6 +126,15 @@ def main():
     if failures:
         print(f"DRILL FAIL — {len(failures)}: {failures}")
         return 1
+    # Phase 10: stamp the exit-bar drill timestamp (best-effort).
+    try:
+        import json as _json, urllib.request as _urq
+        _r = _urq.Request(BASE + '/api/beta/drill-marker', method='POST',
+                          data=_json.dumps({'kind': 'RUNBOOK_DRILL'}).encode(),
+                          headers={'Content-Type': 'application/json'})
+        _urq.urlopen(_r, timeout=30).read()
+    except Exception:
+        pass
     print("DRILL PASS — C19.1 kill-switch checklist demonstrated (measured, not asserted)")
     return 0
 

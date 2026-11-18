@@ -6,7 +6,7 @@
 //          (PAPER⇄LIVE_PILOT, flip re-runs every gate except the mode check
 //          itself), B3_SIGNOFF (counsel), ARM_LIVE_WRITE acknowledgement is
 //          env-only (POLYMARKET_LIVE_WRITE) and never settable via API.
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { custodyStatus, signerAddress } from "@/lib/live/custody";
 import { kalshiCredentialStatus } from "@/lib/live/kalshiCustody";
@@ -14,10 +14,15 @@ import { getConsent } from "@/lib/live/consent";
 import { getPilotState, updatePilotState, getB3Signoff, recordB3Signoff, PILOT_CEILINGS } from "@/lib/live/pilot";
 import { liveGateReport } from "@/lib/live/gates";
 import { enqueueOutbox } from "@/lib/outbox";
+import { resolveAuth, resolveOperator } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+// GET is OPERATOR-ONLY (Phase 10): the report names every Polymarket robot —
+// member robot names must not leak across cohort accounts.
+export async function GET(req: NextRequest) {
+  const auth = await resolveOperator(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const robots = await db.robot.findMany({
     where: { venue: "POLYMARKET" },
     select: { id: true, name: true, mode: true, status: true, allocatedCents: true, maxPositionCents: true },
@@ -43,7 +48,7 @@ export async function GET() {
   });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
     action?: string;
     address?: string;
@@ -57,8 +62,14 @@ export async function POST(req: Request) {
   };
   const actor = body.actor ?? "founder";
 
+  // Phase 10 auth split: REGISTER_WALLET is member onboarding (BETA §1 —
+  // session user registers their OWN wallet, address only, B1); every pilot
+  // control action is OPERATOR-only (caps/modes/counsel are platform truth).
   switch (body.action) {
     case "REGISTER_WALLET": {
+      const auth = await resolveAuth(req);
+      if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+      const user = auth.ctx.user;
       const address = body.address?.trim();
       if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
         return NextResponse.json({ error: "address must be a 0x-prefixed 20-byte address" }, { status: 400 });
@@ -67,16 +78,19 @@ export async function POST(req: Request) {
       if (signer && signer.toLowerCase() !== address.toLowerCase()) {
         return NextResponse.json({ error: `injected signer ${signer} does not control the registered address — refusing (B1)` }, { status: 422 });
       }
-      const user = await db.user.findUnique({ where: { email: "founder@faida.local" } });
-      if (!user) return NextResponse.json({ error: "not seeded" }, { status: 503 });
       const wallet = await db.wallet.upsert({
         where: { address },
-        create: { userId: user.id, address, chainId: 137, signingModel: "SELF_CUSTODY_EIP712", label: "founder self-custody" },
+        create: { userId: user.id, address, chainId: 137, signingModel: "SELF_CUSTODY_EIP712", label: "self-custody (address only)" },
         update: { signingModel: "SELF_CUSTODY_EIP712" },
       });
       return NextResponse.json({ ok: true, wallet: { address: wallet.address, chainId: wallet.chainId, signingModel: wallet.signingModel } });
     }
+  }
 
+  const opAuth = await resolveOperator(req);
+  if (!opAuth.ok) return NextResponse.json({ error: opAuth.error }, { status: opAuth.status });
+
+  switch (body.action) {
     case "ENABLE_PILOT":
     case "DISABLE_PILOT":
     case "SET_CAPS": {

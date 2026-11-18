@@ -1,7 +1,8 @@
 // Eligibility matrix (C4.5): GET the matrix; PUT flips a country.
 // Sanction-list rows can never be flipped to allowed.
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
+import { resolveOperator } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,11 @@ export async function GET() {
   return NextResponse.json({ rules });
 }
 
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
+  // Phase 10: OPERATOR-ONLY — the C4.5 matrix is platform policy.
+  const auth = await resolveOperator(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   const body = (await req.json()) as { country?: string; allowed?: boolean; reason?: string };
   if (!body.country || typeof body.allowed !== "boolean") {
     return NextResponse.json({ error: "country and allowed are required" }, { status: 400 });

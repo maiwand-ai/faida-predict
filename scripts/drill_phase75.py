@@ -248,8 +248,14 @@ def drill_r4():
         venue = "MANIFOLD"
         seeded_fee = True
         print(f"  (no venue ships fee snapshots in this DB — seeding a config fee on MANIFOLD, C4.4: fee schedule is config)")
+    # Depth-qualified selection (Phase 10 fix): the armed venue entry rules
+    # refuse thin touch depth (e.g. LIMITLESS rule (a) min 5000¢, fail-closed
+    # on null) — the drill must exercise a market the risk gate would allow.
     market = conn.execute(
-        "SELECT id, yesTakerFeeBps, noTakerFeeBps FROM Market WHERE venue=? AND ambiguityFlag=0 AND resolvedAt IS NULL AND yesPriceCents IS NOT NULL ORDER BY volumeCents DESC LIMIT 1",
+        "SELECT id, yesTakerFeeBps, noTakerFeeBps FROM Market WHERE venue=? AND ambiguityFlag=0 AND resolvedAt IS NULL AND yesPriceCents IS NOT NULL AND ("
+        " (yesTouchDepthCents IS NOT NULL AND noTouchDepthCents IS NOT NULL AND yesTouchDepthCents >= 5000 AND noTouchDepthCents >= 5000)"
+        " OR (yesTouchDepthCents IS NULL AND noTouchDepthCents IS NULL)"
+        ") ORDER BY volumeCents DESC LIMIT 1",
         (venue,),
     ).fetchone()
     if not market:
@@ -381,6 +387,13 @@ def main():
     if failures:
         print(f"\nDRILL FAIL ({len(failures)}): " + "; ".join(failures))
         sys.exit(1)
+
+    # Phase 10: stamp the exit-bar drill timestamp (best-effort — a marker
+    # failure must never mask a PASS; the key reads honestly STALE/UNKNOWN).
+    try:
+        api("POST", "/api/beta/drill-marker", {"kind": "RUNBOOK_DRILL"}, timeout=30)
+    except Exception:
+        pass
     print("\nDRILL PASS (R1–R5)")
 
 

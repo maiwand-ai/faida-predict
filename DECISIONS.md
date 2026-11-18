@@ -288,3 +288,31 @@ truth for choices that must not drift; code reads them via config, not folklore.
 - Live Polymarket market data — **30 markets synced via Gamma adapter (read-only)**
 - AI gateway A-06 — **GLM keyless path verified; OpenAI/Anthropic/compatible slots ready**
 - Live trading — **disabled by contract** (Phase 7 gates + explicit authorization)
+
+## Phase-10 checkpoint (beta operations readiness, 2026-11-18)
+
+- **Auth posture for the closed beta — decided and applied:** password login
+  (scrypt, node:crypto, per-user salt) + opaque session tokens stored as
+  SHA-256 (P-06 pattern), httpOnly cookie, 14-day expiry. No OAuth/SSO —
+  proportionate for a 10–25 member cohort; revisit on multi-tenancy.
+  `BETA_STRICT_AUTH=1` removes the founder fallback on the beta instance; the
+  fallback otherwise serves pre-Phase-10 operator surfaces unchanged and can
+  never resolve a MEMBER account. One-time operator bootstrap; no default
+  password ships. Registration is closed (enrollment row required) and
+  fail-closes on C4.5 (unknown country denied).
+- **Role model:** OPERATOR (founder — compliance/metrics/control/counsel/
+  pilot surfaces) vs MEMBER (cohort — own robots/orders/ledger/feedback).
+  Per-robot ownership enforced on every mutation path.
+- **Exit bar as data:** BETA_PHASE75 §4 items 1/2/8 are computed from
+  BetaDefect/BetaMember/RobotSession/BetaFeedback; items 3/4 read PASS-stamp
+  control keys written by the drill/smoke scripts; items 5/6/7 render
+  FOUNDER_HOST (never faked from the sandbox). An S0 defect fires an uncapped
+  CRITICAL notification (§3 STOP-the-round response).
+- **In-phase defect catches (recorded in BetaDefect, fixed same-phase):**
+  (1) corrupted `markets` state declaration in app.tsx that had silently
+  passed tsc/lint since Phase 7.5 (parser recovery); (2) SQLite concurrency
+  posture regression in the sandbox (WAL reset, pool params lost) — re-applied
+  per the Phase 7.5 decision row above; B5 load green again (W=6 probe:
+  10.0s → 14ms); (3) stale phase-8/9/7.5 smoke assertions updated to current
+  registry/taxonomy truth (P8-1d 4 venues, P9-8c badge 10, K4 EXECUTION,
+  R4 depth-qualified market pick).

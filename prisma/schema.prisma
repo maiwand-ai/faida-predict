@@ -16,6 +16,12 @@ model User {
   email          String   @unique
   name           String?
   country        String   @default("NL") // ISO 3166-1 alpha-2, checked against EligibilityRule
+  // Phase 10 (beta ops): role split — OPERATOR runs the platform (founder),
+  // MEMBER is a closed-beta cohort account. passwordHash null = password
+  // login disabled for that account (the seed starts null; the operator
+  // password is set once via /api/auth/bootstrap, never shipped as a default).
+  role           String   @default("OPERATOR") // OPERATOR | MEMBER
+  passwordHash   String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   wallets        Wallet[]
@@ -25,6 +31,94 @@ model User {
   riskConfigs    RiskConfig[]
   orders         Order[]
   apiKeys        ApiKey[]
+  sessions       Session[]
+  betaMember     BetaMember?
+  robotSessions  RobotSession[]
+  feedback       BetaFeedback[]
+}
+
+// Phase 10: cookie sessions. The token is random 32 bytes shown once in the
+// cookie and stored ONLY as its SHA-256 hash (the ApiKey P-06 pattern);
+// a leaked DB row cannot be replayed as a session.
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique // sha256hex of the raw session token
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+// Phase 10 (BETA_PHASE75 §1): closed-beta cohort — the operator enrolls an
+// email BEFORE an account exists (no public signup, ever); registration
+// consumes the enrollment row and links the account. The mix requirement
+// (≥3 paper-only, ≥3 live-pilot) is enforced by the round snapshot.
+model BetaMember {
+  id        String   @id @default(cuid())
+  email     String   @unique // enrollment key before the account exists
+  userId    String?  @unique // linked at registration
+  track     String   @default("FREE_CHOICE") // PAPER_ONLY | LIVE_PILOT | FREE_CHOICE
+  round     Int      @default(1) // cohort round the member joined in
+  active    Boolean  @default(true)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+// Phase 10: one row per completed robot-creation flow (exit-bar item 8:
+// "≥ 3 robot sessions" per member is MEASURED here, not estimated).
+model RobotSession {
+  id        String   @id @default(cuid())
+  userId    String
+  robotId   String?
+  kind      String   // WIZARD | TEMPLATE | MANUAL
+  venue     String   // B11: every session names its venue
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+// Phase 10 (BETA_PHASE75 §2/§3): the defect ladder as data — exit-bar items
+// 1–2 (zero open S0/S1, ≤3 open S2) are audited against THIS table, never a
+// markdown file. Severity ladder and response are verbatim from the program.
+model BetaDefect {
+  id           String    @id @default(cuid())
+  round        Int
+  severity     String    // S0 | S1 | S2 | S3 (BETA_PHASE75 §3 ladder)
+  status       String    @default("OPEN") // OPEN | FIXED | WONTFIX
+  title        String
+  detail       String?
+  source       String    @default("BETA_ROUND") // BETA_ROUND | SMOKE | DRILL | OPERATOR
+  owner        String?
+  fixPhase     String?
+  reportedById String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  closedAt     DateTime?
+
+  @@index([round, severity, status])
+}
+
+// Phase 10 (BETA_PHASE75 §2 R-1): member feedback — exit-bar item 8 measures
+// "≥ 1 feedback item" per member against this table.
+model BetaFeedback {
+  id           String   @id @default(cuid())
+  userId       String
+  round        Int
+  category     String   @default("OTHER") // BUG | CONFUSION | FEATURE | OTHER
+  body         String
+  status       String   @default("NEW") // NEW | TRIAGED | DONE
+  operatorNote String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, status])
 }
 
 // B1 decision: SELF-CUSTODY — we store the address only, never keys.

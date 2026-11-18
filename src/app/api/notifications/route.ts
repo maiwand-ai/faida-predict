@@ -2,17 +2,19 @@
 // IMMEDIATE rows and every CRITICAL row surface individually; DIGEST-family
 // rows inside the window collapse to one virtual row per family; suppressed
 // rows never surface but are counted (the storm is provable, never silent).
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { digestFeed, TAXONOMY } from "@/lib/notifications";
+import { resolveAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const windowSec = Math.min(86400, Math.max(60, Number(url.searchParams.get("windowSec") ?? 3600)));
-  const user = await db.user.findUnique({ where: { email: "founder@faida.local" }, select: { id: true } });
-  if (!user) return NextResponse.json({ error: "not seeded" }, { status: 503 });
+  const auth = await resolveAuth(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const user = auth.ctx.user;
 
   const since = new Date(Date.now() - windowSec * 1000);
   const rows = await db.notification.findMany({

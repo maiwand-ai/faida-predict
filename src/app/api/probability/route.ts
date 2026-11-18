@@ -5,13 +5,14 @@
 // POST → founder actions (B8: humans own activation): RECOMPUTE calibration,
 //        PROMOTE / DEMOTE a model, CHECK_DEMOTION (drill path), CLEAR_CACHE,
 //        SCREEN a text sample (A-06 demonstration/verification).
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { listRegistry, recomputeCalibration, promoteModel, demoteModel, checkDemotion } from "@/lib/probability/registry";
 import { governanceView } from "@/lib/probability/governance";
 import { edgeGateReport } from "@/lib/probability/edgeGate";
 import { screenEvidence } from "@/lib/probability/screening";
 import { setModelKnobs } from "@/lib/probability/baseline";
+import { resolveOperator } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,11 @@ export async function GET(req: Request) {
   return NextResponse.json({ ...registry, governance, edgeGate: gate });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  // Phase 10: OPERATOR-ONLY — platform-level mutation.
+  const auth = await resolveOperator(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   const body = (await req.json()) as {
     action?: string;
     modelKey?: string;

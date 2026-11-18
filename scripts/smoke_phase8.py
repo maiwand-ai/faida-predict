@@ -134,7 +134,7 @@ try:
     check("P8-1b azuro adapter module registered", "AZURO: azuro" in reg_src)
     cat_src = open(f"{ROOT}/src/lib/venue/types.ts").read()
     check("P8-1c compliance row VERIFY_BLOCKED with dated evidence", "VERIFY_BLOCKED" in cat_src and "2026-11-18" in cat_src.split("AZURO")[1][:1200])
-    check("P8-1d live-venue set unchanged (PM/MF/LX)", venues_src.count('adapter: "LIVE",') == 3)
+    check("P8-1d live-venue set per Phase 9 registry (PM/MF/LX/KALSHI — 4 venues; was 3 at Phase 8 time)", venues_src.count('adapter: "LIVE",') == 4 and "KALSHI" in venues_src)
     azuro_src = open(f"{ROOT}/src/lib/venue/azuro.ts").read()
     check("P8-1e adapter implements the SDK-verified contract", "api.onchainfeed.org/api/v1/public" in azuro_src and "games-by-filters" in azuro_src and "conditions-by-game-ids" in azuro_src)
     rules_src = open(f"{ROOT}/src/lib/venue/rules.ts").read()

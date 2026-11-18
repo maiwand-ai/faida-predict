@@ -1,28 +1,34 @@
-// Orders: GET recent paper orders; POST places a paper order through the
-// full pipeline (eligibility -> risk -> machine -> fill -> ledger -> outbox).
-import { NextResponse } from "next/server";
+// Orders: GET recent paper orders (request-scoped — Phase 10: members see
+// their own; the operator sees their own); POST places a paper order through
+// the full pipeline (eligibility -> risk -> machine -> fill -> ledger -> outbox).
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { placePaperOrder } from "@/lib/engine/paper";
 import { simulateLostSubmission } from "@/lib/engine/reconcile";
+import { resolveAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await resolveAuth(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const user = auth.ctx.user;
   const [orders, ledger] = await Promise.all([
     db.order.findMany({
-      where: { mode: "PAPER" },
+      where: { mode: "PAPER", userId: user.id },
       orderBy: { createdAt: "desc" },
       take: 40,
       include: { market: { select: { question: true, venue: true } }, robot: { select: { name: true } } },
     }),
-    db.ledgerEntry.findMany({ where: { mode: "PAPER" }, orderBy: { createdAt: "desc" }, take: 30 }),
+    db.ledgerEntry.findMany({ where: { mode: "PAPER", userId: user.id }, orderBy: { createdAt: "desc" }, take: 30 }),
   ]);
   return NextResponse.json({ orders, ledger });
 }
 
-export async function POST(req: Request) {
-  const user = await db.user.findUnique({ where: { email: "founder@faida.local" } });
-  if (!user) return NextResponse.json({ error: "not seeded" }, { status: 503 });
+export async function POST(req: NextRequest) {
+  const auth = await resolveAuth(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const user = auth.ctx.user;
   const body = (await req.json()) as {
     action?: "PLACE" | "SIMULATE_ACK_LOSS";
     marketId?: string;

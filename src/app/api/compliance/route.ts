@@ -2,13 +2,17 @@
 // GET  → policies + last runs + what would be pruned today (dry counts).
 // POST { action: "SET_RETENTION", key, days } → clamped update, audited.
 // POST { action: "RUN_RETENTION", kind } → prune + RetentionRun row + audit.
-import { NextResponse } from "next/server";
+// Phase 10: OPERATOR-ONLY — retention touches platform data, never members.
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { RETENTION_KEYS, getRetentionPolicies, runRetention, setRetentionDays, RETENTION_BOUNDS } from "@/lib/compliance";
+import { resolveOperator } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await resolveOperator(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const policies = await getRetentionPolicies();
   const runs = await db.retentionRun.findMany({ orderBy: { ranAt: "desc" }, take: 10 });
   // Dry counts: what each policy WOULD prune today (honest preview, no writes).
@@ -30,7 +34,11 @@ export async function GET() {
   });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  // Phase 10: OPERATOR-ONLY — platform-level mutation.
+  const auth = await resolveOperator(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   const body = (await req.json().catch(() => ({}))) as { action?: string; key?: string; days?: number; kind?: string };
   if (body.action === "SET_RETENTION") {
     if (!body.key || typeof body.days !== "number") {

@@ -4,6 +4,7 @@
 // per-venue Workspace, Markets, Robot Studio, Trading, Settings.
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ import { c, card, mono, fmtCents, VenueBadge, venueScopeStyle } from "./ui";
 import { LIVE_VENUE_IDS, ROLE_LABEL, VENUE_LABEL, VENUES } from "@/lib/venues";
 import { StudioView, TradingView, SettingsView } from "./views";
 import { DashboardView, VenueWorkspace } from "./dashboard";
+import { BetaView } from "./beta";
 
 // Tolerant JSON parse — a transient empty body (dev recompile race, network
 // hiccup) must never surface as an uncaught promise rejection (D-07).
@@ -36,7 +38,7 @@ async function safeJson<T = unknown>(res: Response): Promise<T | null> {
 // ── overview-local helpers ──────────────────────────────────────────────
 
 // ── main app ─────────────────────────────────────────────────────────────────
-type View = "overview" | "venue" | "markets" | "studio" | "trading" | "settings";
+type View = "overview" | "venue" | "markets" | "studio" | "trading" | "settings" | "beta";
 
 export default function FaidaApp() {
   const { toast } = useToast();
@@ -52,6 +54,16 @@ export default function FaidaApp() {
   // venue-first navigation: dashboard → venue workspace → studio pre-scoped
   const [venueFocus, setVenueFocus] = useState<string | null>(null);
   const [studioVenue, setStudioVenue] = useState<string | null>(null);
+  // Phase 10: the acting identity — session user (member or operator) with the
+  // honest fallback mode disclosed; drives the Beta Ops view and header chip.
+  const [me, setMe] = useState<{ id: string; email: string; role: string; name: string | null; via?: string } | null>(null);
+  const refreshMe = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const json = await safeJson<{ user: { id: string; email: string; role: string; name: string | null }; via: string }>(res);
+      if (json?.user) setMe({ ...json.user, via: json.via });
+    } catch { /* transient — next poll recovers */ }
+  }, []);
 
   const refreshDashboard = useCallback(async () => {
     try {
@@ -98,10 +110,11 @@ export default function FaidaApp() {
     refreshMarkets();
     refreshOrders();
     refreshProbability();
+    refreshMe();
     const t = setInterval(refreshDashboard, 15000);
     const t5 = setInterval(refreshProbability, 15000);
     return () => { clearInterval(t); clearInterval(t5); };
-  }, [refreshDashboard, refreshMarkets, refreshOrders, refreshProbability]);
+  }, [refreshDashboard, refreshMarkets, refreshOrders, refreshProbability, refreshMe]);
 
   const post = useCallback(
     async (url: string, body: unknown, okMsg: string) => {
@@ -166,6 +179,7 @@ export default function FaidaApp() {
     { id: "markets", label: "Markets" },
     { id: "studio", label: "Robot Studio" },
     { id: "trading", label: "Trading" },
+    { id: "beta", label: "Beta Ops" },
     { id: "settings", label: "Settings" },
   ];
   // while inside a venue workspace, keep the Dashboard nav item lit
@@ -180,6 +194,7 @@ export default function FaidaApp() {
     markets: "≡",
     studio: "◇",
     trading: "⇄",
+    beta: "⊙",
     settings: "⚙",
   };
 
@@ -195,7 +210,7 @@ export default function FaidaApp() {
                 <span className={`text-[14px] font-bold tracking-wide ${c.text}`}>FAIDA</span>
                 <span className={`text-[9px] font-bold tracking-[0.2em] ${c.bright}`}>PREDICT</span>
               </div>
-              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 9</div>
+              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 10</div>
             </div>
           </div>
           <nav className="flex flex-col gap-1">
@@ -236,7 +251,7 @@ export default function FaidaApp() {
                   <span className={`text-[13px] font-bold ${c.text}`}>FAIDA</span>
                   <span className={`text-[8px] font-bold tracking-[0.18em] ${c.bright}`}>PREDICT</span>
                 </div>
-                <div className={`mt-0.5 text-[8px] tracking-[0.14em] ${c.text3}`}>PHASE 9</div>
+                <div className={`mt-0.5 text-[8px] tracking-[0.14em] ${c.text3}`}>PHASE 10</div>
               </div>
             </div>
             <div className={`hidden items-center rounded-lg border px-3 py-1.5 text-[12px] ${c.border} ${c.elevated} ${c.text3} sm:flex`}>
@@ -250,7 +265,21 @@ export default function FaidaApp() {
               <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] sm:px-3 sm:text-[11px] border-[#D9B25C]/40 bg-[#D9B25C]/10 ${c.paper} font-semibold`}>
                 ◇ PAPER — sends gated
               </span>
-              <div className={`h-7 w-7 shrink-0 rounded-full ${c.elevated} border ${c.borderStrong}`} />
+              {/* Phase 10: acting identity — session user with honest role; logout revokes server-side */}
+              {me && (
+                <span className={`hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] ${c.border} ${c.elevated} ${c.text2} md:inline-flex`}>
+                  <span className={mono}>{me.email.length > 24 ? me.email.slice(0, 22) + "…" : me.email}</span>
+                  <span className={`rounded px-1 py-0.5 text-[9px] font-bold ${me.role === "OPERATOR" ? "bg-[#00B0F0]/15 text-[#00B0F0]" : "bg-[#2FC08E]/15 text-[#2FC08E]"}`}>{me.role}</span>
+                </span>
+              )}
+              {me?.via === "FOUNDER_FALLBACK" && (
+                <Link href="/login" className={`hidden rounded-full border px-2.5 py-1 text-[10px] ${c.border} ${c.warn} lg:inline-flex`}>fallback mode — sign in</Link>
+              )}
+              <button
+                onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); await refreshMe(); toast({ title: "Signed out" }); }}
+                className={`h-7 shrink-0 rounded-full border px-2.5 text-[10.5px] ${c.border} ${c.text3} hover:${c.text2}`}
+                aria-label="Sign out"
+              >⏻</button>
             </div>
           </div>
 
@@ -300,7 +329,13 @@ export default function FaidaApp() {
                 onTradeSomething={() => setView("markets")}
               />
             )}
-            {view === "settings" && (
+            {view === "beta" && (
+              <BetaView
+                me={me}
+                onToast={toast}
+              />
+            )}
+          {view === "settings" && (
               <SettingsView
                 dash={dash}
                 riskView={riskView}
@@ -337,7 +372,7 @@ export default function FaidaApp() {
             )}
           </main>
           <footer className={`hidden border-t ${c.border} px-6 py-3 text-center text-[11px] ${c.text3} md:block`}>
-            FAIDA Predict — Phase 9 (Mobile shell C18 · venue #6 Kalshi · second credential kind RSA/Ed25519). All figures paper-labeled per D-03/D-05. Live sends stay behind the gates + recorded consent + the SAFE arm switch.
+            FAIDA Predict — Phase 10 (Beta operations readiness: session auth, cohort, defect ladder, feedback, measurable exit bar). All figures paper-labeled per D-03/D-05. Live sends stay behind the gates + recorded consent + the SAFE arm switch.
           </footer>
         </div>
       </div>

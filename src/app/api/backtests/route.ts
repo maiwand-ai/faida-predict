@@ -1,22 +1,32 @@
 // A-05 — Backtest API: run a replay of a strategy version over recorded
 // ticks with the fill model, and list/read runs (B10 live-gate evidence).
-import { NextResponse } from "next/server";
+// Phase 10: session auth + robot ownership — members list/run only their
+// own robots' backtests; the operator sees all.
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { runBacktest } from "@/lib/engine/backtest";
+import { resolveAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const auth = await resolveAuth(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const user = auth.ctx.user;
+  const ownRobot = user.role === "OPERATOR" ? undefined : { userId: user.id };
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   const robotId = url.searchParams.get("robotId");
   if (id) {
     const run = await db.backtestRun.findUnique({
       where: { id },
-      include: { robot: { select: { name: true } }, market: { select: { question: true } } },
+      include: { robot: { select: { name: true, userId: true } }, market: { select: { question: true } } },
     });
     if (!run) return NextResponse.json({ error: "run not found" }, { status: 404 });
+    if (ownRobot && run.robot.userId !== user.id) {
+      return NextResponse.json({ error: "run not found" }, { status: 404 }); // no existence leak
+    }
     return NextResponse.json({
       id: run.id,
       status: run.status,
@@ -31,7 +41,7 @@ export async function GET(req: Request) {
       marketQuestion: run.market.question,
     });
   }
-  const where = robotId ? { robotId } : {};
+  const where = robotId ? { robotId, ...(ownRobot ? { robot: { userId: user.id } } : {}) } : ownRobot ? { robot: { userId: user.id } } : {};
   const runs = await db.backtestRun.findMany({
     where,
     orderBy: { createdAt: "desc" },
@@ -51,7 +61,10 @@ export async function GET(req: Request) {
   });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = await resolveAuth(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const user = auth.ctx.user;
   const body = (await req.json()) as {
     robotId?: string;
     marketId?: string;
@@ -66,6 +79,9 @@ export async function POST(req: Request) {
 
   const robot = await db.robot.findUnique({ where: { id: body.robotId }, include: { versions: { orderBy: { version: "desc" }, take: 1 } } });
   if (!robot) return NextResponse.json({ error: "robot not found" }, { status: 404 });
+  if (user.role !== "OPERATOR" && robot.userId !== user.id) {
+    return NextResponse.json({ error: "not your robot" }, { status: 403 });
+  }
   const version = body.versionId
     ? await db.strategyVersion.findUnique({ where: { id: body.versionId } })
     : robot.versions[0] ?? null;

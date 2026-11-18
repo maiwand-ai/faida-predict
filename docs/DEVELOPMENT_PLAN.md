@@ -10,7 +10,7 @@
 > Before closing any phase, tick its acceptance criteria here and commit the
 > tick. Nothing gets dropped because it is written down here.
 
-Last revised: 2026-11-18 (Phase 9 closed — mobile shell per C18 + venue #6 Kalshi: mobile bottom tab bar + mobile header + notch-safe viewport + installable PWA manifest with honest store-policy re-check per target market (web/PWA only, docs/STORE_POLICY_PHASE9.md); Kalshi adapter LIVE against the documented Trade API v2 contract — [VERIFY] evidence dated BEFORE adapter work, S-05 conformance fixtures RECORDED from the live feed from this sandbox (unlike Azuro), binary non-multivariate markets only, entry prices = the venue's own asks, touch depth from the bids-only complement, fee bps from the series' own fee_multiplier under the documented quadratic schedule; the SECOND credential kind (RSA-PSS/Ed25519 asymmetric API key, env-injected, never stored) implemented + self-tested offline; registry flipped KALSHI → LIVE with recorded fixtures — smoke P9-1..P9-8 PASS, regressions PASS).
+Last revised: 2026-11-18 (Phase 10 closed — beta operations readiness: the roadmap's declared next step (BETA_PHASE75 round 1) needs instruments the platform lacked; all built + verified — session auth core (scrypt passwords, hashed session tokens per the P-06 pattern, cohort-gated registration consuming BetaMember rows, C4.5 eligibility fail-closed at signup, rate-limited login, one-time operator bootstrap, BETA_STRICT_AUTH strict mode with the honest FOUNDER_FALLBACK disclosed via /api/auth/me); route migration to request-scoped users with member/operator role split and per-robot ownership checks; beta ops API (cohort enrollment, S0–S3 defect ladder as data with S0→uncapped CRITICAL, feedback inbox, R-0 round snapshot, measurable 8-item exit bar with honest FOUNDER_HOST rows, drill PASS markers); UI: Beta Ops view (operator) + member progress/feedback panel + login/register/bootstrap pages + identity chip, badge → 10. In-phase catches: (1) a committed corrupted state declaration in app.tsx (silent parser recovery had hidden it since Phase 7.5) — fixed, recorded; (2) the documented SQLite concurrency posture (WAL + connection_limit=1&pool_timeout=120) had regressed in this sandbox — re-applied per DECISIONS.md/R1, B5 load green again; (3) stale phase-8/9 smoke assertions updated to the Phase 9+ registry truth. smoke P10-1..P10-10 PASS (40 checks, re-run PASS); regressions: phase4, phase5, phase8, phase9, phase75 all PASS isolated; tsc + lint clean.)
 
 ---
 
@@ -777,6 +777,92 @@ founder approval); no native store shells (C18 store-policy doc); no
 multivariate/combo positions (recorded mapping scope); Azuro stays PENDING
 until its fixtures are recorded from an unblocked vantage.
 
+
+### Phase 10 — Beta operations readiness (DONE, 2026-11-18)
+
+The numbered roadmap ended at Phase 9; the declared next step (BETA_PHASE75
+round 1) is gated on founder-host readiness, but running round 1 also needs
+platform instruments the sandbox CAN build — none of this crosses a founder
+gate (no billing, no live send, no Azuro flip, no push):
+
+- **P10.1 — Session auth core (the cohort's front door).** `Session` model +
+  `src/lib/auth.ts`: scrypt password hashing (node:crypto, per-user salt,
+  constant-time verify), session tokens = 32 random bytes stored ONLY as
+  SHA-256 (the P-06 ApiKey pattern), httpOnly cookie, 14-day expiry.
+  `resolveAuth()`: session wins; else FOUNDER_FALLBACK (seeded OPERATOR) so
+  every pre-Phase-10 surface and smoke behaves unchanged — disabled by
+  `BETA_STRICT_AUTH=1` on the beta instance; the mode is always disclosed
+  (`/api/auth/me` → via + strictAuth, D-03). Roles: OPERATOR | MEMBER; the
+  fallback can never resolve a MEMBER. Password login rate-limited 10/min per
+  IP+email (honest 429). One-time operator bootstrap (`/api/auth/bootstrap`)
+  refuses once set — no shipped default password. Login/register/bootstrap
+  pages on-brand and minimal.
+- **P10.2 — Closed-beta registration gates (fail-closed at every step).**
+  Password policy ≥10 chars → C4.5 eligibility via the live matrix (unknown
+  country DENIES, sanctioned source surfaced) → enrollment must exist, active,
+  unconsumed (no public signup, BETA §1). Registration links the account to
+  the BetaMember row and notifies the operator (SYSTEM/INFO).
+- **P10.3 — Route migration + ownership.** Every user-scoped API resolved the
+  hardcoded founder; now request-scoped via resolveAuth with per-robot
+  ownership (members act on their own robots only — PATCH/live-ticket/
+  backtests; 404-not-403 on foreign backtest reads: no existence leak).
+  Operator-only surfaces: compliance, metrics, control (kill switch — B8),
+  eligibility PUT, consent record/revoke, probability POST, markets sync,
+  cycle, live GET/pilot actions; REGISTER_WALLET stays session-scoped (member
+  onboarding, B1 address-only). Orders/dashboard/export robots scoping fixed
+  (previously unscoped reads would have leaked across members).
+- **P10.4 — Beta ops API.** `/api/beta/cohort` (operator enrollment ≤25 cap,
+  track mix accounting per §1), `/api/beta/defects` (the S0–S3 ladder as DATA
+  — §3 definitions/responses verbatim in the API and UI; S0 fires an UNCAPPED
+  CRITICAL RISK notification = §3 "STOP the round"), `/api/beta/feedback`
+  (member submit / operator triage NEW→TRIAGED→DONE, member scope OWN),
+  `/api/beta/round-snapshot` (R-0: health, open defects by severity, cohort
+  mix, exit-bar item-8 signal, drill/smoke stamps), `/api/beta/exit-bar` (the
+  8 §4 items MEASURED — items 1/2/8 computed from tables, 3/4 from PASS-stamp
+  control keys written by the drill/smoke scripts via
+  `/api/beta/drill-marker`, items 5/6/7 honest `FOUNDER_HOST` — never faked),
+  `RobotSession` recorded INSIDE the robot-create transaction (atomic with the
+  robot — same chaos-fix discipline; item 8 is measured, not estimated).
+- **P10.5 — UI.** Beta Ops view: operator instruments (snapshot stats, exit
+  bar with status tones, defect ladder + record form, cohort table + enroll,
+  feedback inbox + triage) and a member panel (own progress vs the ≥3-sessions
+  /≥1-feedback bar, feedback form + own items); identity chip + logout in the
+  header; mobile tab bar carries Beta Ops (C18 continuity); badge → 10.
+- **In-phase catches (recorded in BetaDefect + fixed same-phase):**
+  1. `app.tsx` markets-state declaration was corrupted at source
+     (`const [markets` partially eaten) and had passed tsc/lint since Phase
+     7.5 via silent parser recovery — SWC even emitted invalid JS for one
+     variant. Fixed; smoke P10-10d asserts the correct declaration.
+  2. The documented SQLite concurrency posture (DECISIONS.md "SQLite
+     concurrency posture", RUNBOOKS R1 startup check) had regressed in this
+     sandbox: journal_mode back to `delete`, `.env` lost
+     `?connection_limit=1&pool_timeout=120` → the B5 load 500'd (P2028
+     socket-timeout quantization, exactly the runbook's warned failure mode).
+     Re-applied; tx probe W=6: 10.0s→14ms; B5 seed 24/24, p95 ≤750ms PASS.
+  3. Stale assertions: smoke_phase8 P8-1d (3 venues → 4 per Phase 9),
+     smoke_phase9 P9-8c (badge 9 → 10), kill_switch_drill K4 (notification
+     family SYSTEM → EXECUTION per the Phase 8 taxonomy),
+     drill_phase75 R4 (market selection now depth-qualified — the armed
+     touch-depth rule refused the previously-picked thin book).
+- **Verification protocol:** tsc + lint clean; db:push applied (Session,
+  BetaMember, RobotSession, BetaDefect, BetaFeedback, User.role/passwordHash
+  — additive only); smoke `scripts/smoke_phase10.py` SMOKE PASS (40 checks,
+  isolation-run + re-run): auth posture, lifecycle, registration gates, cohort,
+  member isolation, robot sessions, defect ladder, exit bar + snapshot,
+  feedback, closeout SAFE + no billing markers. Regressions re-run isolated:
+  phase4 PASS, phase5 PASS, phase8 PASS (P8-1d updated), phase9 PASS (P9-8c
+  updated), phase75 PASS (K4/R4 updated; B5 green on the restored posture).
+  Screenshots: desktop Beta Ops + exit bar, login, register, mobile dashboard
+  + mobile Beta Ops (`scripts/shoot-phase10.ts`).
+
+**Non-goals for Phase 10 (kept):** no billing code (B4 pending); no live-send
+arming; no Azuro registry flip; no public signup; no email verification
+infrastructure (closed cohort — operator enrolls by email first); no OAuth/SSO
+(scrypt+session is proportionate for ≤25 accounts; revisited if the platform
+multi-tenants). Strict-mode machine-to-machine note: with BETA_STRICT_AUTH=1
+external schedulers hitting /api/cycle get 401 — the beta instance runs the
+in-process autopilot instead (documented here, not silently assumed).
+
 ## 5. Carry-forward register (must never be lost)
 
 These are scheduled spec obligations that no phase may silently drop:
@@ -822,10 +908,10 @@ These are scheduled spec obligations that no phase may silently drop:
 
 ## 8. Open founder inputs
 
-- **Fresh fine-grained PAT** to push pending commits (Phases 3–9) to
+- **Fresh fine-grained PAT** to push pending commits (Phases 3–10) to
   `maiwand-ai/faida-predict`. Tokens are injected per-process only and never
   stored; revoke each after use. (A push was attempted at the Phase 9
-  handoff — refused: no credentials in the sandbox; 8 commits queued.)
+  handoff — refused: no credentials in the sandbox; 9 commits queued.)
 - **B4 pricing approval** — `docs/PRICING_B4.md` §7 checklist (tiers, overage
   policy, dunning ladder, refunds, implementation order). Billing code stays
   unwritten until approved AND the beta exit bar holds.

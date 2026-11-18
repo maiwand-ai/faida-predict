@@ -1,9 +1,13 @@
 // Robots: create (Robot Studio wizard) and status transitions (C26 states).
-import { NextResponse } from "next/server";
+// Phase 10: request-scoped auth (session cookie; founder fallback outside
+// strict mode) + per-user ownership on mutations + RobotSession recording
+// (exit-bar item 8: member sessions are MEASURED at creation time).
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { enqueueOutbox } from "@/lib/outbox";
 import { notifyUser } from "@/lib/notifications";
 import { isVenue, isLiveVenue, VENUE_IDS, VENUE_LABEL } from "@/lib/venues";
+import { resolveAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +21,10 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
   STOPPED: [],
 };
 
-export async function GET() {
-  const user = await db.user.findUnique({ where: { email: "founder@faida.local" } });
-  if (!user) return NextResponse.json({ error: "not seeded" }, { status: 503 });
+export async function GET(req: NextRequest) {
+  const auth = await resolveAuth(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const user = auth.ctx.user;
   const robots = await db.robot.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "asc" },
@@ -28,9 +33,10 @@ export async function GET() {
   return NextResponse.json({ robots });
 }
 
-export async function POST(req: Request) {
-  const user = await db.user.findUnique({ where: { email: "founder@faida.local" } });
-  if (!user) return NextResponse.json({ error: "not seeded" }, { status: 503 });
+export async function POST(req: NextRequest) {
+  const auth = await resolveAuth(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const user = auth.ctx.user;
   const body = (await req.json()) as {
     name?: string;
     family?: string;
@@ -41,6 +47,8 @@ export async function POST(req: Request) {
     dailyLossStopPct?: number;
     drawdownStopPct?: number;
     config?: Record<string, unknown>;
+    templateId?: string;
+    wizard?: boolean;
   };
 
   if (!body.name || !body.family || !FAMILIES.includes(body.family)) {
@@ -62,6 +70,9 @@ export async function POST(req: Request) {
   const allocated = Math.max(0, Math.floor(body.allocatedCents ?? 100000));
   const maxPos = Math.max(0, Math.floor(body.maxPositionCents ?? allocated / 10));
   const maxOpen = Math.max(1, Math.floor(body.maxOpenPositions ?? 4));
+  // Phase 10: the creation flow IS a robot session (exit-bar item 8 counts
+  // these); kind derives from how the wizard submitted the request.
+  const sessionKind = body.wizard ? "WIZARD" : body.templateId ? "TEMPLATE" : "MANUAL";
 
   // C5: activation never happens at creation — every robot starts PAPER_ONLY.
   // Phase 7.5 hardening (B5 load finding): Robot + StrategyVersion v1 +
@@ -90,6 +101,13 @@ export async function POST(req: Request) {
       await tx.strategyVersion.create({
         data: { robotId: r.id, version: 1, config: JSON.stringify(body.config ?? {}) },
       });
+      // Phase 10: the robot-session row (exit-bar item 8) is written INSIDE
+      // the same transaction — atomic with the robot (no orphaned sessions,
+      // same chaos-fix discipline as the strategy version) and it adds no
+      // extra connection acquisition on the concurrent load path (B5).
+      await tx.robotSession.create({
+        data: { userId: user.id, robotId: r.id, kind: sessionKind, venue },
+      });
       await enqueueOutbox(tx, [
         {
           aggregateType: "ROBOT",
@@ -114,11 +132,18 @@ export async function POST(req: Request) {
   return NextResponse.json({ robot });
 }
 
-export async function PATCH(req: Request) {
+export async function PATCH(req: NextRequest) {
+  const auth = await resolveAuth(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const user = auth.ctx.user;
   const body = (await req.json()) as { robotId?: string; status?: string };
   if (!body.robotId || !body.status) return NextResponse.json({ error: "robotId and status required" }, { status: 400 });
   const robot = await db.robot.findUnique({ where: { id: body.robotId } });
   if (!robot) return NextResponse.json({ error: "robot not found" }, { status: 404 });
+  // Phase 10: members act on their own robots only; the operator may act on any.
+  if (user.role !== "OPERATOR" && robot.userId !== user.id) {
+    return NextResponse.json({ error: "not your robot" }, { status: 403 });
+  }
 
   const allowed = STATUS_TRANSITIONS[robot.status] ?? [];
   if (!allowed.includes(body.status)) {

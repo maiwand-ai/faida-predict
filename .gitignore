@@ -57,3 +57,4 @@ next-env.d.ts
 /.serena
 /.agentctx
 __pycache__/
+dev-smoke10.log

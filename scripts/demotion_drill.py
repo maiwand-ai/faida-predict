@@ -249,6 +249,15 @@ def main():
     if failures:
         print(f"DRILL FAIL — {len(failures)}: {failures}")
         sys.exit(1)
+    # Phase 10: stamp the exit-bar drill timestamp (best-effort).
+    try:
+        import json as _json, urllib.request as _urq
+        _r = _urq.Request(BASE + '/api/beta/drill-marker', method='POST',
+                          data=_json.dumps({'kind': 'RUNBOOK_DRILL'}).encode(),
+                          headers={'Content-Type': 'application/json'})
+        _urq.urlopen(_r, timeout=30).read()
+    except Exception:
+        pass
     print("DRILL PASS — A-01 demotion path verified end to end")
 
 

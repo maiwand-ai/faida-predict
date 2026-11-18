@@ -296,7 +296,7 @@ try {
                 src_walk += open(os.path.join(base, f)).read().lower()
     billing_markers = [x for x in ["stripe", "paddle", "lemonsqueezy", "checkout.session"] if x in src_walk]
     check("P9-8b NO billing code exists (B4 gate unchanged)", len(billing_markers) == 0, f"found: {billing_markers}")
-    check("P9-8c dashboard phase badge reads PHASE 9", "PHASE 9" in open(f"{ROOT}/src/components/faida/app.tsx").read())
+    check("P9-8c dashboard phase badge per Phase 10 registry (badge bumped 9→10 with Phase 10)", "PHASE 10" in open(f"{ROOT}/src/components/faida/app.tsx").read())
 
 finally:
     cleanup()

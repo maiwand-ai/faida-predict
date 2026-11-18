@@ -3,8 +3,9 @@
 // JSON (full fidelity) or CSV (spreadsheet-friendly). Every row names its
 // venue (B11). Export is read-only and needs no keys; the PUBLIC key surface
 // is separate (/api/public/v1/*).
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
+import { resolveAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ function toCsv(rows: Record<string, unknown>[]): string {
   return [cols.join(","), ...rows.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const entity = (url.searchParams.get("entity") ?? "all").toLowerCase();
   const format = (url.searchParams.get("format") ?? "json").toLowerCase();
@@ -31,8 +32,9 @@ export async function GET(req: Request) {
   if (!["json", "csv"].includes(format)) {
     return NextResponse.json({ error: "format must be json|csv" }, { status: 400 });
   }
-  const user = await db.user.findUnique({ where: { email: "founder@faida.local" }, select: { id: true, email: true } });
-  if (!user) return NextResponse.json({ error: "not seeded" }, { status: 503 });
+  const auth = await resolveAuth(req);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const user = { id: auth.ctx.user.id, email: auth.ctx.user.email };
 
   const want = (e: string) => entity === "all" || entity === e;
   const payload: Record<string, unknown> = {
@@ -47,7 +49,7 @@ export async function GET(req: Request) {
   };
 
   const robots = want("robots")
-    ? await db.robot.findMany({ orderBy: { createdAt: "asc" } })
+    ? await db.robot.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } })
     : [];
   const orders = want("orders")
     ? await db.order.findMany({
