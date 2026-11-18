@@ -46,7 +46,7 @@ export function VenueBadge({ venue, withLabel = true }: { venue: string; withLab
     <span
       title={def ? `${def.label} — ${def.note}` : venue}
       style={venueScopeStyle(venue)}
-      className={`vc-scope inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide whitespace-nowrap vc-chip ${
+      className={`vc-scope inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap vc-chip ${
         live ? "" : "vc-pending"
       }`}
     >
@@ -72,7 +72,7 @@ export function StateChip({ state }: { state: string }) {
     UNKNOWN: `${c.warn} bg-[#E3A63B]/10`,
   };
   return (
-    <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold tracking-wide ${map[state] ?? c.text2}`}>
+    <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[12px] font-bold tracking-wide ${map[state] ?? c.text2}`}>
       {state === "UNKNOWN" || state === "RECONCILING" ? "⚠ " : ""}
       {state.replace("_", " ")}
     </span>
@@ -94,7 +94,7 @@ export function Pill({ status }: { status: string }) {
     PAUSED_BY_AI_BUDGET: "‖", ERROR: "✕", STOPPED: "■",
   };
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wide ${map[status] ?? c.text2}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-bold tracking-wide ${map[status] ?? c.text2}`}>
       {glyph[status] ?? "•"} {status.replace("PAUSED_BY_", "PAUSED BY ").replace("_", " ")}
     </span>
   );
@@ -104,14 +104,14 @@ export function Meter({ label, pct, detail, tone = "accent" }: { label: string; 
   const fill = tone === "warn" ? "bg-[#E3A63B]" : tone === "ai" ? "bg-[#8B7CF6]" : "bg-[#3E9BF0]";
   return (
     <div>
-      <div className={`flex justify-between text-[11px] ${c.text2}`}>
+      <div className={`flex justify-between text-[13px] ${c.text2}`}>
         <span>{label}</span>
         <span className={mono}>{Math.round(pct)}%</span>
       </div>
       <div className="mt-1 h-1.5 rounded bg-[#121722]">
         <div className={`h-full rounded ${fill}`} style={{ width: `${Math.min(100, Math.max(2, pct))}%` }} />
       </div>
-      <div className={`mt-1 text-[10px] ${c.text3}`}>{detail}</div>
+      <div className={`mt-1 text-[12px] ${c.text3}`}>{detail}</div>
     </div>
   );
 }
@@ -119,7 +119,7 @@ export function Meter({ label, pct, detail, tone = "accent" }: { label: string; 
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <h2 className={`text-[13px] font-semibold tracking-wide ${c.text}`}>{children}</h2>
+      <h2 className={`text-[15px] font-semibold tracking-wide ${c.text}`}>{children}</h2>
       {right}
     </div>
   );
