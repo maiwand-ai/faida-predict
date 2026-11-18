@@ -69,10 +69,12 @@ export async function runScheduledTick(opts: { forceSync?: boolean } = {}): Prom
     let results: SyncResult[] | undefined;
     let lastSyncAt = last?.at ?? null;
     if (syncDue) {
-      results = [];
-      for (const venue of LIVE_VENUE_IDS) {
-        results.push(await syncVenueMarkets(venue).catch((e) => ({ venue, synced: 0, totalMarkets: 0, errors: String(e), source: "UNAVAILABLE" })));
-      }
+      // venues sync in parallel so one slow venue doesn't hold up the others
+      results = await Promise.all(
+        LIVE_VENUE_IDS.map((venue) =>
+          syncVenueMarkets(venue).catch((e) => ({ venue, synced: 0, totalMarkets: 0, errors: String(e), source: "UNAVAILABLE" })),
+        ),
+      );
       lastSyncAt = new Date().toISOString();
       await setControl(LAST_SYNC_KEY, { at: lastSyncAt, results: results.map((r) => ({ venue: r.venue, synced: r.synced, errors: r.errors })) });
     }

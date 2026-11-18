@@ -3,10 +3,10 @@
 // ticks for the busiest ones (A-05 recorder) and flags markets without a
 // tradeable two-sided book (D-04). Behavior is unchanged from the original
 // route handler; it only moved here so a scheduler can call it.
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getVenueAdapter } from "@/lib/venue/registry";
 import { isLiveVenue } from "@/lib/venues";
-import { recordTick } from "@/lib/engine/cycle";
 
 export type SyncResult = { venue: string; synced: number; totalMarkets: number; errors: string | null; source: string };
 
@@ -19,6 +19,7 @@ export async function syncVenueMarkets(venue: string): Promise<SyncResult> {
   try {
     const live = await adapter.fetchMarkets(30);
     fetched = live.length;
+    const ops: Prisma.PrismaPromise<unknown>[] = [];
     for (const m of live) {
       // D-04 honesty: a market is tradeable only with a complete two-sided
       // book (1..99¢ both sides). The flag is SET here for degenerate rows
@@ -28,7 +29,7 @@ export async function syncVenueMarkets(venue: string): Promise<SyncResult> {
         m.yesPriceCents != null && m.noPriceCents != null &&
         m.yesPriceCents >= 1 && m.yesPriceCents <= 99 &&
         m.noPriceCents >= 1 && m.noPriceCents <= 99;
-      await db.market.upsert({
+      ops.push(db.market.upsert({
         where: { venueSymbol: m.venueSymbol },
         update: {
           question: m.question,
@@ -72,18 +73,22 @@ export async function syncVenueMarkets(venue: string): Promise<SyncResult> {
           ambiguityFlag: !healthy,
           dataSource: `${venue}_LIVE`,
         },
-      });
+      }));
     }
+    // one batched transaction instead of a database round trip per market
+    await db.$transaction(ops);
     // A-05 recorder: persist this sync's observations as ticks (top 12 by volume
     // keeps the table bounded while giving backtests real live history).
     const tickTargets = live
       .filter((m) => m.yesPriceCents != null && m.noPriceCents != null)
       .sort((a, b) => (b.volumeCents ?? 0) - (a.volumeCents ?? 0))
       .slice(0, 12);
-    for (const m of tickTargets) {
-      const row = await db.market.findUnique({ where: { venueSymbol: m.venueSymbol }, select: { id: true } });
-      if (row) await recordTick(row.id, m.yesPriceCents as number, m.noPriceCents as number, `${venue}_SYNC`);
-    }
+    const rows = await db.market.findMany({ where: { venueSymbol: { in: tickTargets.map((m) => m.venueSymbol) } }, select: { id: true, venueSymbol: true } });
+    const idBySymbol = new Map(rows.map((r) => [r.venueSymbol, r.id]));
+    const tickData = tickTargets
+      .filter((m) => idBySymbol.has(m.venueSymbol))
+      .map((m) => ({ marketId: idBySymbol.get(m.venueSymbol) as string, yesCents: m.yesPriceCents as number, noCents: m.noPriceCents as number, source: `${venue}_SYNC` }));
+    if (tickData.length) await db.marketPriceTick.createMany({ data: tickData });
     // D-04 honesty: markets without a complete, tradeable two-sided book
     // (missing or degenerate 0¢/100¢ prices) are flagged and refuse orders.
     await db.market.updateMany({
