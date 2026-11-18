@@ -58,3 +58,6 @@ next-env.d.ts
 /.agentctx
 __pycache__/
 dev-smoke10.log
+
+# local SQLite database (DATABASE_URL resolves relative to prisma/)
+/prisma/db
