@@ -864,7 +864,8 @@ multi-tenants). Strict-mode machine-to-machine note: with BETA_STRICT_AUTH=1
 external schedulers hitting /api/cycle get 401 — the beta instance runs the
 in-process autopilot instead (documented here, not silently assumed).
 
-**Phase 11 — UI redesign ratification (2026-11-18, in flight).** The founder
+**Phase 11 — UI redesign ratification (2026-11-18, delivered — commits
+`fa44189` + `444e28c` on GitHub `main`).** The founder
 supplied a redesign artifact ("FAIDA Predict Redesign": Overview, Venue
 workspace, Robot detail, Venue color system — hues identical to B12, neutrals
 rescaled to #0B0E14→#E6EAF2, type stack Inter / Space Grotesk / JetBrains
@@ -948,7 +949,7 @@ These are scheduled spec obligations that no phase may silently drop:
 | B4 pricing | Engineering draft approved by founder **before** billing code exists | **Drafted 2026-11-18 (`docs/PRICING_B4.md`, §7 approval checklist) — founder approval owed; no billing code exists (smoke-asserted)** |
 | C18 store-policy re-check | Per target market before any native distribution | **Recorded 2026-11-18 (Phase 9)** — `docs/STORE_POLICY_PHASE9.md`: web/PWA only, [VERIFY] counsel rows owed before any store channel; re-check cadence documented |
 | Kalshi credential kind | RSA key auth ≠ wallet signing — adapter + settings must support it | **Recorded 2026-11-18 (Phase 9)** — asymmetric API key (RSA-PSS/SHA-256 or Ed25519) implemented env-injected + never stored (`src/lib/live/kalshiCustody.ts`), proven offline (selftest K1–K6), surfaced in Settings + /api/live |
-| Push discipline | Local commits are not delivered until the founder provides a fresh fine-grained PAT | Every handoff — status 2026-11-18: tree clean, all commits through Phase 10 delivered to GitHub |
+| Push discipline | Local commits are not delivered until the founder provides a fresh fine-grained PAT | Every handoff — status 2026-11-18: tree clean, all commits through Phase 11.1 delivered to GitHub |
 
 ## 6. Hard invariants (repeat verbatim at every code review)
 
@@ -975,9 +976,9 @@ These are scheduled spec obligations that no phase may silently drop:
 
 ## 8. Open founder inputs
 
-- **Fresh fine-grained PAT** to push commits (Phases 3–10) to
+- **Fresh fine-grained PAT** to push commits (Phases 3–11.1) to
   `maiwand-ai/faida-predict` — **DELIVERED 2026-11-18.** All commits through
-  Phase 10 (`7318130`) are on GitHub `main` (verified via `ls-remote`); the
+  Phase 11.1 (`444e28c`) are on GitHub `main` (verified via `ls-remote`); the
   Phase 10 commit itself carried the "push pending" note because it could
   only be delivered by the very push it described — this bookkeeping commit
   corrects that record and is delivered by the fresh PAT the founder
@@ -985,7 +986,8 @@ These are scheduled spec obligations that no phase may silently drop:
   (2026-11-18) was refused 403 — the token authenticated as `maiwand-ai` but
   lacked write scope (fine-grained PATs need Repository access =
   `maiwand-ai/faida-predict` AND Permissions → Contents: Read and write); a
-  replacement token with that scope delivers it. Standing rules unchanged:
+  replacement token with that scope delivered it — redesign commits
+  `fa44189` + `444e28c` confirmed on `main` via `ls-remote`. Standing rules unchanged:
   tokens are
   injected per-process only, never stored, and revoked after use; every
   future handoff re-requests a fresh PAT.
