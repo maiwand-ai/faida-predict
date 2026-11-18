@@ -32,10 +32,11 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 BASE = "http://localhost:3000"
-DB = "/home/z/my-project/db/custom.db"
-ROOT = "/home/z/my-project"
+ROOT = Path(__file__).resolve().parent.parent
+DB = str(ROOT / "db" / "custom.db")
 failures = []
 created = {"robots": [], "orders": []}
 
@@ -145,7 +146,7 @@ try:
     # ── P9-2 mapping vectors + conformance ─────────────────────────────────
     print("— P9-2: Kalshi mapping vectors (SYNTHETIC) + recorded-fixture conformance")
     vector_code = r'''
-import { mapKalshiMarkets, kalshiTakerBps, deriveDepth, isMappableKalshiMarket, dollarsToCents } from "/home/z/my-project/src/lib/venue/kalshi.ts";
+import { mapKalshiMarkets, kalshiTakerBps, deriveDepth, isMappableKalshiMarket, dollarsToCents } from "../src/lib/venue/kalshi.ts";
 const m = { ticker: "KXTEST-26NOV18-T50", event_ticker: "KXTEST-26NOV18", title: "Vector market", market_type: "binary", status: "active", yes_bid_dollars: "0.4500", yes_ask_dollars: "0.4700", no_bid_dollars: "0.5300", no_ask_dollars: "0.5500", volume_fp: "1200.00", close_time: "2099-01-01T00:00:00Z", rules_primary: "Resolves Yes if the vector passes." };
 const mve = { ...m, ticker: "KXMVECROSSCATEGORY-S-LEG", mve_collection_ticker: "KXMVECROSSCATEGORY-R", mve_selected_legs: [{}] };
 const m1 = { ...m, ticker: "KXTEST2-26NOV18", market_type: "other" };
@@ -240,7 +241,7 @@ console.log(JSON.stringify({
     else:
         check("P9-5a paper order fills on a Kalshi market (full pipeline)", False, "no synced Kalshi market")
     disable_code = r'''
-import { kalshi } from "/home/z/my-project/src/lib/venue/kalshi.ts";
+import { kalshi } from "../src/lib/venue/kalshi.ts";
 try {
   await kalshi.placeOrder({ userId: "x", robotId: "x", marketId: "x", side: "BUY_YES", priceCents: 10, sizeCents: 100, nonce: "n" });
   console.log("NO_THROW");

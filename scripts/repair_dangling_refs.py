@@ -4,8 +4,9 @@
 # force-market cycle before the cleanup was widened). Child rows of the
 # orders (Fill / OrderEvent / ReconciliationEntry) go first.
 import sqlite3
+from pathlib import Path
 
-DB = "/home/z/my-project/db/custom.db"
+DB = str(Path(__file__).resolve().parent.parent / "db" / "custom.db")
 
 def main():
     con = sqlite3.connect(DB)

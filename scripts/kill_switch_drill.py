@@ -17,9 +17,10 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 BASE = "http://localhost:3000"
-DB = "/home/z/my-project/db/custom.db"
+DB = str(Path(__file__).resolve().parent.parent / "db" / "custom.db")
 failures = []
 robot_id = None
 

@@ -12,8 +12,10 @@ import subprocess
 import sys
 import time
 import urllib.request
+from pathlib import Path
 
 BASE = "http://localhost:3000"
+ROOT = Path(__file__).resolve().parent.parent
 failures = []
 
 
@@ -50,7 +52,7 @@ def api(method, path, body=None, timeout=180):
 # ── start dev server inside this process tree ────────────────────────────────
 server = subprocess.Popen(
     ["bun", "run", "dev"],
-    cwd="/home/z/my-project",
+    cwd=ROOT,
     stdout=open("/tmp/devlog.txt", "w"),
     stderr=subprocess.STDOUT,
     start_new_session=True,

@@ -32,10 +32,11 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 BASE = "http://localhost:3000"
-DB = "/home/z/my-project/db/custom.db"
-ROOT = "/home/z/my-project"
+ROOT = Path(__file__).resolve().parent.parent
+DB = str(ROOT / "db" / "custom.db")
 failures = []
 created = {"keys": [], "probe_run_ids": [], "policy_backup": {}, "retention_runs": [], "notifications": []}
 
@@ -145,7 +146,7 @@ try:
     # ── P8-2 mapping vectors + conformance SKIP ─────────────────────────────
     print("— P8-2: Azuro mapping vectors (SYNTHETIC) + conformance honest SKIP")
     vector_code = r'''
-import { mapAzuroFeed, decimalOddsToCents, azuroTakerBps } from "/home/z/my-project/src/lib/venue/azuro.ts";
+import { mapAzuroFeed, decimalOddsToCents, azuroTakerBps } from "../src/lib/venue/azuro.ts";
 const games = [{ gameId: "g1", title: "Vector Game", startsAt: String(Math.floor(Date.now()/1000) + 86400), state: "Prematch", sport: { slug: "soccer", name: "Soccer" }, league: { name: "L" }, country: { name: "C" } }];
 const conditions = [{ conditionId: "c1", state: "Active", isPrematchEnabled: true, title: "W", margin: "0.06", game: { gameId: "g1" }, outcomes: [ { outcomeId: "1", title: "A", odds: "1.850000000000", state: "Active" }, { outcomeId: "2", title: "B", odds: "2.350000000000", state: "Active" } ] }, { conditionId: "c2", state: "Active", game: { gameId: "g1" }, outcomes: [ { outcomeId: "1", title: "X", odds: "2.0", state: "Active" }, { outcomeId: "2", title: "Y", odds: "3.0", state: "Active" }, { outcomeId: "3", title: "Z", odds: "4.0", state: "Active" } ] }];
 const rows = mapAzuroFeed(games, conditions, 10);

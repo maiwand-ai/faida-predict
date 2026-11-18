@@ -21,9 +21,11 @@ import subprocess
 import sys
 import time
 import urllib.request
+from pathlib import Path
 
 BASE = "http://localhost:3000"
-DB = "/home/z/my-project/db/custom.db"
+ROOT = Path(__file__).resolve().parent.parent
+DB = str(ROOT / "db" / "custom.db")
 GLM_KEY = "ai:GLM/glm-4.6"
 failures = []
 
@@ -61,7 +63,7 @@ def db_query(sql, args=()):
 # ── start dev server inside this process tree ────────────────────────────────
 server = subprocess.Popen(
     ["bun", "run", "dev"],
-    cwd="/home/z/my-project",
+    cwd=ROOT,
     stdout=open("/tmp/devlog5.txt", "w"),
     stderr=subprocess.STDOUT,
     start_new_session=True,

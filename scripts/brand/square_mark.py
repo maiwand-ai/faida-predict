@@ -6,11 +6,15 @@ attributes (Tailwind preflight makes height:auto). Padding the tight content
 bbox to a square keeps the glyph centered and the aspect ratio exact.
 Run after scripts/wireframes/brand_assets.py.
 """
+from pathlib import Path
+
 from PIL import Image
 
+ROOT = Path(__file__).resolve().parents[2]
+
 TARGETS = [
-    "/home/z/my-project/assets/brand/logo_mark.png",
-    "/home/z/my-project/public/brand/logo_mark.png",
+    str(ROOT / "assets" / "brand" / "logo_mark.png"),
+    str(ROOT / "public" / "brand" / "logo_mark.png"),
 ]
 
 for path in TARGETS:

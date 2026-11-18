@@ -21,6 +21,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 BASE = "http://localhost:3000"
 failures = []
@@ -132,7 +133,7 @@ def main():
         conn = None
         try:
             import sqlite3
-            conn = sqlite3.connect("/home/z/my-project/db/custom.db", timeout=30)
+            conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "db" / "custom.db"), timeout=30)
             row = conn.execute("SELECT value FROM PlatformControl WHERE key='GLOBAL_PAUSE'").fetchone()
             paused = json.loads(row[0]).get("paused") if row else False
         except Exception:

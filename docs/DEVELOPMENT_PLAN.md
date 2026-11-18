@@ -926,9 +926,18 @@ These are scheduled spec obligations that no phase may silently drop:
 - **B4 pricing approval** — `docs/PRICING_B4.md` §7 checklist (tiers, overage
   policy, dunning ladder, refunds, implementation order). Billing code stays
   unwritten until approved AND the beta exit bar holds.
-- **Azuro unblock** — run `bun scripts/record-fixtures-azuro.ts` then
-  `bun run conformance:azuro` from the founder host (or any unblocked
-  vantage); a recorded-fixture pass is the registry-flip condition (S-05 §3.4;
-  no self-approved flip).
+- **Azuro unblock** — UPDATED by the 2026-11-18 full-app review: the adapter's
+  API base (`api.onchainfeed.org/api/v1/public`) answers from a reachable
+  network but EVERY path including the root returns nginx 404 — the endpoint
+  the Phase 8 adapter was built against is dead, so fixture recording would
+  fail on ANY host until the adapter is re-pointed to the current Azuro
+  Backend API (developer-hub documented; S-05 obligations apply to the
+  re-point: [VERIFY] evidence, fee schedule, contract tests). THEN run
+  `bun scripts/record-fixtures-azuro.ts` and `bun run conformance:azuro`
+  from any vantage that reaches the new API; a recorded-fixture pass is the
+  registry-flip condition (S-05 §3.4; no self-approved flip).
+- **Stale `phase-3` branch on GitHub** — `refs/heads/phase-3` (b9eac84) is
+  fully merged into main; delete it with the next working PAT:
+  `git push origin --delete phase-3`.
 - Full 72-hour soak (P3.5 acceptance) runs on the founder's host — the
   sandbox runs the shortened variant.

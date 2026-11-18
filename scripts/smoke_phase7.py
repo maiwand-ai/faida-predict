@@ -33,9 +33,11 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 BASE = "http://localhost:3000"
-DB = "/home/z/my-project/db/custom.db"
+ROOT = Path(__file__).resolve().parent.parent
+DB = str(ROOT / "db" / "custom.db")
 TEST_ADDR = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"  # Hardhat #0 — matches the injected fixture key
 P7_ENV = {
     "POLYMARKET_SIGNER_KEY": "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
@@ -99,7 +101,7 @@ def ensure_server():
     env.update(P7_ENV)
     subprocess.Popen(
         ["bun", "run", "dev"],
-        cwd="/home/z/my-project",
+        cwd=ROOT,
         stdout=open("/tmp/devlog7.txt", "w"),
         stderr=subprocess.STDOUT,
         env=env,

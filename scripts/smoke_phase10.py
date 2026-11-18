@@ -41,10 +41,11 @@ import time
 import urllib.error
 import urllib.request
 import http.cookiejar
+from pathlib import Path
 
 BASE = "http://localhost:3000"
-DB = "/home/z/my-project/db/custom.db"
-ROOT = "/home/z/my-project"
+ROOT = Path(__file__).resolve().parent.parent
+DB = str(ROOT / "db" / "custom.db")
 failures = []
 created = {
     "emails": ["p10.member1@beta.test", "p10.member2@beta.test"],

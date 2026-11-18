@@ -20,9 +20,11 @@ import subprocess
 import sys
 import time
 import urllib.request
+from pathlib import Path
 
 BASE = "http://localhost:3000"
-DB = "/home/z/my-project/db/custom.db"
+ROOT = Path(__file__).resolve().parent.parent
+DB = str(ROOT / "db" / "custom.db")
 failures = []
 robot_id = None
 tick_mkt_id = None
@@ -74,7 +76,7 @@ if healthy():
 else:
     server = subprocess.Popen(
         ["bun", "run", "dev"],
-        cwd="/home/z/my-project",
+        cwd=ROOT,
         stdout=open("/tmp/devlog6.txt", "w"),
         stderr=subprocess.STDOUT,
         start_new_session=True,
@@ -202,15 +204,15 @@ try:
     # ── P6-5: Drift BET verdict (S-05 [VERIFY] before adapter) ───────────────
     _, code = api("POST", "/api/robots", {"name": "drift probe", "family": "PROBABILITY_EDGE", "venue": "DRIFT_BET"})
     check("DRIFT_BET robot creation refused 422 (no live adapter)", code == 422)
-    src_types = open("/home/z/my-project/src/lib/venue/types.ts").read()
-    src_venues = open("/home/z/my-project/src/lib/venues.ts").read()
+    src_types = open(str(ROOT / "src" / "lib" / "venue" / "types.ts")).read()
+    src_venues = open(str(ROOT / "src" / "lib" / "venues.ts")).read()
     check("compliance row: DRIFT_BET SUSPENDED with dated [VERIFY] evidence",
           'venue: "DRIFT_BET"' in src_types and 'status: "SUSPENDED"' in src_types and "2026-11-18" in src_types)
     check("registry note names the exploit + deliberately-not-built verdict",
           "SUSPENDED" in src_venues and "April 2026 Drift exploit" in src_venues and "deliberately not built" in src_venues)
 
     # ── P6-6: visual regression harness ──────────────────────────────────────
-    vr = subprocess.run(["bun", "run", "visual"], cwd="/home/z/my-project", capture_output=True, text=True, timeout=300)
+    vr = subprocess.run(["bun", "run", "visual"], cwd=ROOT, capture_output=True, text=True, timeout=300)
     tail = "\n".join(vr.stdout.strip().splitlines()[-3:])
     check("visual regression exits 0 (pixel + DOM modes)", vr.returncode == 0, tail[:220])
 
