@@ -45,7 +45,7 @@ function FlowChart({ flow, range }: { flow: RobotDetailDTO["flow"]; range: 7 | 1
 
   if (pts.length === 0) {
     return (
-      <div className={`px-4 py-10 text-center text-[12px] ${c.text3}`}>
+      <div className={`px-4 py-10 text-center text-[14px] ${c.text3}`}>
         No ledger window — run a robot cycle or place a paper ticket to start the curve.
       </div>
     );
@@ -163,7 +163,7 @@ export function RobotDetail(props: {
     return (
       <div className="flex flex-col items-start gap-3 py-6">
         <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1A2432]`} onClick={onBack}>← {onBackLabel}</Button>
-        <div className={`${card} px-4 py-6 text-[12.5px] ${c.warn}`}>{err}</div>
+        <div className={`${card} px-4 py-6 text-[14.5px] ${c.warn}`}>{err}</div>
       </div>
     );
   }
@@ -198,7 +198,7 @@ export function RobotDetail(props: {
   return (
     <div className="vc-scope flex flex-col gap-4" style={venueScopeStyle(robot.venue)}>
       {/* breadcrumb */}
-      <div className="flex flex-wrap items-center gap-2 text-[12px]">
+      <div className="flex flex-wrap items-center gap-2 text-[14px]">
         <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1A2432]`} onClick={onBack}>
           ← {onBackLabel}
         </Button>
@@ -213,19 +213,19 @@ export function RobotDetail(props: {
         <div className="flex min-w-0 flex-1 items-center gap-3.5">
           <span
             aria-hidden
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-[20px] font-bold"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-[24px] font-bold"
             style={{ background: "var(--vc)", color: "#071018" }}
           >
             {robot.name.slice(0, 1).toUpperCase()}
           </span>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-display text-[22px] font-bold tracking-tight text-[#E6EAF2]">{robot.name}</h1>
+              <h1 className="font-display text-[28px] font-bold tracking-tight text-[#E6EAF2]">{robot.name}</h1>
               <VenueBadge venue={robot.venue} />
               <Pill status={robot.status} />
-              <span className={`rounded px-2 py-0.5 text-[10px] font-bold tracking-wide ${c.paper} bg-[#D9B25C]/10`}>{robot.paperMode ? "PAPER" : robot.mode}</span>
+              <span className={`rounded px-2 py-0.5 text-[12px] font-bold tracking-wide ${c.paper} bg-[#D9B25C]/10`}>{robot.paperMode ? "PAPER" : robot.mode}</span>
             </div>
-            <div className={`mt-1 text-[11.5px] ${c.text2}`}>
+            <div className={`mt-1 text-[13.5px] ${c.text2}`}>
               {FAMILY_LABEL[robot.family] ?? robot.family} · strategy v{robot.activeVersion} · every decision recorded with its inputs and risk checks (A-08)
             </div>
           </div>
@@ -266,40 +266,40 @@ export function RobotDetail(props: {
       {/* KPI band — four tiles with meter bars (allocated / positions / today / stops) */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className={`${card} p-4`}>
-          <div className={`text-[10px] font-semibold tracking-wider ${c.text3}`}>ALLOCATED</div>
-          <div className={`mt-1.5 text-[20px] font-semibold ${mono}`}>{fmtCents(robot.allocatedCents)}</div>
+          <div className={`text-[12px] font-semibold tracking-wider ${c.text3}`}>ALLOCATED</div>
+          <div className={`mt-1.5 text-[24px] font-semibold ${mono}`}>{fmtCents(robot.allocatedCents)}</div>
           <div className={`mt-2 h-1.5 overflow-hidden rounded ${c.elevated}`}>
             <div className="h-full rounded bg-[#3E9BF0]" style={{ width: `${Math.min(100, Math.max(2, allocPct))}%` }} />
           </div>
-          <div className={`mt-1.5 text-[10px] ${c.text3}`}>{allocPct.toFixed(0)}% of paper balance</div>
+          <div className={`mt-1.5 text-[12px] ${c.text3}`}>{allocPct.toFixed(0)}% of paper balance</div>
         </div>
         <div className={`${card} p-4`}>
-          <div className={`text-[10px] font-semibold tracking-wider ${c.text3}`}>OPEN POSITIONS</div>
-          <div className={`mt-1.5 text-[20px] font-semibold ${mono}`}>{positions.length} / {robot.maxOpenPositions}</div>
+          <div className={`text-[12px] font-semibold tracking-wider ${c.text3}`}>OPEN POSITIONS</div>
+          <div className={`mt-1.5 text-[24px] font-semibold ${mono}`}>{positions.length} / {robot.maxOpenPositions}</div>
           <div className={`mt-2 h-1.5 overflow-hidden rounded ${c.elevated}`}>
             <div
               className="h-full rounded bg-[#3E9BF0]"
               style={{ width: `${Math.min(100, Math.max(2, (positions.length / Math.max(1, robot.maxOpenPositions)) * 100))}%` }}
             />
           </div>
-          <div className={`mt-1.5 text-[10px] ${c.text3}`}>Max {fmtCents(robot.maxPositionCents)} per position</div>
+          <div className={`mt-1.5 text-[12px] ${c.text3}`}>Max {fmtCents(robot.maxPositionCents)} per position</div>
         </div>
         <div className={`${card} p-4`}>
-          <div className={`text-[10px] font-semibold tracking-wider ${c.text3}`}>TODAY</div>
-          <div className={`mt-1.5 text-[20px] font-semibold ${mono} ${pnlClass(todayNetCents)}`}>{pnlText(todayNetCents)}</div>
+          <div className={`text-[12px] font-semibold tracking-wider ${c.text3}`}>TODAY</div>
+          <div className={`mt-1.5 text-[24px] font-semibold ${mono} ${pnlClass(todayNetCents)}`}>{pnlText(todayNetCents)}</div>
           <div className={`mt-2 h-1.5 overflow-hidden rounded ${c.elevated}`}>
             <div
               className={`h-full rounded ${todayNetCents < 0 ? "bg-[#F0525F]" : "bg-[#2FC08E]"}`}
               style={{ width: `${Math.min(100, Math.max(2, Math.min(100, Math.abs(todayOnAlloc))))}%` }}
             />
           </div>
-          <div className={`mt-1.5 text-[10px] ${c.text3}`}>
+          <div className={`mt-1.5 text-[12px] ${c.text3}`}>
             {todayOnAlloc >= 0 ? "+" : ""}{todayOnAlloc.toFixed(2)}% on allocation · open mark {pnlText(unrealizedCents)}
           </div>
         </div>
         <div className={`${card} p-4`}>
-          <div className={`text-[10px] font-semibold tracking-wider ${c.text3}`}>REALIZED DRAWDOWN</div>
-          <div className={`mt-1.5 text-[20px] font-semibold ${mono} ${dd > 0 ? c.warn : c.text}`}>{dd > 0 ? fmtCents(dd) : "none"}</div>
+          <div className={`text-[12px] font-semibold tracking-wider ${c.text3}`}>REALIZED DRAWDOWN</div>
+          <div className={`mt-1.5 text-[24px] font-semibold ${mono} ${dd > 0 ? c.warn : c.text}`}>{dd > 0 ? fmtCents(dd) : "none"}</div>
           <div className={`mt-2 h-1.5 overflow-hidden rounded ${c.elevated}`}>
             <div
               className={`h-full rounded ${robot.drawdownStopPct > 0 && robot.allocatedCents > 0 && (dd / robot.allocatedCents) * 100 >= 50 ? "bg-[#F0525F]" : "bg-[#E3A63B]"}`}
@@ -308,7 +308,7 @@ export function RobotDetail(props: {
               }}
             />
           </div>
-          <div className={`mt-1.5 text-[10px] ${c.text3}`}>Stops at {robot.drawdownStopPct}% · daily stop {robot.dailyLossStopPct}%</div>
+          <div className={`mt-1.5 text-[12px] ${c.text3}`}>Stops at {robot.drawdownStopPct}% · daily stop {robot.dailyLossStopPct}%</div>
         </div>
       </div>
 
@@ -317,15 +317,15 @@ export function RobotDetail(props: {
         <div className={`${card} p-4 lg:col-span-2`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <span className={`text-[13px] font-semibold`}>Realized paper P&L</span>
-              <span className={`ml-2 text-[11px] ${c.text3}`}>cumulative ledger net — entries, fees, settlements</span>
+              <span className={`text-[15px] font-semibold`}>Realized paper P&L</span>
+              <span className={`ml-2 text-[13px] ${c.text3}`}>cumulative ledger net — entries, fees, settlements</span>
             </div>
             <div className="flex gap-1.5">
               {([7, 14, 30] as const).map((r) => (
                 <button
                   key={r}
                   onClick={() => setRange(r)}
-                  className={`rounded-full border px-2.5 py-1 text-[10.5px] font-semibold transition-colors ${
+                  className={`rounded-full border px-2.5 py-1 text-[12.5px] font-semibold transition-colors ${
                     range === r ? "border-[var(--vc)] text-[var(--vc)]" : `${c.borderStrong} ${c.text3} hover:${c.text2}`
                   }`}
                 >
@@ -337,7 +337,7 @@ export function RobotDetail(props: {
           <div className="mt-3">
             <FlowChart flow={flow} range={range} />
           </div>
-          <div className={`mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[10px] ${c.text3}`}>
+          <div className={`mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[12px] ${c.text3}`}>
             <span>last {range} days (UTC)</span>
             <span>open mark-to-market <b className={c.text2}>{pnlText(unrealizedCents)}</b> is reported separately, never folded into history</span>
             {openTrades > 0 && <span>{openTrades} trade decision{openTrades === 1 ? "" : "s"} in the recent trace window</span>}
@@ -347,28 +347,28 @@ export function RobotDetail(props: {
         {/* path to live trading — the real B10 edge gate checks */}
         <div className={`${card} p-4`}>
           <div className="flex items-center justify-between">
-            <span className={`text-[13px] font-semibold`}>Path to live trading</span>
-            <span className={`text-[11px] ${mono} ${c.text3}`}>{gate ? `${gate.checks.filter((ck) => ck.passed).length} / ${gate.checks.length}` : "—"}</span>
+            <span className={`text-[15px] font-semibold`}>Path to live trading</span>
+            <span className={`text-[13px] ${mono} ${c.text3}`}>{gate ? `${gate.checks.filter((ck) => ck.passed).length} / ${gate.checks.length}` : "—"}</span>
           </div>
           <div className="mt-3 flex flex-col">
             {(gate?.checks ?? []).map((ck) => (
               <div key={ck.check} className={`border-b py-2 last:border-0 ${c.border}`}>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`grid h-4 w-4 shrink-0 place-items-center rounded-full text-[9px] font-bold ${
+                    className={`grid h-4 w-4 shrink-0 place-items-center rounded-full text-[11px] font-bold ${
                       ck.passed ? "bg-[#2FC08E]/15 text-[#2FC08E]" : "bg-[#121722] text-[#6B7A94]"
                     }`}
                     title={ck.passed ? "gate satisfied" : "not satisfied yet"}
                   >
                     {ck.passed ? "✓" : "·"}
                   </span>
-                  <span className={`text-[12px] font-semibold ${c.text}`}>{GATE_LABEL[ck.check] ?? ck.check}</span>
+                  <span className={`text-[14px] font-semibold ${c.text}`}>{GATE_LABEL[ck.check] ?? ck.check}</span>
                 </div>
-                <div className={`mt-0.5 ml-6 text-[10.5px] leading-snug ${c.text3}`}>{ck.detail}</div>
+                <div className={`mt-0.5 ml-6 text-[12.5px] leading-snug ${c.text3}`}>{ck.detail}</div>
               </div>
             ))}
             {!gate && (
-              <div className={`py-4 text-center text-[12px] ${c.text3}`}>Edge gate report unavailable — check the probability registry in Settings.</div>
+              <div className={`py-4 text-center text-[14px] ${c.text3}`}>Edge gate report unavailable — check the probability registry in Settings.</div>
             )}
           </div>
           <Button variant="outline" size="sm" className={`mt-3 w-full ${c.borderStrong} ${c.elevated} ${c.text3}`} disabled title="Live activation is refused until every gate passes + the Phase 7 execution gates (B10)">
@@ -380,11 +380,11 @@ export function RobotDetail(props: {
       {/* positions on this robot */}
       {positions.length > 0 && (
         <div className={`${card} overflow-hidden`}>
-          <div className="px-4 pt-3 pb-2 text-[13px] font-semibold">Open positions</div>
+          <div className="px-4 pt-3 pb-2 text-[15px] font-semibold">Open positions</div>
           <div className="fd-scroll max-h-[260px] overflow-y-auto">
             <table className="w-full">
               <thead className={`sticky top-0 ${c.surface}`}>
-                <tr className={`border-b text-left text-[10px] tracking-wider ${c.border} ${c.text3}`}>
+                <tr className={`border-b text-left text-[12px] tracking-wider ${c.border} ${c.text3}`}>
                   <th className="px-4 py-2.5 font-semibold">MARKET</th>
                   <th className="px-3 py-2.5 font-semibold">SIDE</th>
                   <th className="px-3 py-2.5 font-semibold">SIZE</th>
@@ -396,10 +396,10 @@ export function RobotDetail(props: {
                 {positions.map((p) => {
                   const mark = p.side === "YES" ? p.market?.yesPriceCents : p.market?.noPriceCents;
                   return (
-                    <tr key={p.id} className={`border-b text-[12px] last:border-0 ${c.border}`}>
+                    <tr key={p.id} className={`border-b text-[14px] last:border-0 ${c.border}`}>
                       <td className={`max-w-[340px] truncate px-4 py-2.5 ${c.text}`}>{p.market?.question}</td>
                       <td className="px-3 py-2.5">
-                        <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${p.side === "YES" ? `${c.gain} bg-[#2FC08E]/10` : `${c.warn} bg-[#E3A63B]/10`}`}>{p.side}</span>
+                        <span className={`rounded px-1.5 py-0.5 text-[11.5px] font-bold ${p.side === "YES" ? `${c.gain} bg-[#2FC08E]/10` : `${c.warn} bg-[#E3A63B]/10`}`}>{p.side}</span>
                       </td>
                       <td className={`px-3 py-2.5 whitespace-nowrap ${mono} ${c.text}`}>{fmtCents(p.sizeCents)}</td>
                       <td className={`px-3 py-2.5 whitespace-nowrap ${mono} ${c.text2}`}>{p.avgPriceCents}¢ → {mark != null ? `${mark}¢` : "—"}</td>
@@ -416,12 +416,12 @@ export function RobotDetail(props: {
       {/* decision trace — the artifact's evidence band, fed by A-08 traces */}
       <div className={`${card} overflow-hidden`}>
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3 pb-2">
-          <span className={`text-[13px] font-semibold`}>Decision trace</span>
-          <span className={`text-[10.5px] ${c.text3}`}>every decision is recorded with its inputs and risk checks (A-08)</span>
+          <span className={`text-[15px] font-semibold`}>Decision trace</span>
+          <span className={`text-[12.5px] ${c.text3}`}>every decision is recorded with its inputs and risk checks (A-08)</span>
         </div>
         <div className="fd-scroll max-h-[520px] overflow-y-auto">
           {traces.length === 0 && (
-            <div className={`px-4 py-7 text-center text-[12px] ${c.text3}`}>
+            <div className={`px-4 py-7 text-center text-[14px] ${c.text3}`}>
               No decisions recorded yet — run a cycle on this robot, or let autopilot tick it.
             </div>
           )}
@@ -431,13 +431,13 @@ export function RobotDetail(props: {
             return (
               <div key={t.id} className={`border-b last:border-0 ${c.border}`}>
                 <button onClick={() => setOpenTrace(open ? null : t.id)} className="flex w-full flex-wrap items-center gap-2.5 px-4 py-3 text-left hover:bg-[#161D2B]" aria-expanded={open}>
-                  <span className={`shrink-0 text-[11px] ${mono} ${c.text3}`}>{new Date(t.createdAt).toLocaleTimeString("en-US", { hour12: false })}</span>
-                  <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-bold tracking-wide ${t.decision === "TRADE" ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#121722]`}`}>
+                  <span className={`shrink-0 text-[13px] ${mono} ${c.text3}`}>{new Date(t.createdAt).toLocaleTimeString("en-US", { hour12: false })}</span>
+                  <span className={`shrink-0 rounded px-2 py-0.5 text-[12px] font-bold tracking-wide ${t.decision === "TRADE" ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#121722]`}`}>
                     {t.decision === "TRADE" ? "TRADE" : "NO TRADE"}
                   </span>
-                  <span className={`min-w-0 flex-1 truncate text-[12.5px] font-semibold ${c.text}`}>{t.market?.question ?? "—"}</span>
-                  <span className={`shrink-0 text-[11px] ${c.text3}`}>{t.reason.length > 46 ? t.reason.slice(0, 46) + "…" : t.reason}</span>
-                  <span className={`shrink-0 text-[10px] ${open ? c.bright : c.text3}`}>{open ? "▾" : "▸"}</span>
+                  <span className={`min-w-0 flex-1 truncate text-[14.5px] font-semibold ${c.text}`}>{t.market?.question ?? "—"}</span>
+                  <span className={`shrink-0 text-[13px] ${c.text3}`}>{t.reason.length > 46 ? t.reason.slice(0, 46) + "…" : t.reason}</span>
+                  <span className={`shrink-0 text-[12px] ${open ? c.bright : c.text3}`}>{open ? "▾" : "▸"}</span>
                 </button>
                 {open && (
                   <div className="px-4 pb-3">
@@ -450,19 +450,19 @@ export function RobotDetail(props: {
                         { k: "Trigger", v: t.trigger ?? "—", hot: false },
                       ].map((s) => (
                         <div key={s.k} className={`rounded-lg border px-3 py-2.5 ${c.border} ${c.elevated}`}>
-                          <div className={`text-[9.5px] tracking-wide ${c.text3}`}>{s.k}</div>
-                          <div className={`mt-0.5 whitespace-nowrap text-[15px] font-semibold ${mono} ${s.hot ? "text-[var(--vc)]" : c.text}`}>{s.v}</div>
+                          <div className={`text-[11.5px] tracking-wide ${c.text3}`}>{s.k}</div>
+                          <div className={`mt-0.5 whitespace-nowrap text-[17px] font-semibold ${mono} ${s.hot ? "text-[var(--vc)]" : c.text}`}>{s.v}</div>
                         </div>
                       ))}
                     </div>
                     {/* risk check pills — pass verdicts glanceable, details below */}
                     <div className="mt-2.5 flex flex-wrap gap-1.5">
-                      {checks.length === 0 && <span className={`text-[11px] ${c.text3}`}>no risk checks recorded on this trace</span>}
+                      {checks.length === 0 && <span className={`text-[13px] ${c.text3}`}>no risk checks recorded on this trace</span>}
                       {checks.map((ck, i) => (
                         <span
                           key={i}
                           title={ck.detail}
-                          className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-semibold whitespace-nowrap ${
+                          className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[12px] font-semibold whitespace-nowrap ${
                             ck.passed ? "text-[#2FC08E] bg-[#2FC08E]/10" : "text-[#F0525F] bg-[#F0525F]/10"
                           }`}
                         >
@@ -471,13 +471,13 @@ export function RobotDetail(props: {
                       ))}
                     </div>
                     {/* provenance envelope (A-02) + footer */}
-                    <div className={`mt-2.5 rounded-lg border px-3 py-2 text-[10.5px] ${c.border} bg-[#10151F] ${c.text3}`}>
+                    <div className={`mt-2.5 rounded-lg border px-3 py-2 text-[12.5px] ${c.border} bg-[#10151F] ${c.text3}`}>
                       <span>model <b className={c.text2}>{t.modelKey ?? "—"}</b></span>
                       <span className="ml-3">trigger <b className={c.text2}>{t.trigger ?? "—"}</b></span>
                       <span className="ml-3">strategy <b className={c.text2}>{t.strategyVersionId ? t.strategyVersionId.slice(0, 10) + "…" : "—"}</b> (C5)</span>
                       <span className="ml-3">trace <b className={c.text2}>{t.id.slice(0, 10)}…</b></span>
                     </div>
-                    <div className={`mt-2 text-[11.5px] ${c.text2}`}>{t.reason}</div>
+                    <div className={`mt-2 text-[13.5px] ${c.text2}`}>{t.reason}</div>
                   </div>
                 )}
               </div>
@@ -488,14 +488,14 @@ export function RobotDetail(props: {
 
       {/* recent orders */}
       <div className={`${card} overflow-hidden`}>
-        <div className="px-4 pt-3 pb-2 text-[13px] font-semibold">Recent orders</div>
+        <div className="px-4 pt-3 pb-2 text-[15px] font-semibold">Recent orders</div>
         <div className="fd-scroll max-h-[240px] overflow-y-auto">
           {orders.length === 0 ? (
-            <div className={`px-4 py-6 text-center text-[12px] ${c.text3}`}>No orders yet — this robot has not traded.</div>
+            <div className={`px-4 py-6 text-center text-[14px] ${c.text3}`}>No orders yet — this robot has not traded.</div>
           ) : (
             <table className="w-full">
               <thead className={`sticky top-0 ${c.surface}`}>
-                <tr className={`border-b text-left text-[10px] tracking-wider ${c.border} ${c.text3}`}>
+                <tr className={`border-b text-left text-[12px] tracking-wider ${c.border} ${c.text3}`}>
                   <th className="px-4 py-2 font-semibold">MARKET</th>
                   <th className="px-3 py-2 font-semibold">SIDE</th>
                   <th className="px-3 py-2 font-semibold">SIZE</th>
@@ -505,7 +505,7 @@ export function RobotDetail(props: {
               </thead>
               <tbody>
                 {orders.map((o) => (
-                  <tr key={o.id} className={`border-b text-[12px] last:border-0 ${c.border}`}>
+                  <tr key={o.id} className={`border-b text-[14px] last:border-0 ${c.border}`}>
                     <td className={`max-w-[260px] truncate px-4 py-2 ${c.text}`}>{o.market?.question}</td>
                     <td className={`px-3 py-2 whitespace-nowrap ${c.text2}`}>{o.side.replace("BUY_", "BUY ")}</td>
                     <td className={`px-3 py-2 whitespace-nowrap ${mono} ${c.text2}`}>{fmtCents(o.sizeCents)}</td>
@@ -521,11 +521,11 @@ export function RobotDetail(props: {
 
       {robot.statusReason && (
         <div className={`flex flex-wrap items-center gap-3 rounded-lg border border-[#E3A63B]/40 bg-[#E3A63B]/10 px-4 py-3`}>
-          <span className={`rounded bg-[#E3A63B]/20 px-2 py-1 text-[10px] font-bold tracking-wide ${c.warn}`}>STATUS NOTE</span>
-          <span className={`text-[11.5px] ${c.text2}`}>{robot.statusReason}</span>
+          <span className={`rounded bg-[#E3A63B]/20 px-2 py-1 text-[12px] font-bold tracking-wide ${c.warn}`}>STATUS NOTE</span>
+          <span className={`text-[13.5px] ${c.text2}`}>{robot.statusReason}</span>
         </div>
       )}
-      <div className={`text-center text-[10px] ${c.text3}`}>
+      <div className={`text-center text-[12px] ${c.text3}`}>
         {status} · created {new Date(robot.createdAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
       </div>
     </div>
@@ -549,7 +549,7 @@ function StateChipInline({ state }: { state: string }) {
     UNKNOWN: `${c.warn} bg-[#E3A63B]/10`,
   };
   return (
-    <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold tracking-wide whitespace-nowrap ${map[state] ?? c.text2}`}>
+    <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[12px] font-bold tracking-wide whitespace-nowrap ${map[state] ?? c.text2}`}>
       {state === "UNKNOWN" || state === "RECONCILING" ? "⚠ " : ""}
       {state.replace("_", " ")}
     </span>
