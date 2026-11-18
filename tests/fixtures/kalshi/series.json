@@ -1,0 +1,446 @@
+{
+  "KXELONMARS": {
+    "additional_prohibitions": [
+      "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+      "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+      "Science and Technology"
+    ],
+    "category": "Science and Technology",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/VISITAREA.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/VISITAREA.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "custom",
+    "last_updated_ts": "2026-11-16T20:52:19.177704Z",
+    "product_metadata": {
+      "scope": "nosearch"
+    },
+    "settlement_sources": [
+      {
+        "name": "official representatives or offices of <person>",
+        "url": "https://kalshi.com/"
+      },
+      {
+        "name": "ABC",
+        "url": "https://abcnews.go.com/"
+      },
+      {
+        "name": "Fox News",
+        "url": "https://www.foxnews.com/"
+      },
+      {
+        "name": "official social media accounts of <person> or their official representatives",
+        "url": "https://kalshi.com/"
+      },
+      {
+        "name": "The Wall Street Journal",
+        "url": "https://www.wsj.com/"
+      },
+      {
+        "name": "Semafor",
+        "url": "https://www.semafor.com/"
+      },
+      {
+        "name": "The Guardian",
+        "url": "https://www.theguardian.com"
+      },
+      {
+        "name": "Bloomberg News",
+        "url": "https://www.bloomberg.com/news"
+      },
+      {
+        "name": "The Information",
+        "url": "https://www.theinformation.com/"
+      },
+      {
+        "name": "CNBC",
+        "url": "https://www.cnbc.com"
+      },
+      {
+        "name": "CBS",
+        "url": "https://www.cbsnews.com/"
+      },
+      {
+        "name": "NBC",
+        "url": "https://www.nbcnews.com/"
+      },
+      {
+        "name": "BBC",
+        "url": "https://www.bbc.co.uk"
+      },
+      {
+        "name": "The Washington Post",
+        "url": "https://www.washingtonpost.com/"
+      },
+      {
+        "name": "Axios",
+        "url": "https://www.axios.com/"
+      },
+      {
+        "name": "CNN",
+        "url": "https://www.cnn.com"
+      },
+      {
+        "name": "The New York Times",
+        "url": "https://www.nytimes.com"
+      },
+      {
+        "name": "Politico",
+        "url": "https://www.politico.com"
+      },
+      {
+        "name": "MSNBC",
+        "url": "https://www.msnbc.com"
+      },
+      {
+        "name": "the Associated Press",
+        "url": "https://apnews.com/"
+      },
+      {
+        "name": "Reuters",
+        "url": "https://www.reuters.com"
+      },
+      {
+        "name": "local news outlets with verifiable mastheads in <area>",
+        "url": "https://kalshi.com/"
+      },
+      {
+        "name": "official government sources of <area>",
+        "url": "https://kalshi.com/"
+      }
+    ],
+    "tags": [
+      "Space"
+    ],
+    "ticker": "KXELONMARS",
+    "title": "Elon Mars"
+  },
+  "AMAZONFTC": {
+    "additional_prohibitions": [
+      "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+      "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+      "Politics"
+    ],
+    "category": "Politics",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/AMAZONFTC.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/AMAZONFTC.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "custom",
+    "last_updated_ts": "2026-11-05T15:04:23.594583Z",
+    "settlement_sources": [
+      {
+        "name": "PACER",
+        "url": "https://pacer.uscourts.gov/"
+      }
+    ],
+    "tags": [
+      "SCOTUS & courts",
+      "Amazon"
+    ],
+    "ticker": "AMAZONFTC",
+    "title": "Courts consider Amazon a monopoly"
+  },
+  "KXGDPYEAR": {
+    "additional_prohibitions": [
+      "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+      "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+      "Economics"
+    ],
+    "category": "Economics",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/GDPYEAR.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/GDPYEAR.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 0,
+    "fee_type": "quadratic",
+    "frequency": "custom",
+    "last_updated_ts": "2026-11-13T01:37:24.593435Z",
+    "product_metadata": {
+      "scope": "Calendar"
+    },
+    "settlement_sources": [
+      {
+        "name": "Bureau of Economic Analysis",
+        "url": "https://www.bea.gov/data/gdp/gross-domestic-product"
+      }
+    ],
+    "tags": [
+      "GDP"
+    ],
+    "ticker": "KXGDPYEAR",
+    "title": "Annual GDP"
+  },
+  "EVSHARE": {
+    "additional_prohibitions": [
+      "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+      "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+      "Climate and Weather",
+      "Companies",
+      "Science and Technology"
+    ],
+    "category": "Climate and Weather",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/EVSHARE.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/EVSHARE.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "custom",
+    "last_updated_ts": "2026-09-29T17:19:02.307426Z",
+    "settlement_sources": [
+      {
+        "name": "Argonne National Laboratory",
+        "url": "https://www.anl.gov/es/light-duty-electric-drive-vehicles-monthly-sales-updates"
+      }
+    ],
+    "tags": [
+      "Elon Musk",
+      "Energy"
+    ],
+    "ticker": "EVSHARE",
+    "title": "EV market share"
+  },
+  "KXNEWROLEJP": {
+    "additional_prohibitions": [
+      "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+      "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+      "Financials"
+    ],
+    "category": "Financials",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/NEWROLE.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/NEWROLE.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "one_off",
+    "last_updated_ts": "2026-11-17T16:31:59.71523Z",
+    "settlement_sources": [
+      {
+        "name": "ESPN",
+        "url": "https://www.espn.com"
+      },
+      {
+        "name": "ABC",
+        "url": "https://abcnews.go.com/"
+      },
+      {
+        "name": "The Information",
+        "url": "https://www.theinformation.com"
+      },
+      {
+        "name": "MSNBC",
+        "url": "https://www.msnbc.com/"
+      },
+      {
+        "name": "The Wall Street Journal",
+        "url": "https://www.wsj.com/"
+      },
+      {
+        "name": "Wired",
+        "url": "https://www.wired.com"
+      },
+      {
+        "name": "Semafor",
+        "url": "https://www.semafor.com/"
+      },
+      {
+        "name": "Bloomberg News",
+        "url": "https://www.bloomberg.com/news"
+      },
+      {
+        "name": "CBS",
+        "url": "https://www.cbsnews.com/"
+      },
+      {
+        "name": "NBC",
+        "url": "https://www.nbcnews.com/"
+      },
+      {
+        "name": "company/organization",
+        "url": "https://kalshi.com/"
+      },
+      {
+        "name": "Axios",
+        "url": "https://www.axios.com"
+      },
+      {
+        "name": "The Washington Post",
+        "url": "https://www.washingtonpost.com/"
+      },
+      {
+        "name": "TechCrunch",
+        "url": "https://techcrunch.com"
+      },
+      {
+        "name": "CNN",
+        "url": "https://www.cnn.com/"
+      },
+      {
+        "name": "Fox News",
+        "url": "https://www.foxnews.com"
+      },
+      {
+        "name": "Reuters",
+        "url": "https://www.reuters.com/"
+      },
+      {
+        "name": "The Athletic",
+        "url": "https://theathletic.com"
+      },
+      {
+        "name": " The New York Times",
+        "url": "https://www.nytimes.com"
+      },
+      {
+        "name": "Politico",
+        "url": "https://www.politico.com"
+      },
+      {
+        "name": "the Associated Press",
+        "url": "https://apnews.com/"
+      }
+    ],
+    "tags": [
+      "JPMorgan Chase",
+      "CEOs"
+    ],
+    "ticker": "KXNEWROLEJP",
+    "title": "JP Morgan Chase new CEO "
+  },
+  "KXIREREFCALL": {
+    "additional_prohibitions": [
+      "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+      "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+      "Politics"
+    ],
+    "category": "Politics",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/COUNTRYACTION.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/COUNTRYACTION.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "one_off",
+    "last_updated_ts": "2026-11-16T20:51:39.227975Z",
+    "settlement_sources": [
+      {
+        "name": "Department of the Taoiseach",
+        "url": "https://www.gov.ie/en/department-of-the-taoiseach/"
+      },
+      {
+        "name": "Houses of the Oireachtas",
+        "url": "https://www.oireachtas.ie/en/"
+      },
+      {
+        "name": "Department of Housing, Local Government and Heritage",
+        "url": "https://www.gov.ie/en/department-of-housing-local-government-and-heritage/"
+      }
+    ],
+    "tags": [
+      "International",
+      "UK & Ireland"
+    ],
+    "ticker": "KXIREREFCALL",
+    "title": "Irish reunification referendum announcement"
+  },
+  "EUCLIMATE": {
+    "additional_prohibitions": [
+      "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+      "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+      "Climate and Weather"
+    ],
+    "category": "Climate and Weather",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/EUCLIMATE.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/EUCLIMATE.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "one_off",
+    "last_updated_ts": "2026-02-26T08:50:31.901806Z",
+    "settlement_sources": [
+      {
+        "name": "EU",
+        "url": "https://www.consilium.europa.eu/en/policies/climate-change/paris-agreement/"
+      }
+    ],
+    "tags": [
+      "Climate change"
+    ],
+    "ticker": "EUCLIMATE",
+    "title": "EU hits climate goals"
+  },
+  "KXECCOMPACT": {
+    "additional_prohibitions": [
+      "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+      "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+      "Politics"
+    ],
+    "category": "Politics",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/ECCOMPACT.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/ECCOMPACT.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "custom",
+    "last_updated_ts": "2026-11-15T23:39:03.043949Z",
+    "settlement_sources": [
+      {
+        "name": "National Popular Vote Inc",
+        "url": "https://www.nationalpopularvote.com"
+      }
+    ],
+    "tags": [
+      "Local",
+      "State laws"
+    ],
+    "ticker": "KXECCOMPACT",
+    "title": "EC compact 270"
+  },
+  "KXMINWAGE": {
+    "additional_prohibitions": [
+      "Persons who are employed by any of the Source Agencies are not permitted to trade on the Contract.",
+      "Persons who hold any material, non-public information on the Underlying are not permitted to trade on the Contract."
+    ],
+    "categories": [
+      "Politics"
+    ],
+    "category": "Politics",
+    "contract_terms_url": "https://assets.kalshi.com/contract_terms/MINWAGE.pdf",
+    "contract_url": "https://assets.kalshi.com/regulatory/product-certifications/MINWAGE.pdf",
+    "exchange_index": 0,
+    "fee_multiplier": 1,
+    "fee_type": "quadratic",
+    "frequency": "custom",
+    "last_updated_ts": "2026-11-13T23:46:38.414556Z",
+    "settlement_sources": [
+      {
+        "name": "Library of Congress",
+        "url": "https://www.congress.gov"
+      }
+    ],
+    "tags": [
+      "Economy",
+      "Congress",
+      "Taxes & spending",
+      "Health & social bills"
+    ],
+    "ticker": "KXMINWAGE",
+    "title": "Minimum wage hike"
+  }
+}

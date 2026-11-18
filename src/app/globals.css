@@ -202,3 +202,10 @@
     radial-gradient(720px 220px at 18% 0%, color-mix(in srgb, var(--vc) 12%, transparent), transparent 70%),
     radial-gradient(480px 180px at 85% 10%, color-mix(in srgb, var(--vc) 7%, transparent), transparent 75%);
 }
+
+/* ── C18 mobile shell (Phase 9) ───────────────────────────────────────────
+   The bottom tab bar sits on the notch/home-indicator edge: pad it with the
+   device safe area so the controls stay reachable and unobstructed. */
+.fd-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

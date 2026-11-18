@@ -9,6 +9,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { custodyStatus, signerAddress } from "@/lib/live/custody";
+import { kalshiCredentialStatus } from "@/lib/live/kalshiCustody";
 import { getConsent } from "@/lib/live/consent";
 import { getPilotState, updatePilotState, getB3Signoff, recordB3Signoff, PILOT_CEILINGS } from "@/lib/live/pilot";
 import { liveGateReport } from "@/lib/live/gates";
@@ -30,6 +31,9 @@ export async function GET() {
   const [consent, pilot, b3] = await Promise.all([getConsent(), getPilotState(), getB3Signoff()]);
   return NextResponse.json({
     custody: custodyStatus(),
+    // Phase 9 — the SECOND credential kind (Kalshi asymmetric API key, RSA-PSS
+    // or Ed25519, env-injected, never stored). Status only — never key material.
+    kalshiCred: kalshiCredentialStatus(),
     consent,
     pilot,
     ceilings: PILOT_CEILINGS,

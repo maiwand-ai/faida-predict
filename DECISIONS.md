@@ -21,6 +21,37 @@ truth for choices that must not drift; code reads them via config, not folklore.
 | A-01 | Model governance | Unproven models never drive decisions: a candidate estimates nothing until the founder promotes it on calibration evidence (B8); an ACTIVE model that drifts worse than baseline by >5% over its recent window is demoted automatically and the baseline re-activates. Every promote/demote writes a MODEL_GOVERNANCE notification + MODEL outbox event. Drills must pass before a phase that touches models closes | RATIFIED | `ProbabilityModel` table + `src/lib/probability/registry.ts`; demotion drill `scripts/demotion_drill.py` |
 | A-06 | Evidence integrity | Market text is untrusted: every forecast input passes prompt-injection screening before any AI prompt, and flagged evidence fails closed to the baseline with the FLAGGED verdict recorded in the trace provenance. Every estimate carries an evidence hash binding it to its exact inputs | RATIFIED | `src/lib/probability/screening.ts`; traces carry `provenance` (A-02) since Phase 5 |
 
+## Phase-9 checkpoint status (mobile shell C18 + venue #6 Kalshi)
+
+- Phase 9 scope — **locked, implemented and verified (2026-11-18)**: mobile
+  shell per C18 (installable PWA manifest + notch-safe viewport + mobile
+  bottom tab bar mirroring the sidebar + responsive tables; web/PWA
+  distribution only, store-policy re-check per target market recorded in
+  `docs/STORE_POLICY_PHASE9.md` with [VERIFY] counsel rows) + venue #6
+  Kalshi adapter LIVE (public market data unauthenticated; binary
+  non-multivariate markets; entry prices = the venue's own asks; touch
+  depth from the bids-only complement; fees = M × 0.07 × C × P × (1−P) with
+  the series' own multiplier; $50 min-touch + $500 per-market structural
+  rules armed). Acceptance: `scripts/smoke_phase9.py` SMOKE PASS
+  (P9-1..P9-8, isolation-run + re-run), S-05 fixtures RECORDED from the live
+  feed (`tests/fixtures/kalshi`, `bun run conformance:kalshi` 11/11 PASS —
+  the recorded-fixture flip condition is satisfied), credential selftest
+  K1–K6 PASS, tsc + lint clean, regression re-runs smoke_phase4 + smoke_5
+  PASS (isolated). Live trading still disabled by contract.
+- Second credential kind — **implemented and proven (2026-11-18)**: Kalshi
+  auth is an asymmetric API key (RSA-PSS/SHA-256 or Ed25519 over
+  `{timestamp}{METHOD}{path}`) — a SECOND credential kind next to the EVM
+  wallet signer (B1). Same custody posture as S-08: env-injected per process
+  (`KALSHI_API_KEY_ID` / `KALSHI_PRIVATE_KEY`), never stored (keyStored
+  structurally false), redacted everywhere, proven offline by
+  `scripts/kalshi_selftest.ts` (K1–K6). A Kalshi live write path does NOT
+  exist; if the founder ever wants one it goes through the same B10 gate
+  stack + explicit authorization as Polymarket.
+- Lineup status after Phase 9 — **four venues LIVE** (Polymarket, Manifold,
+  Limitless, Kalshi), Azuro adapter-built-but-PENDING (fixtures owed from an
+  unblocked vantage), Drift BET SUSPENDED (slot #4 verdict still owed to the
+  founder). All venues carry the B12 color identity and B11 labeling.
+
 ## Phase-8 checkpoint status (commercial platform minus billing + Azuro)
 
 - Phase 8 engineering scope — **locked, implemented and verified

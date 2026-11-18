@@ -1,4 +1,4 @@
-# FAIDA Predict — Phase 8 (Commercial platform minus billing · P-04/P-06/P-07/P-08 landed · Azuro adapter built, venue honestly PENDING · B4 pricing drafted for founder approval)
+# FAIDA Predict — Phase 9 (Mobile shell C18 · venue #6 Kalshi LIVE · second credential kind RSA/Ed25519 · four venues live)
 
 Autonomous prediction-market trading platform — paper-mode core with the full
 trust architecture from the specification review brief. **All execution is
@@ -12,6 +12,31 @@ ledger, carry-forward register). Decisions: `DECISIONS.md`.
 
 ## What is working
 
+- **Mobile shell per C18 (Phase 9)** — installable PWA (manifest + themed
+  icons + notch-safe viewport), a mobile bottom tab bar mirroring the five
+  sidebar views, mobile header, responsive tables (no overflow at 390px) —
+  verified with a touch-viewport screenshot pass (`bun run shoot:phase9`).
+  Store-policy re-check per target market recorded with honest [VERIFY]
+  counsel rows: **web/PWA distribution only, no native store shells**
+  (`docs/STORE_POLICY_PHASE9.md`).
+- **Kalshi adapter LIVE (Phase 9, venue #6)** — the US-persons complement
+  where Polymarket is venue-restricted. Public market data is
+  unauthenticated (Trade API v2); the newest-1000 markets page is dominated
+  by auto-generated multivariate combo legs, so the sync walks open events
+  (which exclude multivariate) with a stratified sample and maps binary
+  two-sided books only: entry prices = the venue's own asks, touch depth
+  from the bids-only complement, fees from the series' own `fee_multiplier`
+  under the documented quadratic schedule, volume honestly null (the API's
+  volume is a contract count, not dollars). $50 min-touch + $500 per-market
+  structural rules armed. S-05 conformance fixtures RECORDED from the live
+  feed (`bun run conformance:kalshi`, 11/11) — the recorded-fixture
+  registry-flip condition is satisfied.
+- **Second credential kind (Phase 9)** — Kalshi trading auth is an asymmetric
+  API key (RSA-PSS/SHA-256 or Ed25519 over `{timestamp}{METHOD}{path}`),
+  env-injected per process (`KALSHI_API_KEY_ID` / `KALSHI_PRIVATE_KEY`),
+  never stored (same posture as S-08 wallet custody), proven offline
+  (`bun run selftest:kalshi`, K1–K6) and surfaced honestly in Settings.
+  A Kalshi live write path does not exist.
 - **Commercial platform surfaces (Phase 8, billing excluded)** — P-04
   notification taxonomy + anti-storm (one writer, 7 families, CRITICAL never
   capped, suppressed repeats recorded — the storm is provable); P-06 data

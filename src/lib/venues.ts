@@ -17,8 +17,10 @@
 //      reboot; BET has been offline since and no relaunch is announced.
 //      Adapter deliberately NOT built — a dead market cannot pass S-05.
 //   5. AZURO     — fast-follow. EVM, sports-leaning, SDK-first.
-//   6. KALSHI    — fast-follow. CFTC-regulated US exchange, REST + key auth;
-//      the US-persons complement to the non-US crypto venues.
+//   6. KALSHI    — fast-follow, LIVE since Phase 9 (P9.1). CFTC-regulated US
+//      exchange, public REST market data; key-based auth (RSA/Ed25519) is the
+//      platform's SECOND credential kind (wallet ≠ API key); the US-persons
+//      complement to the non-US crypto venues.
 //
 // A venue may only be selected for a robot or receive orders once its adapter
 // is LIVE here — the robots API enforces this at creation time (B11).
@@ -91,11 +93,11 @@ export const VENUES: VenueDef[] = [
   {
     id: "KALSHI",
     label: "Kalshi",
-    adapter: "PENDING",
+    adapter: "LIVE",
     role: "FAST_FOLLOW",
     short: "KX",
     hex: "#FFB25C", // soft orange — regulated US exchange
-    note: "Fast-follow — CFTC-regulated US exchange, REST API with key auth; the US-persons complement where Polymarket is venue-restricted (B9)",
+    note: "Fast-follow → LIVE since Phase 9 — CFTC-regulated US exchange, public REST market data (S-05 fixtures recorded from the live feed); the US-persons complement where Polymarket is venue-restricted; key-based auth (RSA/Ed25519) as the platform's second credential kind (B9)",
   },
 ];
 

@@ -65,7 +65,17 @@ export const VENUE_ENTRY_RULES: Record<string, VenueEntryRules> = {
     perMarketPositionCapCents: 10000, // $100 per game condition, user-wide
     minMinutesBeforeClose: 20, // no entries inside the final 20 minutes
   },
-  KALSHI: EMPTY_ENTRY_RULES,
+  // Kalshi (Phase 9): CFTC-regulated exchange with real central limit order
+  // books — rule (a) min-touch-depth IS armed (the founder-calibrated $50
+  // Limitless number; fail-closed when the book was not captured at sync) and
+  // a $500 per-market cap. No close-time window: a regulated exchange with
+  // defined closes has no suspended-odds prematch window (contrast AZURO).
+  // Config, not code — recalibrate by editing this row only.
+  KALSHI: {
+    minTouchDepthCents: 5000, // $50 at the touch (book complement notional)
+    perMarketPositionCapCents: 50000, // $500 per market, user-wide across robots
+    minMinutesBeforeClose: null,
+  },
 };
 
 export function entryRulesFor(venue: string): VenueEntryRules {

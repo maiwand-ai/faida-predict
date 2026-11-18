@@ -116,7 +116,8 @@ export const COMPLIANCE_CATALOG = [
   },
   {
     venue: "KALSHI",
-    status: "PLANNED",
-    notes: "Fast-follow, last — CFTC-regulated US DCM; REST + RSA key auth (second credential kind) per §3.",
+    status: "MARKET_DATA_ONLY",
+    notes:
+      "[VERIFY] executed 2026-11-18 BEFORE adapter work (S-05 §3.2), all from the sandbox: trade-api/v2 markets 200 with live data 04:50:46Z (970 ms), events + market + orderbook + series endpoints 200 with full field sets 04:52:15–30Z (api.elections.kalshi.com — the documented external-api host's shared alias; legacy trade-api.kalshi.com does not resolve), docs.kalshi.com 200 (markdown contract index). Contract verified against official docs: market data UNAUTHENTICATED; trading auth = asymmetric API key (RSA-PSS/SHA-256 or Ed25519 over '{timestamp}{METHOD}{path}', headers KALSHI-ACCESS-KEY/-TIMESTAMP/-SIGNATURE) — the platform's SECOND credential kind, env-injected per process, never stored (src/lib/live/kalshiCustody.ts, proven offline by scripts/kalshi_selftest.ts). Orderbook returns BIDS ONLY — asks derive from the binary complement (YES ask = 1 − NO bid); fees = round_up(M × 0.07 × C × P × (1−P)) with the series' own fee_multiplier (quadratic schedule; general M=1). LIVE market data since Phase 9 (P9.1): binary active non-multivariate markets, entry prices = the venue's own ask fields, touch depth from book complement, fee bps from the series multiplier. Robots trade the full paper pipeline; the Kalshi write path does not exist (B10 gates + founder arm would govern it). CFTC-regulated US DCM — US persons eligible where Polymarket is venue-restricted; geo matrix rows still need counsel sign-off [VERIFY]. Multivariate (combo) markets excluded — multi-outcome positions are recorded scope.",
   },
 ] as const;

@@ -493,8 +493,8 @@ export function VenueWorkspace(props: {
                     <th className="px-4 py-2.5 font-semibold">MARKET</th>
                     <th className="px-3 py-2.5 font-semibold">YES</th>
                     <th className="px-3 py-2.5 font-semibold">NO</th>
-                    <th className="px-3 py-2.5 font-semibold" title="USDC notional at the touch (best ask YES / best bid NO)">TOUCH</th>
-                    <th className="px-3 py-2.5 font-semibold">SOURCE</th>
+                    <th className="hidden px-3 py-2.5 font-semibold sm:table-cell" title="USDC notional at the touch (best ask YES / best bid NO)">TOUCH</th>
+                    <th className="hidden px-3 py-2.5 font-semibold md:table-cell">SOURCE</th>
                     <th className="px-3 py-2.5" />
                   </tr>
                 </thead>
@@ -508,7 +508,7 @@ export function VenueWorkspace(props: {
                       m.yesTouchDepthCents != null && m.yesTouchDepthCents < 5000;
                     return (
                     <tr key={m.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#131A2C]`}>
-                      <td className={`max-w-[300px] px-4 py-2.5 ${c.text}`}>
+                      <td className={`max-w-[210px] px-4 py-2.5 sm:max-w-[300px] ${c.text}`}>
                         <div className="truncate">{m.question}</div>
                         <div className={`text-[10px] ${c.text3}`}>
                           {m.category}
@@ -518,14 +518,14 @@ export function VenueWorkspace(props: {
                       </td>
                       <td className={`px-3 py-2.5 ${mono} ${c.text}`}>{m.yesPriceCents ?? "—"}¢</td>
                       <td className={`px-3 py-2.5 ${mono} ${c.text2}`}>{m.noPriceCents ?? "—"}¢</td>
-                      <td className={`px-3 py-2.5 ${mono} ${c.text2}`} title="USDC notional at the touch (best ask YES / best bid NO) — entry refused below the venue minimum (S-05 rule a)">
+                      <td className={`hidden px-3 py-2.5 sm:table-cell ${mono} ${c.text2}`} title="USDC notional at the touch (best ask YES / best bid NO) — entry refused below the venue minimum (S-05 rule a)">
                         {depth ? (
                           <span className={thin ? c.warn : c.text2}>{depth}</span>
                         ) : (
                           <span className={c.text3}>—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="hidden px-3 py-2.5 md:table-cell">
                         <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${m.dataSource.endsWith("_LIVE") ? `${c.bright} bg-[#00B0F0]/10` : `${c.warn} bg-[#E3A63B]/10`}`}>
                           {m.dataSource.endsWith("_LIVE") ? "LIVE" : "CACHED"}
                         </span>

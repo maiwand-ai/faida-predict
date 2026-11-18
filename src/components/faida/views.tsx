@@ -594,11 +594,14 @@ export function SettingsView(props: {
         <div className={`text-[12px] ${c.text2}`}>
           Your wallet signs every order (EIP-712). The platform stores the address only — it never holds, moves or custody keys.
           Since Phase 7 the signing path is live (self-custody, env-injected per process, redacted everywhere) but every real send stays behind the B10 gates below.
+          Since Phase 9 a SECOND credential kind exists for Kalshi (B9): an asymmetric API key — RSA-PSS/SHA-256 or Ed25519 — env-injected per process
+          (KALSHI_API_KEY_ID / KALSHI_PRIVATE_KEY), never stored, proven offline by `bun run selftest:kalshi` (K1–K6). Wallet signing and key signing are distinct paths; neither key material ever reaches the database.
         </div>
         <div className={`mt-2 flex flex-wrap items-center gap-2 text-[12px]`}>
           <span className={c.text3}>Wallet:</span>
           <span className={`rounded border px-2 py-0.5 ${c.borderStrong} ${mono} ${c.text}`}>{dash.wallet?.address.slice(0, 12)}…{dash.wallet?.address.slice(-6)}</span>
           <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${c.paper} bg-[#D9B25C]/10`}>{dash.wallet?.signingModel}</span>
+          <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${c.text3} bg-[#151D30]`}>KALSHI_ASYMMETRIC_API_KEY (RSA/Ed25519)</span>
         </div>
       </div>
 
@@ -1155,6 +1158,7 @@ interface LiveGateRow {
 }
 interface LiveState {
   custody: { signerPresent: boolean; address: string | null; fingerprint: string | null; signingModel: string; keyStored: boolean };
+  kalshiCred?: { keyPresent: boolean; keyIdFingerprint: string | null; keyType: string | null; credentialModel: string; keyStored: boolean };
   consent: { consented: boolean; phraseEcho: string; recordedAt: string | null; revokedAt: string | null; walletAddress: string | null; consentHash: string | null; note: string | null };
   pilot: { enabled: boolean; maxOrderCents: number; maxTotalNotionalCents: number; venues: string[]; enabledAt: string | null; note: string | null };
   ceilings: { maxOrderCents: number; maxTotalNotionalCents: number; venues: string[] };
@@ -1193,12 +1197,15 @@ export function LiveTradingCard() {
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4">
             <Stat label="Signer key" val={s.custody.signerPresent ? `injected …${s.custody.fingerprint}` : "none (DRY-RUN only)"} tone={s.custody.signerPresent ? "gain" : undefined} />
+            <Stat label="Kalshi key cred" val={s.kalshiCred ? (s.kalshiCred.keyPresent ? `${s.kalshiCred.keyType} …${s.kalshiCred.keyIdFingerprint}` : "none (paper only)") : "…"} tone={s.kalshiCred?.keyPresent ? "gain" : undefined} />
             <Stat label="Consent (C25)" val={s.consent.consented ? "RECORDED" : "absent"} tone={s.consent.consented ? "gain" : undefined} />
             <Stat label="Pilot" val={s.pilot.enabled ? "ENABLED" : "disabled"} tone={s.pilot.enabled ? "gain" : undefined} />
             <Stat label="Counsel (B3)" val={s.b3.signedOff ? `signed off (${s.b3.by})` : "owed"} tone={s.b3.signedOff ? "gain" : undefined} />
           </div>
           <div className={`text-[10.5px] ${c.text2}`}>
             Custody: address-only wallet (B1 — the platform never stores keys; the signer key is env-injected per process and redacted everywhere). Consent hash {s.consent.consentHash ? `${s.consent.consentHash.slice(0, 16)}…` : "—"}{s.consent.revokedAt ? ` · REVOKED ${s.consent.revokedAt}` : ""}. Pilot caps: ≤{s.pilot.maxOrderCents}¢/order, ≤{s.pilot.maxTotalNotionalCents}¢ total (ceilings {s.ceilings.maxOrderCents}¢ / {s.ceilings.maxTotalNotionalCents}¢), venues {s.pilot.venues.join("/")}.
+            {" "}
+            Kalshi carries the platform's SECOND credential kind — an asymmetric API key (RSA-PSS/SHA-256 or Ed25519, pre-sign text "timestamp+METHOD+path"), env-injected via KALSHI_API_KEY_ID / KALSHI_PRIVATE_KEY, never stored ({s.kalshiCred?.credentialModel ?? "KALSHI_ASYMMETRIC_API_KEY"}, keyStored false).
           </div>
 
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">

@@ -1,0 +1,17 @@
+{
+  "recordedAt": "2026-11-18T05:06:50.871Z",
+  "base": "https://api.elections.kalshi.com/trade-api/v2",
+  "endpoints": [
+    "GET /events?status=open&limit=200&with_sub_markets=false (≤3 pages, stratified sample of 45)",
+    "GET /markets?event_ticker={ticker} (per sampled event)",
+    "GET /series/{ticker} (distinct series of the targets)",
+    "GET /markets/{ticker}/orderbook"
+  ],
+  "contractSource": "docs.kalshi.com markdown API reference (fetched 2026-11-18)",
+  "eventsScanned": 600,
+  "eventsSampled": 45,
+  "marketsRecorded": 30,
+  "seriesRecorded": 9,
+  "booksRecorded": 30,
+  "recorder": "scripts/record-fixtures-kalshi.ts"
+}

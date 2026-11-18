@@ -171,6 +171,18 @@ export default function FaidaApp() {
   // while inside a venue workspace, keep the Dashboard nav item lit
   const activeView: View = view === "venue" ? "overview" : view;
 
+  // C18 mobile shell (Phase 9): compact glyph per bottom-tab item — the phone
+  // carries no sidebar, so the five platform views live in a fixed bottom
+  // tab bar with safe-area padding and ≥44px touch targets.
+  const navGlyph: Record<View, string> = {
+    overview: "◱",
+    venue: "◱",
+    markets: "≡",
+    studio: "◇",
+    trading: "⇄",
+    settings: "⚙",
+  };
+
   return (
     <div className={`min-h-screen ${c.bg} ${c.text} flex flex-col`} style={{ fontFamily: "var(--font-geist-sans)" }}>
       <div className="flex flex-1">
@@ -183,7 +195,7 @@ export default function FaidaApp() {
                 <span className={`text-[14px] font-bold tracking-wide ${c.text}`}>FAIDA</span>
                 <span className={`text-[9px] font-bold tracking-[0.2em] ${c.bright}`}>PREDICT</span>
               </div>
-              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 8</div>
+              <div className={`mt-0.5 text-[9px] tracking-[0.15em] ${c.text3}`}>AUTONOMY · PHASE 9</div>
             </div>
           </div>
           <nav className="flex flex-col gap-1">
@@ -215,7 +227,18 @@ export default function FaidaApp() {
 
         {/* ── Main ─────────────────────────────────────────────── */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className={`sticky top-0 z-10 flex h-14 items-center gap-3 border-b ${c.border} ${c.surface} px-5`}>
+          <div className={`sticky top-0 z-10 flex h-14 items-center gap-3 border-b ${c.border} ${c.surface} px-4 sm:px-5`}>
+            {/* C18 mobile header (Phase 9): brand mark + phase always reachable on phones */}
+            <div className="flex items-center gap-2 md:hidden">
+              <Image src="/brand/logo_mark.png" alt="FAIDA Predict mark" width={26} height={26} className="object-contain" />
+              <div className="leading-none">
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-[13px] font-bold ${c.text}`}>FAIDA</span>
+                  <span className={`text-[8px] font-bold tracking-[0.18em] ${c.bright}`}>PREDICT</span>
+                </div>
+                <div className={`mt-0.5 text-[8px] tracking-[0.14em] ${c.text3}`}>PHASE 9</div>
+              </div>
+            </div>
             <div className={`hidden items-center rounded-lg border px-3 py-1.5 text-[12px] ${c.border} ${c.elevated} ${c.text3} sm:flex`}>
               Search markets, robots, orders…
               <span className={`ml-8 rounded border px-1.5 py-0.5 text-[10px] ${c.borderStrong}`}>⌘K</span>
@@ -224,14 +247,14 @@ export default function FaidaApp() {
               <span className={`hidden items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] ${c.border} ${c.elevated} ${c.text2} lg:inline-flex`}>
                 <span className={c.bright}>●</span> Location verified: {dash?.user.country ?? "NL"} (matrix)
               </span>
-              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] border-[#D9B25C]/40 bg-[#D9B25C]/10 ${c.paper} font-semibold`}>
-                ◇ PAPER — sends gated (gates green + consent + arm SAFE)
+              <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] sm:px-3 sm:text-[11px] border-[#D9B25C]/40 bg-[#D9B25C]/10 ${c.paper} font-semibold`}>
+                ◇ PAPER — sends gated
               </span>
-              <div className={`h-7 w-7 rounded-full ${c.elevated} border ${c.borderStrong}`} />
+              <div className={`h-7 w-7 shrink-0 rounded-full ${c.elevated} border ${c.borderStrong}`} />
             </div>
           </div>
 
-          <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-5 sm:px-6">
+          <main className="mx-auto w-full max-w-[1200px] flex-1 px-3 py-4 sm:px-6 sm:py-5 pb-24 md:pb-5">
             {view === "overview" && (
               <DashboardView
                 dash={dash}
@@ -313,11 +336,37 @@ export default function FaidaApp() {
               />
             )}
           </main>
-          <footer className={`border-t ${c.border} px-6 py-3 text-center text-[11px] ${c.text3}`}>
-            FAIDA Predict — Phase 7 (Gated live automation · B10 gates · C25 consent · small-capital pilot · DRY-RUN send armor). All figures paper-labeled per D-03/D-05. Live sends stay behind the gates + recorded consent + the SAFE arm switch.
+          <footer className={`hidden border-t ${c.border} px-6 py-3 text-center text-[11px] ${c.text3} md:block`}>
+            FAIDA Predict — Phase 9 (Mobile shell C18 · venue #6 Kalshi · second credential kind RSA/Ed25519). All figures paper-labeled per D-03/D-05. Live sends stay behind the gates + recorded consent + the SAFE arm switch.
           </footer>
         </div>
       </div>
+
+      {/* ── C18 mobile bottom tab bar (Phase 9): the phone's only nav; mirrors
+          the sidebar. Safe-area padded, ≥44px touch targets. ── */}
+      <nav
+        aria-label="Primary mobile navigation"
+        className={`fixed inset-x-0 bottom-0 z-30 flex border-t ${c.border} ${c.surface} md:hidden fd-safe-bottom`}
+        style={{ borderColor: "#202B45" }}
+      >
+        {navItems.map((n) => {
+          const lit = activeView === n.id;
+          return (
+            <button
+              key={n.id}
+              onClick={() => { setView(n.id); if (n.id === "settings") { refreshRisk(); refreshEligibility(); } if (n.id === "trading") refreshOrders(); }}
+              className={`flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] transition-colors ${
+                lit ? c.text : c.text3
+              }`}
+              aria-current={lit ? "page" : undefined}
+            >
+              <span className={`text-[15px] leading-none ${lit ? "text-[#00B0F0]" : ""}`}>{navGlyph[n.id]}</span>
+              <span className={lit ? "font-semibold" : ""}>{n.label}</span>
+              <span className={`h-0.5 w-6 rounded-full ${lit ? "bg-[#00B0F0]" : "bg-transparent"}`} />
+            </button>
+          );
+        })}
+      </nav>
 
       {/* trade dialog — key remount resets the form per market (no effect needed) */}
       <TradeDialog key={tradeMarket?.id ?? "closed"} market={tradeMarket} onClose={() => setTradeMarket(null)} onPlace={(p) => post("/api/orders", p, "Paper order filled")} busy={busy} />
@@ -384,9 +433,9 @@ function MarketsView({ markets, onSync, onTrade, busy }: { markets: MarketDTO[];
                       <th className="px-4 py-2.5 font-semibold">MARKET</th>
                       <th className="px-3 py-2.5 font-semibold">YES</th>
                       <th className="px-3 py-2.5 font-semibold">NO</th>
-                      <th className="px-3 py-2.5 font-semibold">PARITY</th>
-                      <th className="px-3 py-2.5 font-semibold">VOLUME</th>
-                      <th className="px-3 py-2.5 font-semibold">SOURCE</th>
+                      <th className="hidden px-3 py-2.5 font-semibold sm:table-cell">PARITY</th>
+                      <th className="hidden px-3 py-2.5 font-semibold sm:table-cell">VOLUME</th>
+                      <th className="hidden px-3 py-2.5 font-semibold md:table-cell">SOURCE</th>
                       <th className="px-3 py-2.5" />
                     </tr>
                   </thead>
@@ -401,9 +450,9 @@ function MarketsView({ markets, onSync, onTrade, busy }: { markets: MarketDTO[];
                           </td>
                           <td className={`px-3 py-2.5 ${mono} ${c.text}`}>{m.yesPriceCents ?? "—"}¢</td>
                           <td className={`px-3 py-2.5 ${mono} ${c.text2}`}>{m.noPriceCents ?? "—"}¢</td>
-                          <td className={`px-3 py-2.5 ${mono} ${parity != null && parity > 0 ? c.gain : c.text3}`}>{parity != null ? `${parity >= 0 ? "+" : ""}${parity}¢` : "—"}</td>
-                          <td className={`px-3 py-2.5 ${mono} ${c.text2}`}>{m.volumeCents != null ? fmtCents(m.volumeCents) : "—"}</td>
-                          <td className="px-3 py-2.5">
+                          <td className={`hidden px-3 py-2.5 sm:table-cell ${mono} ${parity != null && parity > 0 ? c.gain : c.text3}`}>{parity != null ? `${parity >= 0 ? "+" : ""}${parity}¢` : "—"}</td>
+                          <td className={`hidden px-3 py-2.5 sm:table-cell ${mono} ${c.text2}`}>{m.volumeCents != null ? fmtCents(m.volumeCents) : "—"}</td>
+                          <td className="hidden px-3 py-2.5 md:table-cell">
                             <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${m.dataSource.endsWith("_LIVE") ? `${c.bright} bg-[#00B0F0]/10` : `${c.warn} bg-[#E3A63B]/10`}`}>
                               {m.dataSource.endsWith("_LIVE") ? "LIVE" : "CACHED"}
                             </span>

@@ -10,7 +10,7 @@
 > Before closing any phase, tick its acceptance criteria here and commit the
 > tick. Nothing gets dropped because it is written down here.
 
-Last revised: 2026-11-18 (Phase 8 engineering scope closed — commercial platform minus billing + venue #5 Azuro: P-04 notification taxonomy + anti-storm with honest suppressed accounting; P-06 data export + read-only API keys (hash-only storage, public read API, rate limit); P-07 compliance ops + retention with financial-truth preservation guarantee; P-08 platform metrics; Azuro adapter IMPLEMENTED against the SDK-verified V3 contract but the venue stays PENDING — feed hosts unreachable from the sandbox, dated [VERIFY] evidence recorded BEFORE adapter work, conformance fixtures owed from an unblocked vantage; B4 pricing DRAFTED in docs/PRICING_B4.md and escalated — no billing code exists until the founder approves and the beta exit bar holds).
+Last revised: 2026-11-18 (Phase 9 closed — mobile shell per C18 + venue #6 Kalshi: mobile bottom tab bar + mobile header + notch-safe viewport + installable PWA manifest with honest store-policy re-check per target market (web/PWA only, docs/STORE_POLICY_PHASE9.md); Kalshi adapter LIVE against the documented Trade API v2 contract — [VERIFY] evidence dated BEFORE adapter work, S-05 conformance fixtures RECORDED from the live feed from this sandbox (unlike Azuro), binary non-multivariate markets only, entry prices = the venue's own asks, touch depth from the bids-only complement, fee bps from the series' own fee_multiplier under the documented quadratic schedule; the SECOND credential kind (RSA-PSS/Ed25519 asymmetric API key, env-injected, never stored) implemented + self-tested offline; registry flipped KALSHI → LIVE with recorded fixtures — smoke P9-1..P9-8 PASS, regressions PASS).
 
 ---
 
@@ -60,7 +60,7 @@ signs + audits but sends nothing until the founder arms it).
 | 3 | **Limitless** | Base network, USDC, order book | API/SDK | **LIVE** from Phase 4 (market data) | Closest Polymarket twin. **Structural thin-liquidity rules, not afterthoughts**: (a) refuse entry if touch depth < configured minimum; (b) edge computed **after** venue fees; (c) per-market position cap. Thin books make robots conservative, not broken. Conformance fixtures: `tests/fixtures/limitless` (`bun run conformance`). |
 | 4 | **Drift BET** | Solana, SDK-first | TypeScript SDK | **SUSPENDED** (2026-11-18 verdict, §4 Phase 6) | Offline since the April 2026 ~$285M exploit; S-05 conformance cannot pass against a dead market. Compliance row SUSPENDED with dated evidence; robot creation refused 422. Slot #4 substitution awaits the founder's verdict (B9) — no lineup change is self-approved. |
 | 5 | **Azuro** | EVM, sports-leaning | SDK + subgraph odds | **PENDING — adapter built, conformance owed from unblocked vantage (Phase 8)** | Sports events shape: shorter closes, different resolution sources — eligibility matrix and category handling must cover it. Phase 8: adapter implemented against the SDK-verified V3 REST contract (binary prematch conditions, margin-embedded fees, game-level A-04 clusters, close-time structural rule); every feed host is unreachable from the sandbox (dated [VERIFY] evidence in the compliance row) — `record-fixtures-azuro` + `conformance:azuro` must pass from the founder host before the registry flips (no self-approved flip). |
-| 6 | **Kalshi** | CFTC-regulated US DCM, USD | REST + RSA key auth | PENDING (fast-follow, last) | The US-persons complement where Polymarket is venue-restricted. Key-based auth (not wallet) — adapter must handle a second credential kind. |
+| 6 | **Kalshi** | CFTC-regulated US DCM, USD | REST + RSA/Ed25519 key auth | **LIVE** (market data, Phase 9) | The US-persons complement where Polymarket is venue-restricted. Public market data is UNAUTHENTICATED; trading auth is the platform's **second credential kind** — an asymmetric API key (RSA-PSS/SHA-256 or Ed25519 over `{timestamp}{METHOD}{path}`), env-injected, never stored (`src/lib/live/kalshiCustody.ts`, self-test K1–K6). Mapping scope: binary active non-multivariate markets (MVE combo legs excluded); entry prices = the venue's own asks; touch depth from the bids-only complement (YES ask = 1 − NO bid); fees = round_up(M × 0.07 × C × P × (1−P)) with the series' own `fee_multiplier` (quadratic schedule). Structural rules armed: $50 min touch, $500 per-market cap. S-05 fixtures RECORDED from the live feed (`tests/fixtures/kalshi`). |
 
 Standing rules for every venue adapter, no exceptions:
 
@@ -680,10 +680,102 @@ holds; P-01 organization schema waits with it; no Azuro registry flip without
 recorded conformance fixtures; no Kalshi work (Phase 9); no ARMED live send
 (founder authorization on the founder host).
 
-### Phase 9 — Mobile + venue #6 (Kalshi)
+### Phase 9 — Mobile + venue #6 (Kalshi) (DONE, 2026-11-18)
 
 Mobile shell per C18 + store-policy re-check per target market; Kalshi
 adapter (key-based credential kind, US-persons complement).
+
+- **P9.1 — Kalshi adapter → LIVE (S-05 §3.2 [VERIFY] first).** Dated probes
+  recorded BEFORE adapter work (2026-11-18, 04:50–04:52 UTC, from this
+  sandbox): `/markets` 200 with live data, `/events` + `/markets/{ticker}/orderbook`
+  + `/series/{ticker}` 200 with full field sets, `docs.kalshi.com` markdown
+  contract index 200. The documented contract: public market data is
+  UNAUTHENTICATED; trading auth is an asymmetric API key; the orderbook
+  returns BIDS ONLY (asks derive from the binary complement). Implementation
+  (`src/lib/venue/kalshi.ts`): open events (the events endpoint EXCLUDES
+  multivariate events — the newest-1000 /markets page is dominated by
+  auto-generated MVE combo legs, observed and recorded) → stratified event
+  sample → per-event markets → binary/active/non-MVE/two-sided filter with
+  complement sanity → ranked by the venue's own contract volume (SELECTION
+  only — `volume_fp` is a contract count, so `volumeCents` stays an honest
+  null, D-03) → series metadata (fee_type/fee_multiplier/category/settlement
+  sources) → books best-effort (fail-closed depth). Registry flipped
+  KALSHI → LIVE; robots run the full paper pipeline.
+  *Acceptance: ≥20 Kalshi markets synced with fee bps + A-04 keys +
+  resolution provenance; thin books refused by the armed min-touch rule with
+  the measured depth stated.* — **sandbox-verified 2026-11-18: 30 markets
+  synced (all with depth + fees; categories: elections, sports, economics,
+  climate, science, financials); thin-book manual ticket refused with the
+  stated depth reason; live-mode flip for a Kalshi robot refused (live write
+  exists only on POLYMARKET).**
+- **P9.2 — Structural rules armed (config row in `src/lib/venue/rules.ts`).**
+  Kalshi books are real central limit order books: rule (a) min-touch-depth
+  $50 (the founder-calibrated Limitless number, fail-closed on missing
+  books) + $500 per-market user-wide cap; NO close-time window (a regulated
+  exchange with defined closes has no suspended-odds prematch window —
+  contrast AZURO).
+- **P9.3 — Fee schedule (C4.4 config, never hardcoded at call sites).**
+  Documented quadratic schedule `fees = round_up(M × 0.07 × C × P × (1−P))`
+  with the series' OWN `fee_multiplier` (e.g. KXELONMARS answered
+  `{fee_type: "quadratic", fee_multiplier: 1}`; a 0-multiplier promo yields
+  the venue's own 0 bps). Per-side bps at entry price p: M × 7 × (100 − p).
+  Series lookup failure → the documented general schedule (M=1), never a
+  made-up discount. Caught in-phase: the first implementation divided by 100
+  twice — the smoke vector (350 bps @ 50¢ vs $1.75/100 contracts) caught it
+  and the formula was fixed before close.
+- **P9.4 — Second credential kind (carry-forward register: "RSA key auth ≠
+  wallet signing").** `src/lib/live/kalshiCustody.ts`: asymmetric API key —
+  RSA-2048 with RSA-PSS/SHA-256 (salt = digest length) or Ed25519 over
+  `{timestamp_ms}{METHOD}{path}` (path from the API root, no query);
+  headers KALSHI-ACCESS-KEY/-TIMESTAMP/-SIGNATURE. Same posture as S-08:
+  env-injected per process (`KALSHI_API_KEY_ID` / `KALSHI_PRIVATE_KEY`),
+  never stored (keyStored structurally false), every outbound string passes
+  `redactKalshiKey()`. Proven OFFLINE by `scripts/kalshi_selftest.ts`
+  (K1–K6 SELFTEST PASS: sign/verify round trips for both key types, pre-sign
+  contract tamper checks, env-absent honest state, redaction, signature
+  shape). Settings surfaces the credential kind honestly (custody card chip
+  + live-control "Kalshi key cred" stat + /api/live `kalshiCred` — status
+  only, never key material).
+- **P9.5 — S-05 conformance fixtures RECORDED from the live feed.** Unlike
+  Azuro (origin-blocked), the Kalshi API answers from this sandbox —
+  `bun scripts/record-fixtures-kalshi.ts` captured 30 real markets + 9
+  series + 30 books with a provenance manifest (`tests/fixtures/kalshi`);
+  `bun run conformance:kalshi` replays the PURE mapping offline — 11/11
+  PASS on 2026-11-18. That recorded-fixture pass is the registry-flip
+  condition (S-05 §3.4) — satisfied, no self-approved flip.
+- **P9.6 — Mobile shell per C18.** Installable PWA: `public/manifest.webmanifest`
+  (standalone, themed icons 192/512/maskable generated from the brand mark,
+  apple-touch-icon), `viewport` export (device-width, `viewportFit: cover`,
+  theme-color) in `src/app/layout.tsx`. The phone carries no sidebar: a fixed
+  bottom tab bar (`md:hidden`, aria-labeled, safe-area padded
+  `fd-safe-bottom`, ≥44px touch targets) mirrors the five sidebar views, and
+  the header gains a compact brand+phase block; PAPER chip always reachable.
+  Tables go responsive: venue workspace and Markets hide TOUCH/PARITY/
+  VOLUME below `sm` and SOURCE below `md` instead of overflowing at 390px.
+  Verified with a 390×844 touch viewport (`scripts/shoot-phase9.ts`):
+  dashboard, Kalshi workspace, markets, desktop custody card.
+- **P9.7 — Store-policy re-check per target market (C18).**
+  `docs/STORE_POLICY_PHASE9.md`: engineering-level re-check table (US / EU /
+  rest-of-world matrix-allowed), dated sources, honest [VERIFY] counsel rows,
+  re-check cadence. Decision: **web/PWA distribution only — no native store
+  shells are built or submitted**; a store-channel change requires counsel
+  sign-off on the [VERIFY] rows AND a founder decision (no self-approval).
+- **Verification protocol:** `bunx tsc --noEmit` clean, `bun run lint` clean
+  (no db:push needed — no schema changes), acceptance smoke
+  `scripts/smoke_phase9.py` SMOKE PASS (P9-1..P9-8, isolation-run + re-run):
+  posture, mapping vectors, recorded-fixture conformance + azuro honest SKIP,
+  credential kind + no-PEM negative scans, live sync + freshness, paper fill
+  on a Kalshi market + write-path negatives, mobile shell HTML/manifest/
+  icons, store-policy doc, platform ends SAFE. Regression re-runs:
+  smoke_phase4 PASS, smoke_phase5 PASS (isolated; one transient first-run
+  warm-up failure after the reseed passed on the isolated re-run).
+
+**Non-goals for Phase 9 (kept):** no Kalshi write path (the credential kind
+exists; a live order path would require the B10 gates + founder authorization
+on the founder host, same as Polymarket); no billing code (B4 still awaiting
+founder approval); no native store shells (C18 store-policy doc); no
+multivariate/combo positions (recorded mapping scope); Azuro stays PENDING
+until its fixtures are recorded from an unblocked vantage.
 
 ## 5. Carry-forward register (must never be lost)
 
@@ -691,7 +783,7 @@ These are scheduled spec obligations that no phase may silently drop:
 
 | Item | Obligation | When |
 |------|-----------|------|
-| S-05 conformance catalogue | Every new venue: catalog row + [VERIFY] check + contract tests + fee schedule | With each venue adapter (P3.1, 4, 6, 8, 9) — **Azuro executed 2026-11-18 (Phase 8): [VERIFY] evidence dated BEFORE adapter work; conformance fixtures owed from an unblocked vantage before the registry flips** |
+| S-05 conformance catalogue | Every new venue: catalog row + [VERIFY] check + contract tests + fee schedule | With each venue adapter (P3.1, 4, 6, 8, 9) — **Azuro executed 2026-11-18 (Phase 8): [VERIFY] evidence dated BEFORE adapter work; conformance fixtures owed from an unblocked vantage before the registry flips. Kalshi executed 2026-11-18 (Phase 9): [VERIFY] evidence dated BEFORE adapter work AND fixtures recorded from the live feed from the sandbox — the recorded-fixture flip condition is SATISFIED (registry LIVE)** |
 | C19.1 kill-switch drill | Scheduled operational drill, not just a feature | **Executed 2026-11-18 (rehearsal DRILL PASS, §4 Phase 7); re-executed on the 7.5 cadence (smoke P75-5); monthly + per beta round from 7.5** |
 | S-08 custody rubric | Rubric results recorded in DECISIONS.md before live signing | **Recorded 2026-11-18** (rubric verdict + S1–S6 self-test in DECISIONS.md) |
 | B3 [VERIFY] rows | Counsel sign-off on geo/restriction entries | Rehearsal sign-off only (smoke P7-13, resets on exit) — **real counsel sign-off owed before the live pilot** |
@@ -701,7 +793,8 @@ These are scheduled spec obligations that no phase may silently drop:
 | P-01 organizations | Data model early, feature later | Model when billing lands (Phase 8) — **billing stays unwritten pending founder B4 approval + beta exit bar (Phase 8 ledger, P8.1); P-01 waits with it** |
 | R-01 B5 defaults | Founder numbers recorded in DECISIONS.md | Confirmed via B5; **7.5 stress pass recorded (32-way lockstep burst p95 977 ms — capacity holds, latency budget needs paced scheduling); revisit at the live pilot** |
 | B4 pricing | Engineering draft approved by founder **before** billing code exists | **Drafted 2026-11-18 (`docs/PRICING_B4.md`, §7 approval checklist) — founder approval owed; no billing code exists (smoke-asserted)** |
-| Kalshi credential kind | RSA key auth ≠ wallet signing — adapter + settings must support it | Phase 9 |
+| C18 store-policy re-check | Per target market before any native distribution | **Recorded 2026-11-18 (Phase 9)** — `docs/STORE_POLICY_PHASE9.md`: web/PWA only, [VERIFY] counsel rows owed before any store channel; re-check cadence documented |
+| Kalshi credential kind | RSA key auth ≠ wallet signing — adapter + settings must support it | **Recorded 2026-11-18 (Phase 9)** — asymmetric API key (RSA-PSS/SHA-256 or Ed25519) implemented env-injected + never stored (`src/lib/live/kalshiCustody.ts`), proven offline (selftest K1–K6), surfaced in Settings + /api/live |
 | Push discipline | Local commits are not delivered until the founder provides a fresh fine-grained PAT | Every handoff |
 
 ## 6. Hard invariants (repeat verbatim at every code review)
@@ -729,9 +822,10 @@ These are scheduled spec obligations that no phase may silently drop:
 
 ## 8. Open founder inputs
 
-- **Fresh fine-grained PAT** to push pending commits (Phases 3–8) to
+- **Fresh fine-grained PAT** to push pending commits (Phases 3–9) to
   `maiwand-ai/faida-predict`. Tokens are injected per-process only and never
-  stored; revoke each after use.
+  stored; revoke each after use. (A push was attempted at the Phase 9
+  handoff — refused: no credentials in the sandbox; 8 commits queued.)
 - **B4 pricing approval** — `docs/PRICING_B4.md` §7 checklist (tiers, overage
   policy, dunning ladder, refunds, implementation order). Billing code stays
   unwritten until approved AND the beta exit bar holds.
