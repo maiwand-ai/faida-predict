@@ -124,29 +124,48 @@
 
 /* ── FAIDA Predict brand layer (derived from the logo gradient) ── */
 :root {
-  --fd-bg: #0B0E14;
-  --fd-surface: #0E121A;
-  --fd-elevated: #121722;
-  --fd-border: #1E2533;
-  --fd-border-strong: #2C3648;
-  --fd-text: #E6EAF2;
-  --fd-text2: #8B95A7;
-  --fd-text3: #6B7A94;
-  --fd-accent: #3E9BF0;
-  --fd-accent-bright: #00B0F0;
-  --fd-accent-deep: #0B54D0;
-  --fd-on-accent: #001040;
-  --fd-gain: #2FC08E;
-  --fd-loss: #F0525F;
-  --fd-warn: #E3A63B;
-  --fd-ai: #8B7CF6;
-  --fd-paper: #D9B25C;
+  /* FAIDA Predict design tokens (global redesign) */
+  --fd-bg: #080B12;
+  --fd-bg2: #0D121C;
+  --fd-surface: #111827;
+  --fd-elevated: #161F2D;
+  --fd-border: #253247;
+  --fd-border-soft: #1A2333;
+  --fd-text: #E8EDF5;
+  --fd-text2: #9AA6B8;
+  --fd-text3: #7C889B;
+  --fd-accent: #2583FF;
+  --fd-accent-bright: #08D9E8;
+  --fd-accent-deep: #1A5FD0;
+  --fd-on-accent: #04101F;
+  --fd-gain: #00D69A;
+  --fd-loss: #FF5268;
+  --fd-warn: #FFB547;
+  --fd-ai: #9B7BFF;
+  --fd-paper: #FFB547;
 }
+
+body { background: var(--fd-bg); }
+
+/* visible keyboard focus everywhere (a11y) */
+:where(button, a, input, select, textarea, [role="tab"], [tabindex]):focus-visible {
+  outline: 2px solid var(--fd-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+.fd-num { font-family: var(--font-jetbrains), ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.fd-fade-in { animation: fdFade 180ms ease-out; }
+@keyframes fdFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
 .fd-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
 .fd-scroll::-webkit-scrollbar-track { background: transparent; }
-.fd-scroll::-webkit-scrollbar-thumb { background: #2C3648; border-radius: 4px; }
-.fd-scroll::-webkit-scrollbar-thumb:hover { background: #3E9BF0; }
+.fd-scroll::-webkit-scrollbar-thumb { background: #253247; border-radius: 4px; }
+.fd-scroll::-webkit-scrollbar-thumb:hover { background: #2583FF; }
 
 /* ── Venue color identity (B13) ──────────────────────────────────────────────
    Each venue carries its own accent (set as `--vc` inline from the registry).
@@ -155,10 +174,10 @@
    shifts hue when the user enters a different market. Pending venues get
    `vc-pending`, which grays --vc toward slate until the adapter ships. */
 .vc-scope {
-  --vc: #3E9BF0; /* fallback — platform accent for unknown venues */
+  --vc: #2583FF; /* fallback — platform accent for unknown venues */
 }
 .vc-pending {
-  --vc: color-mix(in srgb, var(--vc) 38%, #6B7A94);
+  --vc: color-mix(in srgb, var(--vc) 38%, #7C889B);
 }
 .vc-text { color: var(--vc); }
 .vc-bg { background-color: var(--vc); }
@@ -182,8 +201,8 @@
   background-color: color-mix(in srgb, var(--vc) 82%, white);
 }
 .vc-btn:disabled {
-  background-color: color-mix(in srgb, var(--vc) 35%, #121722);
-  color: color-mix(in srgb, var(--vc) 55%, #6B7A94);
+  background-color: color-mix(in srgb, var(--vc) 35%, #161F2D);
+  color: color-mix(in srgb, var(--vc) 55%, #7C889B);
   cursor: not-allowed;
 }
 /* venue card on the dashboard grid — the whole card leans into the venue hue */
@@ -192,7 +211,7 @@
 }
 .venue-card:hover {
   border-color: color-mix(in srgb, var(--vc) 60%, transparent);
-  background-color: color-mix(in srgb, var(--vc) 9%, #0E121A);
+  background-color: color-mix(in srgb, var(--vc) 9%, #111827);
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--vc) 22%, transparent),
     0 10px 32px -16px color-mix(in srgb, var(--vc) 55%, transparent);
