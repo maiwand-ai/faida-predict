@@ -347,7 +347,7 @@ clean, `scripts/demotion_drill.py` DRILL PASS, `scripts/smoke_phase5.py`
 SMOKE PASS (28 checks on live APIs), screenshot pass over Settings (registry
 + governance cards) and dashboard traces (§7.4).
 
-### Phase 6 — Robot Studio completion + venue #4 (Drift BET) — **DONE (commit ca607cd), push pending founder PAT**
+### Phase 6 — Robot Studio completion + venue #4 (Drift BET) — **DONE (commit ca607cd), delivered to GitHub**
 
 Robot templates P-03, trace UI depth (A-08 front-end), visual regression,
 three-user usability check (template → first backtest in one guided
@@ -421,7 +421,7 @@ cross-suite assertions),
 pass over Studio template gallery, strategy knobs, expanded dashboard trace
 and venue workspace (§7.4).
 
-### Phase 7 — Gated live automation (first real money) — **DONE, push pending founder PAT**
+### Phase 7 — Gated live automation (first real money) — **DONE, delivered to GitHub**
 
 B1 custody rubric executed and recorded in DECISIONS.md (S-08 evidence);
 EIP-712 signing; Polymarket CLOB write path; Phase 7 gates (B10): edge gate
@@ -510,7 +510,7 @@ regression green after the documented Settings re-baseline (the live-trading
 card joined the clipped region). S-08 custody rubric verdict recorded in
 `DECISIONS.md`.
 
-### Phase 7.5 — Hardening + closed beta (R-02, locked) — **DONE, push pending founder PAT**
+### Phase 7.5 — Hardening + closed beta (R-02, locked) — **DONE, delivered to GitHub**
 
 Runbooks written and drilled; C19.1 re-executed on the 7.5 cadence; load
 measured at the B5 targets; chaos suite executed and reviewed; closed-beta
@@ -567,7 +567,8 @@ reruns owed where noted):
   defect ladder, and a measurable exit defect bar (zero open S0/S1, ≤ 3 open
   S2, invariants re-verified ≤ 7 days, all runbooks drilled ≤ 14 days, B5
   founder-host pass, 72 h soak, DRY-RUN live-pilot sanity, cohort signal).
-  Round 1 starts on founder-host readiness (PAT + B3 sign-off).
+  Round 1 starts on founder-host readiness (B3 counsel sign-off + founder
+  host; PAT delivered and commits pushed 2026-11-18).
 - **P75.6 — Acceptance smoke.** `scripts/smoke_phase75.py`: SMOKE PASS
   (P75-1..P75-9, isolation-run) — docs checks, R1–R5 + R6 + C19.1 + chaos +
   B5-short as subprocesses, per-robot endpoint graceful degradation, platform
@@ -881,7 +882,7 @@ These are scheduled spec obligations that no phase may silently drop:
 | B4 pricing | Engineering draft approved by founder **before** billing code exists | **Drafted 2026-11-18 (`docs/PRICING_B4.md`, §7 approval checklist) — founder approval owed; no billing code exists (smoke-asserted)** |
 | C18 store-policy re-check | Per target market before any native distribution | **Recorded 2026-11-18 (Phase 9)** — `docs/STORE_POLICY_PHASE9.md`: web/PWA only, [VERIFY] counsel rows owed before any store channel; re-check cadence documented |
 | Kalshi credential kind | RSA key auth ≠ wallet signing — adapter + settings must support it | **Recorded 2026-11-18 (Phase 9)** — asymmetric API key (RSA-PSS/SHA-256 or Ed25519) implemented env-injected + never stored (`src/lib/live/kalshiCustody.ts`), proven offline (selftest K1–K6), surfaced in Settings + /api/live |
-| Push discipline | Local commits are not delivered until the founder provides a fresh fine-grained PAT | Every handoff |
+| Push discipline | Local commits are not delivered until the founder provides a fresh fine-grained PAT | Every handoff — status 2026-11-18: tree clean, all commits through Phase 10 delivered to GitHub |
 
 ## 6. Hard invariants (repeat verbatim at every code review)
 
@@ -908,10 +909,20 @@ These are scheduled spec obligations that no phase may silently drop:
 
 ## 8. Open founder inputs
 
-- **Fresh fine-grained PAT** to push pending commits (Phases 3–10) to
-  `maiwand-ai/faida-predict`. Tokens are injected per-process only and never
-  stored; revoke each after use. (A push was attempted at the Phase 9
-  handoff — refused: no credentials in the sandbox; 9 commits queued.)
+- **Fresh fine-grained PAT** to push commits (Phases 3–10) to
+  `maiwand-ai/faida-predict` — **DELIVERED 2026-11-18.** All commits through
+  Phase 10 (`7318130`) are on GitHub `main` (verified via `ls-remote`); the
+  Phase 10 commit itself carried the "push pending" note because it could
+  only be delivered by the very push it described — this bookkeeping commit
+  corrects that record and is delivered by the fresh PAT the founder
+  supplied for exactly this purpose. First push attempt with that token
+  (2026-11-18) was refused 403 — the token authenticated as `maiwand-ai` but
+  lacked write scope (fine-grained PATs need Repository access =
+  `maiwand-ai/faida-predict` AND Permissions → Contents: Read and write); a
+  replacement token with that scope delivers it. Standing rules unchanged:
+  tokens are
+  injected per-process only, never stored, and revoked after use; every
+  future handoff re-requests a fresh PAT.
 - **B4 pricing approval** — `docs/PRICING_B4.md` §7 checklist (tiers, overage
   policy, dunning ladder, refunds, implementation order). Billing code stays
   unwritten until approved AND the beta exit bar holds.

@@ -90,7 +90,7 @@ top of an open S0/S1.
 
 | Round | Dates | Cohort | Round entry (summary, defects, drills, decision) |
 |---|---|---|---|
-| 1 | TBD — starts on founder host readiness | 10 | pending founder PAT + B3 sign-off |
+| 1 | TBD — starts on founder host readiness | 10 | pending B3 counsel sign-off + founder host (commits delivered 2026-11-18) |
 
 (The ledger is appended per round; entries never rewritten — the exit bar is
 audited against this table.)
