@@ -79,11 +79,38 @@ export interface PositionRowDTO {
 export interface VenueStatDTO {
   venue: string;
   markets: number;
+  // last market-sync touch for this venue (max Market.updatedAt, UTC ISO) —
+  // drives the workspace "data freshness" stat honestly (Phase 11 redesign).
+  syncedAt: string | null;
   robotsTotal: number;
   robotsActive: number;
   openPositions: number;
   exposureCents: number;
   unrealizedCents: number;
+}
+
+// Phase 11 (redesign ratification) — one-shot payload for the Robot detail
+// screen (GET /api/robots/[id]/detail). Mirrors the dashboard DTO shapes so
+// the same row renderers stay reusable.
+export interface RobotFlowDayDTO {
+  day: string; // UTC YYYY-MM-DD
+  fillCents: number;
+  feeCents: number;
+  settleCents: number;
+  netCents: number;
+  cumCents: number; // running realized P&L through this day
+}
+
+export interface RobotDetailDTO {
+  robot: RobotDTO & { mode: string; createdAt: string };
+  positions: PositionRowDTO[];
+  orders: OrderRowDTO[];
+  traces: TraceDTO[];
+  gate: EdgeGateDTO | null;
+  flow: RobotFlowDayDTO[];
+  todayNetCents: number;
+  unrealizedCents: number | null;
+  balanceCents: number;
 }
 
 export interface ProviderDTO {

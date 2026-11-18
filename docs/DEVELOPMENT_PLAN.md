@@ -889,6 +889,47 @@ pre-trade risk checks. Non-goals this pass: Venue workspace and Robot-detail
 restyle (views keep the rescaled tokens only), Beta Ops screens unchanged;
 search is still decorative (⌘K surface exists, command palette owed later).
 
+**Phase 11.1 — Venue workspace + Robot detail rebuilt (2026-11-18, same
+session).** The two remaining IA levels of the ratified artifact, both fed by
+real data — nothing mock:
+- **Venue workspace** rebuilt: avatar tile in the venue hue + display-font
+  name + Live/role chips; five-stat KPI band with **real data freshness**
+  (`syncedAt` = max Market.updatedAt per venue, added to /api/dashboard via a
+  combined `_count`+`_max` groupBy); markets table with filter chips
+  (All / Closing ≤14d / Thin book — the last only when the venue's S-05
+  min-touch rule is armed), a 0-100¢ YES price bar in the venue hue, a **real
+  VOLUME column** (Market.volumeCents — closes the artifact's empty-column
+  defect with actual data), and single-line tabular numerics; robots rail with
+  per-robot paper-mark P&L and click-through to robot detail; **Venue rules
+  panel rendered from the live engine config** (src/lib/venue/rules.ts:
+  armed/unarmed structural rules, per-venue credential kind, observed taker-fee
+  range from the synced markets, live/cached source mix). Market-row event
+  clusters collapse to a "⛭ cluster" chip with the full A-04 key in the
+  tooltip (raw ids were wrapping rows to three lines).
+- **Robot detail** (new third IA level, Overview → Venue workspace → Robot
+  detail; route = in-app view, nav maps to Robot Studio): breadcrumb; header
+  with avatar/venue/status chips + Run cycle (per-robot POST
+  /api/robots/[id]/cycle) + Pause/Resume (C26 transitions via new PATCH twin
+  of the post() helper); KPI band with meter bars (allocated vs paper balance,
+  open/max positions, today's realized net vs allocation, realized drawdown
+  vs the configured stops); **Realized paper P&L chart** — cumulative ledger
+  net (FILL/FEE/SETTLEMENT attributed to the robot's orders via refId →
+  Order.id, dense UTC day axis) with y-axis money labels at nice 1/2/2.5/5 ×
+  10^k steps (artifact fix #6), 7d/14d/30d toggle, open mark reported
+  separately and never folded into history; **Path to live trading** fed by
+  the real B10 edge gate report (6 checks with pass verdicts + details,
+  x/6 progress, honest "Go live: locked" until gates + execution gates pass);
+  Decision trace redesigned to the artifact's evidence band (stat quartet:
+  model estimate / market price / net edge / trigger + pass/fail risk pills +
+  provenance footer); open positions + recent orders tables. Backed by new
+  one-shot endpoint GET /api/robots/[id]/detail (ownership-scoped, Phase 10
+  rules). Chart money labels unit-tested by inspection: cents → dollars
+  conversion (initial 10× mislabel caught in browser review and fixed).
+- Verification: tsc + eslint clean; both screens browser-verified desktop
+  (1440) + mobile (390) with seeded data — trace expansion, gate list,
+  freshness "1h ago", volume column, venue rules from config, chart y-axis;
+  screenshots in download/redesign-review/.
+
 ## 5. Carry-forward register (must never be lost)
 
 These are scheduled spec obligations that no phase may silently drop:

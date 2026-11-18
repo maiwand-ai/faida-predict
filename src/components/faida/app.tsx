@@ -23,6 +23,7 @@ import { c, card, mono, fmtCents, VenueBadge, venueScopeStyle } from "./ui";
 import { LIVE_VENUE_IDS, ROLE_LABEL, VENUE_LABEL, VENUES, venueColor } from "@/lib/venues";
 import { StudioView, TradingView, SettingsView } from "./views";
 import { DashboardView, VenueWorkspace } from "./dashboard";
+import { RobotDetail } from "./robot";
 import { BetaView } from "./beta";
 
 // Tolerant JSON parse — a transient empty body (dev recompile race, network
@@ -38,7 +39,7 @@ async function safeJson<T = unknown>(res: Response): Promise<T | null> {
 // ── overview-local helpers ──────────────────────────────────────────────
 
 // ── main app ─────────────────────────────────────────────────────────────────
-type View = "overview" | "venue" | "markets" | "studio" | "trading" | "settings" | "beta";
+type View = "overview" | "venue" | "markets" | "studio" | "trading" | "settings" | "beta" | "robot";
 
 export default function FaidaApp() {
   const { toast } = useToast();
@@ -51,8 +52,10 @@ export default function FaidaApp() {
   const [probability, setProbability] = useState<ProbabilityDTO | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [tradeMarket, setTradeMarket] = useState<MarketDTO | null>(null);
-  // venue-first navigation: dashboard → venue workspace → studio pre-scoped
+  // venue-first navigation: dashboard → venue workspace → robot detail →
+  // studio pre-scoped (Phase 11 redesign IA)
   const [venueFocus, setVenueFocus] = useState<string | null>(null);
+  const [robotFocus, setRobotFocus] = useState<string | null>(null);
   const [studioVenue, setStudioVenue] = useState<string | null>(null);
   // Phase 10: the acting identity — session user (member or operator) with the
   // honest fallback mode disclosed; drives the Beta Ops view and header chip.
@@ -140,6 +143,32 @@ export default function FaidaApp() {
     [toast, refreshDashboard, refreshOrders],
   );
 
+  // PATCH twin of post() — same contract (toast + refresh); used by the robot
+  // detail screen for C26 status transitions (pause / resume).
+  const patch = useCallback(
+    async (url: string, body: unknown, okMsg: string) => {
+      setBusy(url + JSON.stringify(body).slice(0, 40));
+      try {
+        const res = await fetch(url, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+        const json = await safeJson<Record<string, unknown>>(res);
+        if (!json) {
+          toast({ title: "Refused", description: "Empty response — try again", variant: "destructive" });
+          return;
+        }
+        if (res.ok) {
+          toast({ title: okMsg, description: typeof json === "object" ? summarize(json) : "" });
+        } else {
+          toast({ title: "Refused", description: String(json.error ?? json.reason ?? "unknown"), variant: "destructive" });
+        }
+        return json;
+      } finally {
+        setBusy(null);
+        await refreshDashboard();
+      }
+    },
+    [toast, refreshDashboard],
+  );
+
   // P3.1: venue-aware sync — no venue argument syncs every LIVE venue.
   const syncMarkets = async (venue?: string) => {
     setBusy("sync");
@@ -182,8 +211,8 @@ export default function FaidaApp() {
     { id: "beta", label: "Beta Ops" },
     { id: "settings", label: "Settings" },
   ];
-  // while inside a venue workspace, keep the Dashboard nav item lit
-  const activeView: View = view === "venue" ? "overview" : view;
+  // while inside a venue workspace or robot detail, keep the origin nav lit
+  const activeView: View = view === "venue" ? "overview" : view === "robot" ? "studio" : view;
 
   // C18 mobile shell (Phase 9): compact glyph per bottom-tab item — the phone
   // carries no sidebar, so the five platform views live in a fixed bottom
@@ -191,6 +220,7 @@ export default function FaidaApp() {
   const navGlyph: Record<View, string> = {
     overview: "◱",
     venue: "◱",
+    robot: "◇",
     markets: "≡",
     studio: "◇",
     trading: "⇄",
@@ -382,6 +412,7 @@ export default function FaidaApp() {
                 hasUnknown={hasUnknown}
                 onControl={(body, msg) => post("/api/control", body, msg)}
                 onOpenVenue={(venueId) => { setVenueFocus(venueId); setView("venue"); }}
+                onOpenRobot={(robotId) => { setRobotFocus(robotId); setView("robot"); }}
               />
             )}
             {view === "venue" && venueFocus && (
@@ -396,6 +427,19 @@ export default function FaidaApp() {
                 onTrade={(m) => setTradeMarket(m)}
                 onCreateRobot={(v) => { setStudioVenue(v); setView("studio"); }}
                 onControl={(body, msg) => post("/api/control", body, msg)}
+                onOpenRobot={(robotId) => { setRobotFocus(robotId); setView("robot"); }}
+              />
+            )}
+            {view === "robot" && robotFocus && (
+              <RobotDetail
+                key={robotFocus}
+                robotId={robotFocus}
+                busy={busy}
+                onBack={() => setView(venueFocus ? "venue" : "overview")}
+                onBackLabel={venueFocus ? "Venue workspace" : "Overview"}
+                onOpenVenue={(venueId) => { setVenueFocus(venueId); setView("venue"); }}
+                onCycleRobot={(rid, name) => post(`/api/robots/${rid}/cycle`, {}, `${name} cycle executed`)}
+                onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, `${name} → ${status.replace("_", " ").toLowerCase()}`)}
               />
             )}
             {view === "markets" && (

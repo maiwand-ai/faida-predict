@@ -22,6 +22,7 @@ import {
 } from "./types";
 import { c, card, mono, fmtCents, Pill, Meter, SectionTitle, VenueBadge, StateChip, venueScopeStyle } from "./ui";
 import { ROLE_LABEL, VENUE_LABEL, VENUES } from "@/lib/venues";
+import { EMPTY_ENTRY_RULES, VENUE_ENTRY_RULES } from "@/lib/venue/rules";
 
 // B12: role chips are neutral gray — the venue's own color (badge, card strip,
 // workspace interior) carries the identity, so role text never fights the hue.
@@ -55,8 +56,9 @@ export function DashboardView(props: {
   hasUnknown: boolean;
   onControl: (body: Record<string, unknown>, okMsg: string) => void;
   onOpenVenue: (venueId: string) => void;
+  onOpenRobot: (robotId: string) => void;
 }) {
-  const { dash, onCycle, onReconcile, hasUnknown, onSync, onControl, onOpenVenue } = props;
+  const { dash, onCycle, onReconcile, hasUnknown, onSync, onControl, onOpenVenue, onOpenRobot } = props;
   const [intervalSec, setIntervalSec] = useState(60);
   // Greeting + date live in the browser clock; the server snapshot renders
   // a neutral string so server and client HTML stay identical (no hydration
@@ -246,11 +248,16 @@ export function DashboardView(props: {
                     const rs = robotStats.get(r.name);
                     const pnl = rs && rs.open > 0 ? rs.pnl : null;
                     return (
-                      <tr key={r.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#161D2B]`}>
+                      <tr
+                        key={r.id}
+                        className={`cursor-pointer border-b text-[12px] last:border-0 ${c.border} hover:bg-[#161D2B]`}
+                        onClick={() => onOpenRobot(r.id)}
+                        title={`Open ${r.name} — robot detail`}
+                      >
                         <td className="px-4 py-2.5">
                           <button
                             className={`font-semibold ${c.text} hover:underline`}
-                            onClick={() => onOpenVenue(r.venue)}
+                            onClick={(e) => { e.stopPropagation(); onOpenVenue(r.venue); }}
                             title={`Open the ${VENUE_LABEL[r.venue] ?? r.venue} workspace`}
                           >
                             {r.name}
@@ -482,7 +489,14 @@ function DecisionFeed({ traces }: { traces: TraceDTO[] }) {
   );
 }
 
-// ── venue workspace (drilldown) ──────────────────────────────────────────────
+// ── venue workspace (drilldown) — rebuilt per the ratified redesign artifact ──
+// Layout: venue header (avatar tile + display name + live/role chips + actions)
+// → five-stat KPI band (incl. real data freshness from Market.updatedAt) →
+// markets table (left ⅔: filter chips, 0-100 price bar, real volume column,
+// single-line tabular numerics) → right rail (robots with paper-mark P&L,
+// click-through to robot detail + the venue rules the engine actually
+// enforces) → positions / orders / decisions sections. B12: the whole room
+// inherits the venue accent via vc-scope.
 export function VenueWorkspace(props: {
   venueId: string;
   dash: DashboardDTO | null;
@@ -494,9 +508,16 @@ export function VenueWorkspace(props: {
   onTrade: (m: MarketDTO) => void;
   onCreateRobot: (venueId: string) => void;
   onControl: (body: Record<string, unknown>, okMsg: string) => void;
+  onOpenRobot: (robotId: string) => void;
 }) {
-  const { venueId, dash, markets, busy, onBack, onSyncVenue, onCycle, onTrade, onCreateRobot } = props;
+  const { venueId, dash, markets, busy, onBack, onSyncVenue, onCycle, onTrade, onCreateRobot, onOpenRobot } = props;
   const v = VENUES.find((x) => x.id === venueId);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  const [mktFilter, setMktFilter] = useState<"all" | "closing" | "thin">("all");
   if (!dash || !v) return <DashboardSkeleton />;
   const stat = dash.venues.find((s) => s.venue === venueId);
   const vRobots = dash.robots.filter((r) => r.venue === venueId);
@@ -505,8 +526,20 @@ export function VenueWorkspace(props: {
   const vOrders = dash.orders.filter((o) => o.market?.venue === venueId);
   const vTraces = dash.traces.filter((t) => t.market?.venue === venueId);
   const live = v.adapter === "LIVE";
-  // Phase 4 — A-04 visibility: positions on related markets share an eventKey;
-  // their exposure stacks in the per-event risk check, so the cluster size is
+  const rules = VENUE_ENTRY_RULES[venueId] ?? EMPTY_ENTRY_RULES;
+
+  // per-robot paper-mark P&L (same rollup as the overview robots table)
+  const robotPnl = new Map<string, { open: number; pnl: number }>();
+  for (const p of vPositions) {
+    const name = p.robot?.name ?? "—";
+    const cur = robotPnl.get(name) ?? { open: 0, pnl: 0 };
+    cur.open += 1;
+    cur.pnl += p.unrealizedCents ?? 0;
+    robotPnl.set(name, cur);
+  }
+
+  // A-04 visibility: positions on related markets share an eventKey; their
+  // exposure stacks in the per-event risk check, so the cluster size is
   // shown right in the workspace ("stacks visibly", not just inside traces).
   const clusterOf = new Map<string, number>();
   for (const p of vPositions) {
@@ -514,30 +547,85 @@ export function VenueWorkspace(props: {
     if (key) clusterOf.set(key, (clusterOf.get(key) ?? 0) + 1);
   }
 
+  // data freshness — age of the venue's last market sync (max Market.updatedAt)
+  const syncedAt = stat?.syncedAt ? new Date(stat.syncedAt).getTime() : null;
+  let freshLabel = "—";
+  let freshSub = live ? "no sync recorded yet" : "adapter pending";
+  if (mounted && syncedAt != null) {
+    const ageMs = Date.now() - syncedAt;
+    const ageMin = Math.floor(ageMs / 60_000);
+    const ageH = Math.floor(ageMin / 60);
+    freshLabel = ageMin < 1 ? "just now" : ageH < 1 ? `${ageMin}m ago` : ageH < 24 ? `${ageH}h ago` : `${Math.floor(ageH / 24)}d ago`;
+    freshSub = "last venue sync";
+  }
+
+  // market filters — every chip computes from real fields, never decoration
+  const closingSoon = vMarkets.filter((m) => m.closeDate && new Date(m.closeDate).getTime() - Date.now() < 14 * 86_400_000);
+  const thinBook = vMarkets.filter(
+    (m) => rules.minTouchDepthCents != null && (m.yesTouchDepthCents == null || m.yesTouchDepthCents < rules.minTouchDepthCents),
+  );
+  const shownMarkets = mktFilter === "closing" ? closingSoon : mktFilter === "thin" ? thinBook : vMarkets;
+
+  // fee + source mix across the venue's synced markets (honest rules panel)
+  const feeBps = vMarkets.map((m) => m.yesTakerFeeBps).filter((x): x is number => x != null);
+  const feeRange = feeBps.length ? (Math.min(...feeBps) === Math.max(...feeBps) ? `${Math.min(...feeBps)} bps` : `${Math.min(...feeBps)}–${Math.max(...feeBps)} bps`) : null;
+  const liveSrc = vMarkets.filter((m) => m.dataSource.endsWith("_LIVE")).length;
+  const credential: Record<string, string> = {
+    POLYMARKET: "Wallet (EVM · Polygon)",
+    MANIFOLD: "Public API — play money",
+    LIMITLESS: "Public REST — wallet (Base)",
+    KALSHI: "API key (RSA / Ed25519)",
+    AZURO: "Wallet (EVM)",
+    DRIFT_BET: "— (adapter not built)",
+  };
+
+  const filterChip = (id: "all" | "closing" | "thin", label: string, count: number, title?: string) => (
+    <button
+      onClick={() => setMktFilter(id)}
+      title={title}
+      className={`whitespace-nowrap rounded-full border px-2.5 py-1 text-[10.5px] font-semibold transition-colors ${
+        mktFilter === id ? "border-[var(--vc)] text-[var(--vc)]" : `${c.borderStrong} ${c.text3} hover:${c.text2}`
+      }`}
+    >
+      {label} <span className={mono}>{count}</span>
+    </button>
+  );
+
   return (
     // B12: the whole workspace inherits the venue accent — header, strips,
-    // buttons, headings and dots below all render in this venue's color, so
+    // buttons, bars and dots below all render in this venue's color, so
     // entering a different market visibly changes the room.
     <div className={`vc-scope flex flex-col gap-4 ${live ? "" : "vc-pending"}`} style={venueScopeStyle(venueId)}>
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1A2432]`} onClick={onBack}>
-          ← Back to dashboard
+          ← Overview
         </Button>
         <span className={`text-[12px] ${c.text3}`}>venue workspace — everything on this venue in one place (B11)</span>
       </div>
 
-      {/* venue header — glow + strip carry the venue color into the room */}
-      <div className={`${card} relative flex flex-col gap-3 overflow-hidden p-4 lg:flex-row lg:items-center`}>
+      {/* venue header — avatar tile + display name + chips, actions right */}
+      <div className={`${card} relative flex flex-col gap-4 overflow-hidden p-4 lg:flex-row lg:items-center lg:p-5`}>
         <span className="vc-glow absolute inset-0" aria-hidden />
         <span className="vc-strip absolute inset-x-0 top-0 h-[3px]" aria-hidden />
-        <div className="relative min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[17px] font-bold vc-text">{v.label}</span>
-            <VenueBadge venue={v.id} />
-            <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${roleChipClass(v.role)}`}>{ROLE_LABEL[v.role]}</span>
-            <span className={`text-[11px] font-semibold ${live ? "vc-text" : c.text3}`}>{live ? "● adapter live (market data)" : "○ adapter pending"}</span>
+        <div className="relative flex min-w-0 flex-1 items-center gap-3.5">
+          <span
+            aria-hidden
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-[20px] font-bold"
+            style={{ background: "var(--vc)", color: "#071018" }}
+          >
+            {v.label.slice(0, 1)}
+          </span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-[22px] font-bold tracking-tight text-[#E6EAF2]">{v.label}</h1>
+              <span className={`rounded px-2 py-0.5 text-[10px] font-bold tracking-wide ${live ? "text-[#2FC08E] bg-[#2FC08E]/10" : "text-[#E3A63B] bg-[#E3A63B]/10"}`}>
+                {live ? "Live" : "Pending"}
+              </span>
+              <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${roleChipClass(v.role)}`}>{ROLE_LABEL[v.role]}</span>
+              <span className={`text-[11px] font-semibold ${live ? "vc-text" : c.text3}`}>{live ? "● market data streaming" : "○ adapter pending"}</span>
+            </div>
+            <div className={`mt-1 text-[11.5px] ${c.text2}`}>{v.note}</div>
           </div>
-          <div className={`mt-1.5 text-[11.5px] ${c.text2}`}>{v.note}</div>
         </div>
         <div className="relative flex shrink-0 flex-wrap gap-2">
           {live && (
@@ -555,7 +643,7 @@ export function VenueWorkspace(props: {
             title={live ? undefined : "Adapter pending — robot creation is refused until it ships (B11)"}
             onClick={() => onCreateRobot(v.id)}
           >
-            + Create robot on {v.label}
+            + New robot on {v.label}
           </Button>
         </div>
       </div>
@@ -570,109 +658,98 @@ export function VenueWorkspace(props: {
         </div>
       )}
 
-      {/* stats row */}
+      {/* KPI band — five tiles incl. real data freshness (Market.updatedAt) */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <MiniStat label="MARKETS" value={String(stat?.markets ?? 0)} sub={live ? "synced, unresolved" : "—"} />
-        <MiniStat label="ROBOTS" value={`${stat?.robotsActive ?? 0}/${stat?.robotsTotal ?? 0}`} sub="active / total" />
-        <MiniStat label="OPEN POSITIONS" value={String(stat?.openPositions ?? 0)} sub="in trade now" />
-        <MiniStat label="EXPOSURE" value={fmtCents(stat?.exposureCents ?? 0)} sub="open notional" />
+        <MiniStat label="MARKETS SYNCED" value={String(stat?.markets ?? 0)} sub={live ? "unresolved" : "—"} />
+        <MiniStat label="ACTIVE ROBOTS" value={`${stat?.robotsActive ?? 0} / ${stat?.robotsTotal ?? 0}`} sub={`${stat?.robotsTotal ?? 0} scoped here`} />
+        <MiniStat label="OPEN EXPOSURE" value={fmtCents(stat?.exposureCents ?? 0)} sub={`${stat?.openPositions ?? 0} position${stat?.openPositions === 1 ? "" : "s"} in trade`} />
         <MiniStat
-          label="UNREALIZED"
+          label="TODAY (PAPER MARK)"
           value={stat && stat.openPositions > 0 ? pnlText(stat.unrealizedCents) : "—"}
-          sub="paper mark"
+          sub="open mark-to-market"
           tone={stat && stat.openPositions > 0 ? (stat.unrealizedCents > 0 ? "gain" : stat.unrealizedCents < 0 ? "loss" : "text") : "text"}
         />
+        <MiniStat label="DATA FRESHNESS" value={freshLabel} sub={freshSub} />
       </div>
 
-      {/* robots + markets */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className={`${card} p-4`}>
-          <SectionTitle right={<span className={`text-[11px] ${c.text3}`}>{vRobots.length} robot{vRobots.length === 1 ? "" : "s"} scoped here</span>}>
-            Robots on <span className="vc-text">{v.label}</span>
-          </SectionTitle>
-          <div className="flex flex-col gap-2.5">
-            {vRobots.map((r) => (
-              <div key={r.id} className={`rounded-lg border p-3 ${c.border} ${c.elevated}`}>
-                <div className="flex items-center justify-between">
-                  <Pill status={r.status} />
-                  <span className={`text-[10px] ${c.text3}`}>v{r.activeVersion}</span>
-                </div>
-                <div className="mt-2 text-[13px] font-semibold">{r.name}</div>
-                <div className={`mt-0.5 text-[11px] ${c.text3}`}>{FAMILY_LABEL[r.family] ?? r.family}</div>
-                <div className={`mt-2 border-t pt-2 text-[11px] ${c.border} ${c.text2}`}>
-                  <span className={mono}>alloc {fmtCents(r.allocatedCents)}</span>
-                  <span className={`ml-3 ${mono}`}>pos cap {fmtCents(r.maxPositionCents)}</span>
-                  <span className={`ml-3 ${mono}`}>open ≤ {r.maxOpenPositions}</span>
-                </div>
-                {r.statusReason && <div className={`mt-1.5 text-[10.5px] ${c.warn}`}>{r.statusReason}</div>}
-              </div>
-            ))}
-            {vRobots.length === 0 && (
-              <div className={`py-5 text-center text-[12px] ${c.text3}`}>
-                {live
-                  ? `No robots on ${v.label} yet — “+ Create robot on ${v.label}” above starts the wizard pre-scoped to this venue.`
-                  : `Robots cannot be scoped to ${v.label} until its adapter ships (B11).`}
-              </div>
-            )}
+      {/* markets (left) + robots & rules rail (right) */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className={`${card} overflow-hidden lg:col-span-2`}>
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3 pb-2">
+            <div className="flex items-center gap-2 text-[13px] font-semibold">
+              <span className="vc-bg h-2 w-2 rounded-[3px]" aria-hidden />
+              <span>Markets on <span className="vc-text">{v.label}</span></span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {filterChip("all", "All", vMarkets.length)}
+              {filterChip("closing", "Closing soon", closingSoon.length, "Close date within 14 days")}
+              {rules.minTouchDepthCents != null &&
+                filterChip("thin", "Thin book", thinBook.length, `Touch depth below the ${fmtCents(rules.minTouchDepthCents)} venue minimum — entries refused (S-05)`)}
+            </div>
           </div>
-        </div>
-
-        <div className={`${card} overflow-hidden`}>
-          <div className="flex items-center gap-2 px-4 pt-3 pb-2 text-[13px] font-semibold">
-            <span className="vc-bg h-2 w-2 rounded-[3px]" aria-hidden />
-            <span>Markets on <span className="vc-text">{v.label}</span></span>
-          </div>
-          {vMarkets.length > 0 ? (
-            <div className="fd-scroll max-h-[420px] overflow-y-auto">
+          {shownMarkets.length > 0 ? (
+            <div className="fd-scroll max-h-[460px] overflow-y-auto">
               <table className="w-full">
                 <thead className={`sticky top-0 ${c.surface}`}>
                   <tr className={`border-b text-left text-[10px] tracking-wider ${c.border} ${c.text3}`}>
                     <th className="px-4 py-2.5 font-semibold">MARKET</th>
-                    <th className="px-3 py-2.5 font-semibold">YES</th>
-                    <th className="px-3 py-2.5 font-semibold">NO</th>
-                    <th className="hidden px-3 py-2.5 font-semibold sm:table-cell" title="USDC notional at the touch (best ask YES / best bid NO)">TOUCH</th>
-                    <th className="hidden px-3 py-2.5 font-semibold md:table-cell">SOURCE</th>
+                    <th className="px-3 py-2.5 font-semibold" title="YES price with a 0-100¢ bar in the venue hue">YES</th>
+                    <th className="hidden px-3 py-2.5 font-semibold sm:table-cell">NO</th>
+                    <th className="hidden px-3 py-2.5 font-semibold md:table-cell" title="USDC notional at the touch (best ask YES / best bid NO)">TOUCH</th>
+                    <th className="px-3 py-2.5 font-semibold whitespace-nowrap" title="Venue-reported lifetime volume (USDC)">VOLUME</th>
+                    <th className="hidden px-3 py-2.5 font-semibold lg:table-cell">SOURCE</th>
                     <th className="px-3 py-2.5" />
                   </tr>
                 </thead>
                 <tbody>
-                  {vMarkets.slice(0, 40).map((m) => {
-                    const depth =
-                      m.yesTouchDepthCents != null || m.noTouchDepthCents != null
-                        ? `${m.yesTouchDepthCents ?? "—"}¢ / ${m.noTouchDepthCents ?? "—"}¢`
-                        : null;
+                  {shownMarkets.slice(0, 40).map((m) => {
                     const thin =
-                      m.yesTouchDepthCents != null && m.yesTouchDepthCents < 5000;
+                      rules.minTouchDepthCents != null &&
+                      (m.yesTouchDepthCents == null || m.yesTouchDepthCents < rules.minTouchDepthCents);
                     return (
-                    <tr key={m.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#161D2B]`}>
-                      <td className={`max-w-[210px] px-4 py-2.5 sm:max-w-[300px] ${c.text}`}>
-                        <div className="truncate">{m.question}</div>
-                        <div className={`text-[10px] ${c.text3}`}>
-                          {m.category}
-                          {m.eventKey ? ` · ⛭ event cluster ${m.eventKey}` : ""}
-                          {m.ambiguityFlag ? " · ⚠ ambiguity check" : ""}
-                        </div>
-                      </td>
-                      <td className={`px-3 py-2.5 ${mono} ${c.text}`}>{m.yesPriceCents ?? "—"}¢</td>
-                      <td className={`px-3 py-2.5 ${mono} ${c.text2}`}>{m.noPriceCents ?? "—"}¢</td>
-                      <td className={`hidden px-3 py-2.5 sm:table-cell ${mono} ${c.text2}`} title="USDC notional at the touch (best ask YES / best bid NO) — entry refused below the venue minimum (S-05 rule a)">
-                        {depth ? (
-                          <span className={thin ? c.warn : c.text2}>{depth}</span>
-                        ) : (
-                          <span className={c.text3}>—</span>
-                        )}
-                      </td>
-                      <td className="hidden px-3 py-2.5 md:table-cell">
-                        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${m.dataSource.endsWith("_LIVE") ? `${c.bright} bg-[#00B0F0]/10` : `${c.warn} bg-[#E3A63B]/10`}`}>
-                          {m.dataSource.endsWith("_LIVE") ? "LIVE" : "CACHED"}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 text-right">
-                        <Button size="sm" variant="outline" className={`h-7 border-[#2C3648] bg-[#121722] text-[11px] text-[#E6EAF2] hover:bg-[#1A2432]`} onClick={() => onTrade(m)} disabled={m.ambiguityFlag}>
-                          {m.ambiguityFlag ? "Flagged" : "Trade"}
-                        </Button>
-                      </td>
-                    </tr>
+                      <tr key={m.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#161D2B]`}>
+                        <td className={`max-w-[210px] px-4 py-2.5 sm:max-w-[300px] ${c.text}`}>
+                          <div className="truncate">{m.question}</div>
+                          <div className={`text-[10px] ${c.text3}`}>
+                            {m.category}
+                            {m.closeDate ? ` · closes ${new Date(m.closeDate).toLocaleDateString("en-US", { day: "numeric", month: "short" })}` : ""}
+                            {m.eventKey ? (
+                              <span title={`A-04 event cluster ${m.eventKey} — positions here stack in the per-event exposure cap`}> · ⛭ cluster</span>
+                            ) : null}
+                            {m.ambiguityFlag ? " · ⚠ ambiguity check" : ""}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          <span className={`${mono} ${c.text}`}>{m.yesPriceCents ?? "—"}¢</span>
+                          <span className={`mt-1 block h-1 w-16 rounded ${c.elevated}`} title={`YES at ${m.yesPriceCents ?? "?"}¢ on a 0-100¢ scale`}>
+                            <span
+                              className="block h-full rounded"
+                              style={{ width: `${Math.min(100, Math.max(0, m.yesPriceCents ?? 0))}%`, background: "var(--vc)" }}
+                            />
+                          </span>
+                        </td>
+                        <td className={`hidden px-3 py-2.5 whitespace-nowrap sm:table-cell ${mono} ${c.text2}`}>{m.noPriceCents ?? "—"}¢</td>
+                        <td className={`hidden px-3 py-2.5 whitespace-nowrap md:table-cell ${mono}`} title="USDC notional at the touch (best ask YES / best bid NO) — entry refused below the venue minimum (S-05 rule a)">
+                          {m.yesTouchDepthCents != null || m.noTouchDepthCents != null ? (
+                            <span className={thin ? c.warn : c.text2}>{m.yesTouchDepthCents ?? "—"}¢ / {m.noTouchDepthCents ?? "—"}¢</span>
+                          ) : (
+                            <span className={c.text3}>—</span>
+                          )}
+                        </td>
+                        <td className={`px-3 py-2.5 whitespace-nowrap text-right ${mono} ${m.volumeCents ? c.text2 : c.text3}`}>
+                          {m.volumeCents ? fmtCents(m.volumeCents) : "—"}
+                        </td>
+                        <td className="hidden px-3 py-2.5 lg:table-cell">
+                          <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${m.dataSource.endsWith("_LIVE") ? `${c.bright} bg-[#00B0F0]/10` : `${c.warn} bg-[#E3A63B]/10`}`}>
+                            {m.dataSource.endsWith("_LIVE") ? "LIVE" : "CACHED"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-right">
+                          <Button size="sm" variant="outline" className={`h-7 border-[#2C3648] bg-[#121722] text-[11px] text-[#E6EAF2] hover:bg-[#1A2432]`} onClick={() => onTrade(m)} disabled={m.ambiguityFlag}>
+                            {m.ambiguityFlag ? "Flagged" : "Trade"}
+                          </Button>
+                        </td>
+                      </tr>
                     );
                   })}
                 </tbody>
@@ -680,9 +757,85 @@ export function VenueWorkspace(props: {
             </div>
           ) : (
             <div className={`px-4 py-7 text-center text-[12px] ${c.text3}`}>
-              {live ? `No ${v.label} markets cached yet — press “Sync ${v.label}” above.` : `No ${v.label} markets — the adapter ships per the B9 roadmap.`}
+              {mktFilter === "closing"
+                ? `No ${v.label} markets close within 14 days — the All chip shows every synced market.`
+                : mktFilter === "thin"
+                  ? `No ${v.label} markets below the ${fmtCents(rules.minTouchDepthCents ?? 0)} touch minimum — the thin-book refusal has nothing to flag right now.`
+                  : live
+                    ? `No ${v.label} markets cached yet — press “Sync ${v.label}” above.`
+                    : `No ${v.label} markets — the adapter ships per the B9 roadmap.`}
             </div>
           )}
+        </div>
+
+        {/* right rail: robots with paper-mark P&L + the rules the engine enforces */}
+        <div className="flex flex-col gap-4">
+          <div className={`${card} p-4`}>
+            <div className="flex items-center justify-between">
+              <span className={`text-[13px] font-semibold`}>Robots on <span className="vc-text">{v.label}</span></span>
+              <span className={`text-[10.5px] ${c.text3}`}>{vRobots.length} scoped</span>
+            </div>
+            <div className="mt-3 flex flex-col gap-2.5">
+              {vRobots.map((r) => {
+                const rp = robotPnl.get(r.name);
+                const pnl = rp && rp.open > 0 ? rp.pnl : null;
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => onOpenRobot(r.id)}
+                    title={`Open ${r.name} — robot detail`}
+                    className={`w-full rounded-lg border p-3 text-left transition-colors ${c.border} ${c.elevated} hover:border-[#2C3648] hover:bg-[#161D2B]`}
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="min-w-0 truncate text-[13px] font-semibold">{r.name}</span>
+                      <span className={`shrink-0 whitespace-nowrap text-[12px] font-semibold ${mono} ${pnlClass(pnl)}`}>{pnlText(pnl)}</span>
+                    </div>
+                    <div className={`mt-1 flex items-center justify-between text-[11px] ${c.text3}`}>
+                      <span className="truncate">{FAMILY_LABEL[r.family] ?? r.family} · {r.status.replace("_", " ").toLowerCase()}</span>
+                      <span className={mono}>v{r.activeVersion}</span>
+                    </div>
+                    <div className={`mt-2 border-t pt-2 text-[11px] ${c.border} ${c.text2}`}>
+                      <span className={mono}>alloc {fmtCents(r.allocatedCents)}</span>
+                      <span className={`ml-3 ${mono}`}>cap {fmtCents(r.maxPositionCents)}</span>
+                      <span className={`ml-3 ${mono}`}>open ≤ {r.maxOpenPositions}</span>
+                    </div>
+                    {r.statusReason && <div className={`mt-1.5 text-[10.5px] ${c.warn}`}>{r.statusReason}</div>}
+                  </button>
+                );
+              })}
+              {vRobots.length === 0 && (
+                <div className={`py-5 text-center text-[12px] ${c.text3}`}>
+                  {live
+                    ? `No robots on ${v.label} yet — “+ New robot on ${v.label}” starts the wizard pre-scoped to this venue.`
+                    : `Robots cannot be scoped to ${v.label} until its adapter ships (B11).`}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* venue rules — the real structural config the engine enforces (S-05) */}
+          <div className={`${card} p-4`}>
+            <div className="text-[13px] font-semibold">Venue rules</div>
+            <div className="mt-2.5 flex flex-col">
+              {[
+                { k: "Adapter", val: live ? "LIVE · market data" : "PENDING · B9 roadmap" },
+                { k: "Credential kind", val: credential[v.id] ?? "—" },
+                { k: "Min touch depth", val: rules.minTouchDepthCents != null ? `${fmtCents(rules.minTouchDepthCents)} at the touch` : "not armed" },
+                { k: "Per-market cap", val: rules.perMarketPositionCapCents != null ? `${fmtCents(rules.perMarketPositionCapCents)} user-wide` : "not armed" },
+                { k: "Close window", val: rules.minMinutesBeforeClose != null ? `${rules.minMinutesBeforeClose} min before close` : "not armed" },
+                { k: "Taker fee", val: feeRange ?? "snapshot missing" },
+                { k: "Data source", val: vMarkets.length ? `${liveSrc} live · ${vMarkets.length - liveSrc} cached` : "—" },
+              ].map((row) => (
+                <div key={row.k} className={`flex items-baseline justify-between gap-3 border-b py-1.5 last:border-0 ${c.border}`}>
+                  <span className={`shrink-0 text-[11.5px] ${c.text3}`}>{row.k}</span>
+                  <span className={`text-right text-[11.5px] ${c.text2} ${row.k !== "Adapter" && row.k !== "Credential kind" ? mono : ""}`}>{row.val}</span>
+                </div>
+              ))}
+            </div>
+            <div className={`mt-2 text-[10px] leading-snug ${c.text3}`}>
+              Enforced by the shared risk engine at cycle and ticket time — config in src/lib/venue/rules.ts, never hardcoded at call sites (C4.4).
+            </div>
+          </div>
         </div>
       </div>
 
@@ -724,9 +877,9 @@ export function VenueWorkspace(props: {
                       <td className="px-3 py-2.5">
                         <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${p.side === "YES" ? `${c.gain} bg-[#2FC08E]/10` : `${c.warn} bg-[#E3A63B]/10`}`}>{p.side}</span>
                       </td>
-                      <td className={`px-3 py-2.5 ${mono} ${c.text}`}>{fmtCents(p.sizeCents)}</td>
-                      <td className={`px-3 py-2.5 ${mono} ${c.text2}`}>{p.avgPriceCents}¢ → {mark != null ? `${mark}¢` : "—"}</td>
-                      <td className={`px-4 py-2.5 ${mono} font-semibold ${pnlClass(p.unrealizedCents)}`}>{pnlText(p.unrealizedCents)}</td>
+                      <td className={`px-3 py-2.5 whitespace-nowrap ${mono} ${c.text}`}>{fmtCents(p.sizeCents)}</td>
+                      <td className={`px-3 py-2.5 whitespace-nowrap ${mono} ${c.text2}`}>{p.avgPriceCents}¢ → {mark != null ? `${mark}¢` : "—"}</td>
+                      <td className={`px-4 py-2.5 whitespace-nowrap ${mono} font-semibold ${pnlClass(p.unrealizedCents)}`}>{pnlText(p.unrealizedCents)}</td>
                     </tr>
                   );
                 })}
@@ -758,8 +911,8 @@ export function VenueWorkspace(props: {
                   {vOrders.map((o) => (
                     <tr key={o.id} className={`border-b text-[12px] last:border-0 ${c.border}`}>
                       <td className={`max-w-[220px] truncate px-4 py-2 ${c.text}`}>{o.market?.question}{o.robot ? ` · ${o.robot.name}` : ""}</td>
-                      <td className={`px-3 py-2 ${c.text2}`}>{o.side.replace("BUY_", "BUY ")}</td>
-                      <td className={`px-3 py-2 ${mono} ${c.text2}`}>{fmtCents(o.sizeCents)}</td>
+                      <td className={`px-3 py-2 whitespace-nowrap ${c.text2}`}>{o.side.replace("BUY_", "BUY ")}</td>
+                      <td className={`px-3 py-2 whitespace-nowrap ${mono} ${c.text2}`}>{fmtCents(o.sizeCents)}</td>
                       <td className="px-4 py-2"><StateChip state={o.state} /></td>
                     </tr>
                   ))}

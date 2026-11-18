@@ -62,7 +62,14 @@ export async function GET(req: NextRequest) {
       db.outboxEvent.count({ where: { status: "PENDING" } }),
       getPauseState(),
       getAutopilotState(),
-      db.market.groupBy({ by: ["venue"], where: { resolvedAt: null }, _count: { venue: true } }),
+      // one pass: per-venue market count + the last sync touch (_max updatedAt)
+      // drives the workspace "data freshness" stat honestly (redesign Phase 11)
+      db.market.groupBy({
+        by: ["venue"],
+        where: { resolvedAt: null },
+        _count: { venue: true },
+        _max: { updatedAt: true },
+      }),
       db.notification.count({ where: { userId: user.id, severity: { in: ["CRITICAL", "WARNING"] } } }),
     ]);
 
@@ -85,6 +92,7 @@ export async function GET(req: NextRequest) {
     return {
       venue: v.id,
       markets: marketGroups.find((g) => g.venue === v.id)?._count.venue ?? 0,
+      syncedAt: marketGroups.find((g) => g.venue === v.id)?._max.updatedAt?.toISOString() ?? null,
       robotsTotal: vRobots.length,
       robotsActive: vRobots.filter((r) => r.status === "RUNNING").length,
       openPositions: vPositions.length,
