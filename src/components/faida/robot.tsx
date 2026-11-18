@@ -55,8 +55,9 @@ export function RobotDetail(props: {
   onEditStrategy: () => void;
   onCycleRobot: (robotId: string, name: string) => Promise<unknown> | void;
   onRobotStatus: (robotId: string, status: string, name: string) => Promise<unknown> | void;
+  onClosePosition: (positionId: string) => Promise<unknown> | void;
 }) {
-  const { robotId, busy, onBack, onBackLabel, onOpenVenue, onEditStrategy, onCycleRobot, onRobotStatus } = props;
+  const { robotId, busy, onBack, onBackLabel, onOpenVenue, onEditStrategy, onCycleRobot, onRobotStatus, onClosePosition } = props;
   const [data, setData] = useState<RobotDetailDTO | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [versions, setVersions] = useState<VersionRow[] | null>(null);
@@ -148,7 +149,7 @@ export function RobotDetail(props: {
       <EmptyState compact title="No open positions" body="Positions appear here when this robot enters a market." />
     ) : (
       <TableWrap minWidth={760}>
-        <thead><tr><th className={th}>Market</th><th className={th}>Side</th><th className={`${th} text-right`}>Entry</th><th className={`${th} text-right`}>Current</th><th className={`${th} text-right`}>Size</th><th className={`${th} text-right`}>Unrealized</th><th className={th}>Opened</th></tr></thead>
+        <thead><tr><th className={th}>Market</th><th className={th}>Side</th><th className={`${th} text-right`}>Entry</th><th className={`${th} text-right`}>Current</th><th className={`${th} text-right`}>Size</th><th className={`${th} text-right`}>Unrealized</th><th className={th}>Opened</th><th className={th}><span className="sr-only">Actions</span></th></tr></thead>
         <tbody>
           {positions.map((p) => {
             const mark = p.side === "YES" ? p.market?.yesPriceCents : p.market?.noPriceCents;
@@ -161,6 +162,9 @@ export function RobotDetail(props: {
                 <td className={`${td} fd-num text-right`}>{money(p.sizeCents)}</td>
                 <td className={`${td} fd-num text-right font-semibold ${toneText[toneOf(p.unrealizedCents)]}`}>{p.unrealizedCents != null ? money(p.unrealizedCents, { sign: true }) : "—"}</td>
                 <td className={`${td} text-[var(--fd-text-soft)]`}>{ago(p.openedAt)}</td>
+                <td className={`${td} text-right`}>
+                  <button className={btn.small} disabled={busy !== null || robot.mode === "LIVE_PILOT"} onClick={async () => { await onClosePosition(p.id); setTick((x) => x + 1); }}>Close</button>
+                </td>
               </tr>
             );
           })}

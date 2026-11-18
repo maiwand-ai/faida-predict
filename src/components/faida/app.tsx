@@ -246,6 +246,7 @@ export default function FaidaApp() {
   const pauseAll = () => post("/api/control", { action: "PAUSE", reason: "manual pause from navigation" }, "Everything paused: robot cycles and new orders stop until you resume");
   const signOut = async () => { await fetch("/api/auth/logout", { method: "POST" }); await refreshMe(); toast({ title: "Signed out" }); };
   const runCycle = () => post("/api/cycle", {}, "Robot cycle executed");
+  const closePosition = (positionId: string) => post("/api/orders", { action: "CLOSE_POSITION", positionId }, "Position closed");
 
   const sidebar = (inDrawer: boolean) => (
     <Sidebar
@@ -301,6 +302,7 @@ export default function FaidaApp() {
               onOpenMarket={openMarket}
               onNavigate={navigate}
               onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, `${name} → ${status.replace("_", " ").toLowerCase()}`)}
+              onClosePosition={closePosition}
             />
           )}
           {view === "venue" && venueFocus && (
@@ -329,6 +331,7 @@ export default function FaidaApp() {
               onOpenVenue={openVenue}
               onOpenMarket={openMarket}
               onEditStrategy={() => navigate({ view: "studio", tab: "library" })}
+              onClosePosition={closePosition}
               onCycleRobot={(rid, name) => post(`/api/robots/${rid}/cycle`, {}, `${name} cycle executed`)}
               onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, `${name} → ${status.replace("_", " ").toLowerCase()}`)}
             />
@@ -398,6 +401,7 @@ export default function FaidaApp() {
               onTradeSomething={() => navigate({ view: "markets", tab: "trending" })}
               onOpenMarket={openMarket}
               onOpenRobot={openRobot}
+              onClosePosition={closePosition}
             />
           )}
           {view === "analytics" && (

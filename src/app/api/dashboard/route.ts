@@ -1,10 +1,11 @@
 // Aggregated overview for the single-page dashboard.
 // Phase 10: request-scoped auth — robots/positions/traces scope to the acting
 // user; market counts and platform state stay shared.
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { getAutopilotState, getPauseState } from "@/lib/control";
 import { ensureAutopilotTimer } from "@/lib/engine/autopilot";
+import { runScheduledTick } from "@/lib/engine/scheduler";
 import { VENUES } from "@/lib/venues";
 import { resolveAuth } from "@/lib/auth";
 
@@ -28,7 +29,14 @@ export async function GET(req: NextRequest) {
   const auth = await resolveAuth(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const user = auth.ctx.user;
-  await ensureAutopilotTimer(); // self-heal the loop after a process restart
+  if (process.env.VERCEL) {
+    // serverless: no long-lived timer survives between requests, so while the
+    // app is open its dashboard polls drive the scheduled tick (after the
+    // response is sent, so the dashboard stays fast)
+    after(() => runScheduledTick().catch(() => undefined));
+  } else {
+    await ensureAutopilotTimer(); // self-heal the loop after a process restart
+  }
 
   const [robots, lastLedger, orders, positions, traces, notifications, marketCount, providers, riskRows, wallet, outboxPending, pause, autopilot, marketGroups, openAlerts] =
     await Promise.all([
@@ -41,7 +49,7 @@ export async function GET(req: NextRequest) {
         include: { market: { select: { question: true, venue: true } } },
       }),
       db.position.findMany({
-        where: { status: "OPEN", robot: { userId: user.id } },
+        where: { status: "OPEN", OR: [{ robot: { userId: user.id } }, { userId: user.id }] },
         include: {
           market: { select: { question: true, venue: true, yesPriceCents: true, noPriceCents: true, eventKey: true } },
           robot: { select: { name: true } },
@@ -73,12 +81,14 @@ export async function GET(req: NextRequest) {
       db.notification.count({ where: { userId: user.id, severity: { in: ["CRITICAL", "WARNING"] } } }),
     ]);
 
-  // exposure + daily P&L (paper)
+  // exposure + daily P&L (paper): realized gains/losses (SETTLEMENT) and fees
+  // booked today. Cash spent opening positions is not a loss; open positions
+  // are reported separately at their mark.
   const exposure = positions.reduce((a, p) => a + p.sizeCents, 0);
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);
   const todayEntries = await db.ledgerEntry.findMany({
-    where: { userId: user.id, mode: "PAPER", createdAt: { gte: startOfDay }, type: { in: ["FILL", "FEE", "SETTLEMENT"] } },
+    where: { userId: user.id, mode: "PAPER", createdAt: { gte: startOfDay }, type: { in: ["FEE", "SETTLEMENT"] } },
   });
   const balance = lastLedger[0]?.balanceAfterCents ?? 0;
 

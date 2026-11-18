@@ -195,10 +195,10 @@ export async function preTradeRiskChecks(params: {
   //    Market-wide across the user's robots: thin books make big exits costly.
   //    Applies to robots AND manual tickets — structural means structural.
   if (rules.perMarketPositionCapCents != null) {
-    // Position has no direct user link — market-wide = all the user's robots
+    // market-wide = all the user's robot positions plus manual positions
     // on this market (linked through Robot.userId).
     const perMarketUser = await db.position.aggregate({
-      where: { robot: { userId: params.userId }, marketId: params.marketId, status: "OPEN" },
+      where: { OR: [{ robot: { userId: params.userId } }, { userId: params.userId }], marketId: params.marketId, status: "OPEN" },
       _sum: { sizeCents: true },
     });
     const marketTotal = (perMarketUser._sum?.sizeCents ?? 0) + sizeCents;

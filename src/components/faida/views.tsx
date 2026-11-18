@@ -93,8 +93,9 @@ export function TradingView(props: {
   onTradeSomething: () => void;
   onOpenMarket: (id: string) => void;
   onOpenRobot: (id: string) => void;
+  onClosePosition: (positionId: string) => void;
 }) {
-  const { markets, dash, ordersData, busy, tab, onTab, onPlace, onSimulateAckLoss, onReconcile, hasUnknown, onTradeSomething, onOpenMarket } = props;
+  const { markets, dash, ordersData, busy, tab, onTab, onPlace, onSimulateAckLoss, onReconcile, hasUnknown, onTradeSomething, onOpenMarket, onClosePosition } = props;
   const [q, setQ] = useState("");
   const [venue, setVenue] = useState("ALL");
   const [side, setSide] = useState("ALL");
@@ -158,7 +159,7 @@ export function TradingView(props: {
         </>
       )}
       <button className={btn.small} onClick={() => setSortDesc((d) => !d)} aria-label="Toggle sort order">{sortDesc ? "Newest first" : "Oldest first"}</button>
-      <button className={btn.small} onClick={exportCurrent}><Download size={14} /> Export CSV</button>
+      <button className={btn.small} onClick={exportCurrent} disabled={(tab === "positions" ? posRows : tab === "ledger" ? ledgerRows : orderRows).length === 0} title="Download the rows shown as CSV"><Download size={14} /> Export CSV</button>
     </div>
   );
 
@@ -209,7 +210,7 @@ export function TradingView(props: {
           ) : (
             <>
               <TableWrap minWidth={900}>
-                <thead><tr><th className={th}>Market</th><th className={th}>Venue</th><th className={th}>Robot</th><th className={th}>Side</th><th className={`${th} text-right`}>Entry</th><th className={`${th} text-right`}>Current</th><th className={`${th} text-right`}>Size</th><th className={`${th} text-right`}>Unrealized</th></tr></thead>
+                <thead><tr><th className={th}>Market</th><th className={th}>Venue</th><th className={th}>Robot</th><th className={th}>Side</th><th className={`${th} text-right`}>Entry</th><th className={`${th} text-right`}>Current</th><th className={`${th} text-right`}>Size</th><th className={`${th} text-right`}>Unrealized</th><th className={th}><span className="sr-only">Actions</span></th></tr></thead>
                 <tbody>
                   {pageSlice(posRows).map((p) => {
                     const mark = p.side === "YES" ? p.market?.yesPriceCents : p.market?.noPriceCents;
@@ -223,6 +224,9 @@ export function TradingView(props: {
                         <td className={`${td} fd-num text-right`}>{mark != null ? `${mark}¢` : "—"}</td>
                         <td className={`${td} fd-num text-right`}>{money(p.sizeCents)}</td>
                         <td className={`${td} fd-num text-right font-semibold ${toneText[toneOf(p.unrealizedCents)]}`}>{p.unrealizedCents != null ? money(p.unrealizedCents, { sign: true }) : "—"}</td>
+                        <td className={`${td} text-right`}>
+                          <button className={btn.small} disabled={busy !== null} onClick={(e) => { e.stopPropagation(); onClosePosition(p.id); }} aria-label={`Close position on ${p.market?.question ?? "market"}`}>Close</button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -277,7 +281,7 @@ export function TradingView(props: {
                   {pageSlice(ledgerRows).map((l) => (
                     <tr key={l.id} className={trow}>
                       <td className={`${td} fd-num whitespace-nowrap text-[var(--fd-text-soft)]`}>{new Date(l.createdAt).toISOString().replace("T", " ").slice(0, 19)}</td>
-                      <td className={td}><Badge tone={l.type === "DEPOSIT" ? "cyan" : l.type === "FEE" ? "amber" : "neutral"}>{l.type.toLowerCase()}</Badge></td>
+                      <td className={td}><Badge tone={l.type === "DEPOSIT" ? "cyan" : l.type === "FEE" ? "amber" : l.type === "SETTLEMENT" ? (l.amountCents >= 0 ? "green" : "red") : l.type === "CLOSE" ? "blue" : "neutral"}>{({ FILL: "buy", CLOSE: "cost returned", SETTLEMENT: "realized p&l", FEE: "fee", DEPOSIT: "deposit" } as Record<string, string>)[l.type] ?? l.type.toLowerCase()}</Badge></td>
                       <td className={`${td} fd-num text-right font-semibold ${l.amountCents < 0 ? "text-[var(--fd-red-text)]" : "text-[var(--fd-green-text)]"}`}>{money(l.amountCents, { sign: true })}</td>
                       <td className={`${td} fd-num text-right`}>{money(l.balanceAfterCents)}</td>
                       <td className={`${td} max-w-[420px] truncate text-[var(--fd-text2)]`}>{l.memo}</td>
@@ -349,6 +353,8 @@ export function TradingView(props: {
                 <KV k="Payout if correct" v={money(Math.round((detail.sizeCents / Math.max(1, detail.avgPriceCents)) * 100))} mono />
                 {detail.market?.eventKey && <KV k="Event cluster" v={detail.market.eventKey} mono />}
               </div>
+              <button className={btn.danger} disabled={busy !== null} onClick={() => { onClosePosition(detail.id); setDetail(null); }}>Close position at current price</button>
+              <p className="text-[13px] text-[var(--fd-text3)]">Sells the whole position at the venue&apos;s current price for this side. The realized gain or loss is booked to your paper ledger.</p>
             </div>
           )}
         </SheetContent>

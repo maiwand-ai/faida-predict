@@ -86,7 +86,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   for (const e of ledger) {
     const day = e.createdAt.toISOString().slice(0, 10);
     const b = byDay.get(day) ?? { fill: 0, fee: 0, settle: 0, net: 0 };
-    if (e.type === "FILL") { b.fill += -e.amountCents; b.net += e.amountCents; }
+    if (e.type === "FILL") { b.fill += -e.amountCents; } // buying is not realized P&L
     else if (e.type === "FEE") { b.fee += -e.amountCents; b.net += e.amountCents; }
     else { b.settle += e.amountCents; b.net += e.amountCents; }
     byDay.set(day, b);

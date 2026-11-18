@@ -10,6 +10,7 @@ import { ArrowDownRight, ArrowLeft, ArrowUpRight, Compass, RefreshCw, Star } fro
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import type { DashboardDTO, MarketDTO, OrderRowDTO, TraceDTO } from "./types";
 import { VENUES, venueColor } from "@/lib/venues";
+import { EMPTY_ENTRY_RULES, VENUE_ENTRY_RULES } from "@/lib/venue/rules";
 import {
   AreaChart, Badge, btn, decisionBadge, EmptyState, KV, money, orderStateBadge, PageHeader, PageSkeleton, Panel,
   Segmented, shortDate, Tabs, TableWrap, td, th, trow, VenueTag, ago,
@@ -729,6 +730,21 @@ function TicketBody({ market, t, disabledReason, busy, onSubmit }: { market: Mar
   );
 }
 
+// The venue's structural entry rules (minimum book depth, close window), checked
+// before submitting so the ticket explains a refusal up front. The risk engine
+// still enforces them server-side; this only mirrors the same rule for clarity.
+function structuralBlock(market: MarketDTO, side: "BUY_YES" | "BUY_NO"): string | null {
+  const rules = VENUE_ENTRY_RULES[market.venue] ?? EMPTY_ENTRY_RULES;
+  const depth = side === "BUY_YES" ? market.yesTouchDepthCents : market.noTouchDepthCents;
+  if (rules.minTouchDepthCents != null && (depth == null || depth < rules.minTouchDepthCents)) {
+    return `The order book is too thin: ${depth != null ? money(depth) : "no depth"} available at the best price, and this venue requires at least ${money(rules.minTouchDepthCents)}.`;
+  }
+  if (rules.minMinutesBeforeClose != null && market.closeDate && new Date(market.closeDate).getTime() - Date.now() < rules.minMinutesBeforeClose * 60_000) {
+    return `New entries stop ${rules.minMinutesBeforeClose} minutes before this market closes.`;
+  }
+  return null;
+}
+
 function TradePanel({ market, venueLive, closed, busy, onPlace }: { market: MarketDTO; venueLive: boolean; closed: boolean; busy: string | null; onPlace: (p: unknown) => Promise<void> }) {
   const t = useTicket(market);
   const disabledReason = market.ambiguityFlag
@@ -737,7 +753,7 @@ function TradePanel({ market, venueLive, closed, busy, onPlace }: { market: Mark
       ? "This venue's adapter is not live, so orders can't be placed here."
       : closed
         ? "This market is closed."
-        : null;
+        : structuralBlock(market, t.side);
   return (
     <Panel title="Trade" subtitle="Manual paper order" action={<Badge tone="amber" dot>Paper</Badge>}>
       <TicketBody
@@ -764,7 +780,7 @@ function TradeDialogInner({ market, onClose, onPlace, busy }: { market: MarketDT
     ? "Trading is blocked: the resolution criteria were flagged as ambiguous."
     : def?.adapter !== "LIVE"
       ? "This venue's adapter is not live, so orders can't be placed here."
-      : null;
+      : structuralBlock(market, t.side);
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-h-[92vh] overflow-y-auto border-[var(--fd-border2)] bg-[var(--fd-surface)] text-[var(--fd-text)] sm:max-w-[460px]">

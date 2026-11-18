@@ -61,13 +61,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ path: string[] 
   }
   if (entity === "positions") {
     const rows = await db.position.findMany({
-      where: { robot: { userId: key.userId } },
+      where: { OR: [{ robot: { userId: key.userId } }, { userId: key.userId }] },
       orderBy: { openedAt: "desc" },
       take: limit,
       include: { market: { select: { venue: true, question: true } }, robot: { select: { name: true } } },
     });
     return NextResponse.json({ data: rows.map((p) => ({
-      id: p.id, venue: p.market.venue, market: p.market.question, robot: p.robot.name,
+      id: p.id, venue: p.market.venue, market: p.market.question, robot: p.robot?.name ?? "manual",
       side: p.side, sizeCents: p.sizeCents, avgPriceCents: p.avgPriceCents, status: p.status, openedAt: p.openedAt,
     })) });
   }

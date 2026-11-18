@@ -35,6 +35,7 @@ model User {
   betaMember     BetaMember?
   robotSessions  RobotSession[]
   feedback       BetaFeedback[]
+  positions      Position[]
 }
 
 // Phase 10: cookie sessions. The token is random 32 bytes shown once in the
@@ -312,7 +313,10 @@ model Fill {
 
 model Position {
   id           String   @id @default(cuid())
-  robotId      String
+  // robot positions carry robotId; manual paper positions have no robot and
+  // are owned through userId (set on every new position)
+  robotId      String?
+  userId       String?
   marketId     String
   side         String   // YES | NO
   sizeCents    Int
@@ -320,8 +324,11 @@ model Position {
   status       String   @default("OPEN") // OPEN | CLOSED | SETTLED
   openedAt     DateTime @default(now())
   closedAt     DateTime?
-  robot        Robot    @relation(fields: [robotId], references: [id])
+  robot        Robot?   @relation(fields: [robotId], references: [id])
+  user         User?    @relation(fields: [userId], references: [id])
   market       Market   @relation(fields: [marketId], references: [id])
+
+  @@index([userId, status])
 }
 
 // P-02: virtual paper ledger — separate from any future live ledger by `mode`.
