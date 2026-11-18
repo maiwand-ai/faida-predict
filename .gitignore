@@ -61,3 +61,6 @@ dev-smoke10.log
 
 # local SQLite database (DATABASE_URL resolves relative to prisma/)
 /prisma/db
+
+# generated at build time from schema.prisma (Vercel / Postgres)
+/prisma/schema.postgres.prisma

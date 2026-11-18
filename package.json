@@ -30,7 +30,8 @@
     "record:kalshi": "bun scripts/record-fixtures-kalshi.ts",
     "selftest:kalshi": "bun scripts/kalshi_selftest.ts",
     "smoke:phase9": "python3 scripts/smoke_phase9.py",
-    "shoot:phase9": "bun scripts/shoot-phase9.ts"
+    "shoot:phase9": "bun scripts/shoot-phase9.ts",
+    "vercel-build": "node scripts/schema-postgres.mjs && prisma generate --schema prisma/schema.postgres.prisma && prisma db push --schema prisma/schema.postgres.prisma --skip-generate && (if command -v bun >/dev/null; then bun prisma/seed.ts; else npx -y tsx prisma/seed.ts; fi) && next build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
