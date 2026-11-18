@@ -2,7 +2,7 @@
 // Discloses the acting user AND the auth mode (D-03: the fallback posture is
 // visible, never implied). 401 in strict mode without a session.
 import { NextResponse } from "next/server";
-import { resolveAuth } from "@/lib/auth";
+import { resolveAuth, strictAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +18,6 @@ export async function GET(req: Request) {
       country: auth.ctx.user.country,
     },
     via: auth.ctx.via,
-    strictAuth: process.env.BETA_STRICT_AUTH === "1",
+    strictAuth: strictAuth(),
   });
 }

@@ -68,6 +68,8 @@ export default function FaidaApp() {
   const refreshMe = useCallback(async () => {
     try {
       const res = await fetch("/api/auth/me");
+      // strict sign-in and no session: send the visitor to the login page
+      if (res.status === 401) { window.location.assign("/login"); return; }
       const json = await safeJson<{ user: { id: string; email: string; role: string; name: string | null }; via: string }>(res);
       if (json?.user) setMe({ ...json.user, via: json.via });
     } catch { /* transient — next poll recovers */ }
