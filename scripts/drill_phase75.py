@@ -33,6 +33,8 @@ T = int(time.time() * 1000)
 failures = []
 cleanup = {"robots": [], "orders": [], "outbox": [], "ledger_refids": []}
 fee_backup = {}   # marketId -> (yes, no) original fee bps
+volume_backup = {}  # marketId -> original volumeCents (R4 engine-pick coherence, restored in cleanup_all)
+MIN_TOUCH = {"LIMITLESS": 5000, "KALSHI": 5000}  # armed structural rule (a) per src/lib/venue/rules.ts
 flag_backup = {}  # marketId -> original ambiguityFlag
 
 
@@ -84,6 +86,8 @@ def cleanup_all():
     conn.execute("DELETE FROM MarketPriceTick WHERE capturedAt >= ?", (T - 1000,))
     for mid, (y, n) in fee_backup.items():
         conn.execute("UPDATE Market SET yesTakerFeeBps = ?, noTakerFeeBps = ? WHERE id = ?", (y, n, mid))
+    for mid, v in volume_backup.items():
+        conn.execute("UPDATE Market SET volumeCents = ? WHERE id = ?", (v, mid))
     for mid, f in flag_backup.items():
         conn.execute("UPDATE Market SET ambiguityFlag = ? WHERE id = ?", (f, mid))
     conn.commit()
@@ -248,21 +252,52 @@ def drill_r4():
         venue = "MANIFOLD"
         seeded_fee = True
         print(f"  (no venue ships fee snapshots in this DB — seeding a config fee on MANIFOLD, C4.4: fee schedule is config)")
-    # Depth-qualified selection (Phase 10 fix): the armed venue entry rules
-    # refuse thin touch depth (e.g. LIMITLESS rule (a) min 5000¢, fail-closed
-    # on null) — the drill must exercise a market the risk gate would allow.
+    # Fixture step (mirror of the MANIFOLD step in main): best-effort refresh
+    # of the chosen venue's books through the REAL sync API so freshness (S-10)
+    # and the depth columns reflect a real book — never faked (D-03).
+    sm, scode = api("POST", "/api/markets", {"venue": venue}, timeout=180)
+    print(f"  (fixture sync {venue}: HTTP {scode} synced={sm.get('synced')} source={sm.get('source')})" if isinstance(sm, dict) else f"  (fixture sync {venue}: HTTP {scode})")
+    # Depth-qualified + fresh selection (Phase 10 fix, coherence-hardened
+    # 2026-11-18): the armed venue entry rules refuse thin or missing touch
+    # depth fail-closed (rule (a) on LIMITLESS/KALSHI — minTouchDepthCents per
+    # src/lib/venue/rules.ts), and the S-10 gate refuses stale books — so the
+    # drill must exercise a FRESH market the risk gate would allow on THIS
+    # venue's armed rules (the old NULL-depth branch was incoherent for venues
+    # where rule (a) is armed: fail-closed on null). If no market qualifies,
+    # the drill fails honestly instead of pricing no clause.
+    min_touch = MIN_TOUCH.get(venue)
+    if min_touch:
+        depth_clause = "(yesTouchDepthCents IS NOT NULL AND noTouchDepthCents IS NOT NULL AND yesTouchDepthCents >= ? AND noTouchDepthCents >= ?)"
+        depth_params = (min_touch, min_touch)
+    else:
+        depth_clause = "((yesTouchDepthCents IS NOT NULL AND noTouchDepthCents IS NOT NULL) OR (yesTouchDepthCents IS NULL AND noTouchDepthCents IS NULL))"
+        depth_params = ()
     market = conn.execute(
-        "SELECT id, yesTakerFeeBps, noTakerFeeBps FROM Market WHERE venue=? AND ambiguityFlag=0 AND resolvedAt IS NULL AND yesPriceCents IS NOT NULL AND ("
-        " (yesTouchDepthCents IS NOT NULL AND noTouchDepthCents IS NOT NULL AND yesTouchDepthCents >= 5000 AND noTouchDepthCents >= 5000)"
-        " OR (yesTouchDepthCents IS NULL AND noTouchDepthCents IS NULL)"
-        ") ORDER BY volumeCents DESC LIMIT 1",
-        (venue,),
+        "SELECT id, yesTakerFeeBps, noTakerFeeBps FROM Market WHERE venue=? AND ambiguityFlag=0 AND resolvedAt IS NULL AND yesPriceCents IS NOT NULL AND updatedAt > ? AND "
+        + depth_clause +
+        " ORDER BY volumeCents DESC LIMIT 1",
+        (venue, T - 890_000, *depth_params),
     ).fetchone()
     if not market:
-        check("R4 market available", False, f"no eligible market on {venue}")
+        check("R4 market available", False,
+              f"no fresh depth-qualified market on {venue} (armed touch rule needs both touches >= {min_touch}¢ when armed; books must be freshly synced — S-10)")
         conn.close()
         return
     mid = market["id"]
+    # Engine-pick coherence: the cycle engine evaluates the venue's TOP-VOLUME
+    # market (no depth condition) — if that is not the drill's depth-qualified
+    # pick, the structural rule correctly refuses the ENGINE's market and the
+    # fee clause is never priced (observed 2026-11-18: top-volume LIMITLESS
+    # book had NO touch 1500¢ vs minimum 5000¢ while the drill had picked a
+    # deeper market). Lift the picked market above the venue max so the engine
+    # and the drill evaluate the SAME book; restored in cleanup_all.
+    top = conn.execute(
+        "SELECT COALESCE(MAX(volumeCents), 0) AS mv FROM Market WHERE venue=? AND id != ?", (venue, mid),
+    ).fetchone()
+    mine = conn.execute("SELECT volumeCents FROM Market WHERE id = ?", (mid,)).fetchone()
+    if (mine["volumeCents"] or 0) <= top["mv"]:
+        volume_backup[mid] = mine["volumeCents"]
+        conn.execute("UPDATE Market SET volumeCents = ? WHERE id = ?", (top["mv"] + 1000, mid))
     fee_backup[mid] = (market["yesTakerFeeBps"], market["noTakerFeeBps"])
     if seeded_fee:
         conn.execute("UPDATE Market SET yesTakerFeeBps = 300, noTakerFeeBps = 300 WHERE id = ?", (mid,))
