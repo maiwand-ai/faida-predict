@@ -166,14 +166,14 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue, onActi
             <div className={`rounded-lg border p-2.5 ${c.border} ${guidedDone.cycle ? "border-[#2FC08E]/40" : ""}`}>
               <div className="flex items-center gap-2 text-[12px] font-semibold"><span className={guidedDone.cycle ? c.gain : c.text3}>{guidedDone.cycle ? "✓" : "2"}</span>Run the first cycle</div>
               <div className={`mt-0.5 text-[10.5px] ${c.text3}`}>Every robot evaluates its book; the trace lands on the dashboard (A-08)</div>
-              <Button size="sm" variant="outline" className={`mt-2 h-7 border-[#2E3C5F] bg-[#151D30] text-[9px] text-[#9AA8C0] hover:bg-[#1B2540]`} disabled={guidedBusy !== null} onClick={() => runGuidedStep("cycle")}>
+              <Button size="sm" variant="outline" className={`mt-2 h-7 border-[#2C3648] bg-[#121722] text-[9px] text-[#8B95A7] hover:bg-[#1A2432]`} disabled={guidedBusy !== null} onClick={() => runGuidedStep("cycle")}>
                 {guidedBusy === "cycle" ? "Running cycle…" : guidedDone.cycle ? "Run again" : "Run first cycle"}
               </Button>
             </div>
             <div className={`rounded-lg border p-2.5 ${c.border} ${guidedDone.backtest ? "border-[#2FC08E]/40" : ""}`}>
               <div className="flex items-center gap-2 text-[12px] font-semibold"><span className={guidedDone.backtest ? c.gain : c.text3}>{guidedDone.backtest ? "✓" : "3"}</span>Run the first backtest</div>
               <div className={`mt-0.5 text-[10.5px] ${c.text3}`}>Recorded-tick replay with adverse slippage + fees (A-05 evidence)</div>
-              <Button size="sm" variant="outline" className={`mt-2 h-7 border-[#2E3C5F] bg-[#151D30] text-[9px] text-[#9AA8C0] hover:bg-[#1B2540]`} disabled={guidedBusy !== null} onClick={() => runGuidedStep("backtest")}>
+              <Button size="sm" variant="outline" className={`mt-2 h-7 border-[#2C3648] bg-[#121722] text-[9px] text-[#8B95A7] hover:bg-[#1A2432]`} disabled={guidedBusy !== null} onClick={() => runGuidedStep("backtest")}>
                 {guidedBusy === "backtest" ? "Backtesting…" : guidedDone.backtest ? "Run again" : "Run first backtest"}
               </Button>
             </div>
@@ -191,7 +191,7 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue, onActi
               onClick={() => setStep(i + 1)}
               className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-left ${step === i + 1 ? c.elevated : ""}`}
             >
-              <span className={`flex h-[22px] w-[22px] items-center justify-center rounded-full border text-[11px] ${step === i + 1 ? "border-[#3E9BF0] bg-[#3E9BF0] font-bold text-[#001040]" : i + 1 < step ? `border-[#00B0F0] ${c.bright}` : `border-[#2E3C5F] ${c.text3}`}`}>
+              <span className={`flex h-[22px] w-[22px] items-center justify-center rounded-full border text-[11px] ${step === i + 1 ? "border-[#3E9BF0] bg-[#3E9BF0] font-bold text-[#001040]" : i + 1 < step ? `border-[#00B0F0] ${c.bright}` : `border-[#2C3648] ${c.text3}`}`}>
                 {i + 1 < step ? "✓" : i + 1}
               </span>
               <span className={`text-[12.5px] ${step === i + 1 ? `font-semibold ${c.text}` : c.text2}`}>{s}</span>
@@ -211,13 +211,13 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue, onActi
                     key={t.id}
                     onClick={() => applyTemplate(t)}
                     disabled={!t.venueLive}
-                    className={`rounded-lg border p-3 text-left transition-colors ${t.venueLive ? "border-[#202B45] hover:border-[#00B0F0] hover:bg-[#131A2C]" : "cursor-not-allowed border-[#202B45] opacity-50"}`}
+                    className={`rounded-lg border p-3 text-left transition-colors ${t.venueLive ? "border-[#1E2533] hover:border-[#00B0F0] hover:bg-[#161D2B]" : "cursor-not-allowed border-[#1E2533] opacity-50"}`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className={`text-[12.5px] font-semibold ${c.text}`}>{t.label}</span>
                       <span className="flex items-center gap-1">
                         <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${t.riskProfile === "CONSERVATIVE" ? "text-[#2FC08E] bg-[#2FC08E]/10" : t.riskProfile === "AGGRESSIVE" ? "text-[#F0525F] bg-[#F0525F]/10" : `${c.bright} bg-[#00B0F0]/10`}`}>{t.riskProfile}</span>
-                        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#151D30]`}>{t.venueLabel}{t.venueLive ? "" : " · offline"}</span>
+                        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#121722]`}>{t.venueLabel}{t.venueLive ? "" : " · offline"}</span>
                       </span>
                     </div>
                     <div className={`mt-1 text-[11px] ${c.text2}`}>{t.thesis}</div>
@@ -238,11 +238,11 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue, onActi
                 // tints the row so the robot's scope is unmistakable.
                 <button key={v.id} onClick={() => setVenue(v.id)} disabled={v.adapter === "PENDING"}
                   style={venueScopeStyle(v.id)}
-                  className={`vc-scope rounded-lg border p-3 text-left transition-colors ${venue === v.id ? "vc-border vc-tint" : `border-[#202B45] hover:bg-[#131A2C]`} ${v.adapter === "PENDING" ? "vc-pending cursor-not-allowed opacity-50" : ""}`}>
+                  className={`vc-scope rounded-lg border p-3 text-left transition-colors ${venue === v.id ? "vc-border vc-tint" : `border-[#1E2533] hover:bg-[#161D2B]`} ${v.adapter === "PENDING" ? "vc-pending cursor-not-allowed opacity-50" : ""}`}>
                   <div className="flex items-center justify-between">
                     <span className={`text-[12.5px] font-semibold ${c.text}`}>{v.label}</span>
                     <span className="flex items-center gap-1.5">
-                      <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${c.text3} bg-[#151D30]`}>
+                      <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${c.text3} bg-[#121722]`}>
                         {ROLE_LABEL[v.role]}{v.adapter === "PENDING" ? " · PENDING" : " · LIVE"}
                       </span>
                       {venue === v.id && <span className="vc-chip rounded px-1.5 py-0.5 text-[9px] font-bold">SELECTED</span>}
@@ -254,7 +254,7 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue, onActi
               <div className={`text-[12px] font-semibold ${c.text2} mt-1`}>Robot family</div>
               {FAMILIES.map((f) => (
                 <button key={f.id} onClick={() => setFamily(f.id)} disabled={f.id === "ARBITRAGE"}
-                  className={`rounded-lg border p-3 text-left transition-colors ${family === f.id ? "border-[#00B0F0] bg-[#00B0F0]/5" : `border-[#202B45] hover:bg-[#131A2C]`} ${f.id === "ARBITRAGE" ? "cursor-not-allowed opacity-50" : ""}`}>
+                  className={`rounded-lg border p-3 text-left transition-colors ${family === f.id ? "border-[#00B0F0] bg-[#00B0F0]/5" : `border-[#1E2533] hover:bg-[#161D2B]`} ${f.id === "ARBITRAGE" ? "cursor-not-allowed opacity-50" : ""}`}>
                   <div className="flex items-center justify-between">
                     <span className={`text-[12.5px] font-semibold ${c.text}`}>{f.label}</span>
                     {family === f.id && <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.bright} bg-[#00B0F0]/10`}>SELECTED</span>}
@@ -264,7 +264,7 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue, onActi
               ))}
               <div>
                 <Label className={`mt-2 text-[12px] font-semibold ${c.text2}`}>Robot name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Senate Edge" className={`mt-1 border-[#2E3C5F] bg-[#151D30] ${c.text}`} />
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Senate Edge" className={`mt-1 border-[#2C3648] bg-[#121722] ${c.text}`} />
               </div>
             </div>
           )}
@@ -372,7 +372,7 @@ export function StudioView({ dash, onCreate, onAfterChange, initialVenue, onActi
             </div>
           )}
           <div className="flex gap-2">
-            <Button variant="outline" className={`border-[#2E3C5F] bg-[#151D30] text-[#9AA8C0] hover:bg-[#1B2540]`} onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1}>Back</Button>
+            <Button variant="outline" className={`border-[#2C3648] bg-[#121722] text-[#8B95A7] hover:bg-[#1A2432]`} onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1}>Back</Button>
             {step < 5 && <Button className="bg-[#00B0F0] font-semibold text-[#001040] hover:bg-[#2FC1F5]" onClick={() => setStep(Math.min(5, step + 1))} disabled={!canNext}>Next</Button>}
           </div>
         </div>
@@ -477,7 +477,7 @@ export function TradingView(props: {
           </div>
           <div>
             <Label className={`text-[11px] ${c.text2}`}>Size ($)</Label>
-            <Input value={size} onChange={(e) => setSize(e.target.value.replace(/[^0-9.]/g, ""))} className={`mt-1 border-[#2E3C5F] bg-[#151D30] ${c.text} ${mono}`} />
+            <Input value={size} onChange={(e) => setSize(e.target.value.replace(/[^0-9.]/g, ""))} className={`mt-1 border-[#2C3648] bg-[#121722] ${c.text} ${mono}`} />
           </div>
           <div className={`flex justify-between text-[12px]`}><span className={c.text2}>Est. total</span><span className={mono}>{fmtCents(sizeCents)}</span></div>
           <Button className="bg-[#00B0F0] font-semibold text-[#001040] hover:bg-[#2FC1F5]" disabled={!market || sizeCents <= 0 || props.busy !== null}
@@ -487,10 +487,10 @@ export function TradingView(props: {
           <div className={`border-t pt-3 ${c.border}`}>
             <div className={`mb-2 text-[12px] font-semibold`}>Reconciliation drill (S-01/S-04)</div>
             <div className="flex flex-col gap-2">
-              <Button size="sm" variant="outline" className={`border-[#E3A63B]/50 bg-[#151D30] text-[#E3A63B] hover:bg-[#1B2540]`} disabled={!market || props.busy !== null} onClick={() => market && props.onSimulateAckLoss(market.id)}>
+              <Button size="sm" variant="outline" className={`border-[#E3A63B]/50 bg-[#121722] text-[#E3A63B] hover:bg-[#1A2432]`} disabled={!market || props.busy !== null} onClick={() => market && props.onSimulateAckLoss(market.id)}>
                 Simulate lost venue ack → UNKNOWN
               </Button>
-              <Button size="sm" variant="outline" className={`border-[#2E3C5F] bg-[#151D30] text-[#9AA8C0] hover:bg-[#1B2540]`} disabled={!props.hasUnknown || props.busy !== null} onClick={props.onReconcile}>
+              <Button size="sm" variant="outline" className={`border-[#2C3648] bg-[#121722] text-[#8B95A7] hover:bg-[#1A2432]`} disabled={!props.hasUnknown || props.busy !== null} onClick={props.onReconcile}>
                 Run reconciliation pass {props.hasUnknown ? "(UNKNOWN orders present)" : "(nothing pending)"}
               </Button>
             </div>
@@ -601,7 +601,7 @@ export function SettingsView(props: {
           <span className={c.text3}>Wallet:</span>
           <span className={`rounded border px-2 py-0.5 ${c.borderStrong} ${mono} ${c.text}`}>{dash.wallet?.address.slice(0, 12)}…{dash.wallet?.address.slice(-6)}</span>
           <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${c.paper} bg-[#D9B25C]/10`}>{dash.wallet?.signingModel}</span>
-          <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${c.text3} bg-[#151D30]`}>KALSHI_ASYMMETRIC_API_KEY (RSA/Ed25519)</span>
+          <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${c.text3} bg-[#121722]`}>KALSHI_ASYMMETRIC_API_KEY (RSA/Ed25519)</span>
         </div>
       </div>
 
@@ -647,10 +647,10 @@ export function SettingsView(props: {
                 {p.hasKey ? `key ${p.keyMasked}` : "no key — add one below"}{p.baseUrl ? ` · ${p.baseUrl}` : ""}
               </div>
               <div className="mt-2 flex flex-col gap-2">
-                <Input placeholder={p.name === "OPENAI_COMPATIBLE" ? "model name (required for custom)" : p.model} value={modelDrafts[p.id] ?? ""} onChange={(e) => setModelDrafts((d) => ({ ...d, [p.id]: e.target.value }))} className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[12px] ${c.text}`} />
+                <Input placeholder={p.name === "OPENAI_COMPATIBLE" ? "model name (required for custom)" : p.model} value={modelDrafts[p.id] ?? ""} onChange={(e) => setModelDrafts((d) => ({ ...d, [p.id]: e.target.value }))} className={`h-8 border-[#2C3648] bg-[#121722] text-[12px] ${c.text}`} />
                 <div className="flex gap-2">
-                  <Input type="password" placeholder="API key" value={keyDrafts[p.id] ?? ""} onChange={(e) => setKeyDrafts((d) => ({ ...d, [p.id]: e.target.value }))} className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[12px] ${c.text}`} />
-                  <Button size="sm" variant="outline" className={`border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} disabled={!keyDrafts[p.id]}
+                  <Input type="password" placeholder="API key" value={keyDrafts[p.id] ?? ""} onChange={(e) => setKeyDrafts((d) => ({ ...d, [p.id]: e.target.value }))} className={`h-8 border-[#2C3648] bg-[#121722] text-[12px] ${c.text}`} />
+                  <Button size="sm" variant="outline" className={`border-[#2C3648] bg-[#121722] text-[#E6EAF2] text-[11px] hover:bg-[#1A2432]`} disabled={!keyDrafts[p.id]}
                     onClick={async () => {
                       await props.onSaveProvider({ id: p.id, apiKey: keyDrafts[p.id], model: modelDrafts[p.id] || p.model || undefined });
                       setKeyDrafts((d) => ({ ...d, [p.id]: "" }));
@@ -659,7 +659,7 @@ export function SettingsView(props: {
                   </Button>
                 </div>
                 {p.name === "OPENAI_COMPATIBLE" && (
-                  <Input placeholder="Base URL (e.g. https://api.deepseek.com/v1)" defaultValue={p.baseUrl ?? ""} onBlur={(e) => props.onSaveProvider({ id: p.id, baseUrl: e.target.value })} className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[12px] ${c.text}`} />
+                  <Input placeholder="Base URL (e.g. https://api.deepseek.com/v1)" defaultValue={p.baseUrl ?? ""} onBlur={(e) => props.onSaveProvider({ id: p.id, baseUrl: e.target.value })} className={`h-8 border-[#2C3648] bg-[#121722] text-[12px] ${c.text}`} />
                 )}
                 <div className={`text-[10px] ${c.text3}`}>budget {fmtCents(p.monthlyBudgetCents)} · spent {fmtCents(p.spentCents)} · priority {p.priority}</div>
               </div>
@@ -716,7 +716,7 @@ function ModelRegistryCard({ probability, onAction }: { probability: Probability
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className={`text-[13px] font-semibold`}>Model registry — calibration, promotion & demotion (A-01/A-03)</div>
-        <Button size="sm" variant="outline" className="border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]"
+        <Button size="sm" variant="outline" className="border-[#2C3648] bg-[#121722] text-[#E6EAF2] text-[11px] hover:bg-[#1A2432]"
           onClick={() => onAction({ action: "RECOMPUTE" }, "Calibration recomputed")}>
           Recompute calibration
         </Button>
@@ -733,25 +733,25 @@ function ModelRegistryCard({ probability, onAction }: { probability: Probability
             const statusCls =
               m.status === "ACTIVE" ? `text-[#2FC08E] bg-[#2FC08E]/10`
               : m.status === "DEMOTED" ? `text-[#F0525F] bg-[#F0525F]/10`
-              : m.status === "RETIRED" ? `${c.text3} bg-[#151D30]`
+              : m.status === "RETIRED" ? `${c.text3} bg-[#121722]`
               : `text-[#D9B25C] bg-[#D9B25C]/10`;
             return (
               <div key={m.key} className={`rounded-lg border p-3 ${c.border}`}>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${statusCls}`}>{m.status}</span>
                   <span className={`text-[12px] font-semibold ${mono} ${c.text}`}>{m.key}</span>
-                  <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#151D30]`}>{m.kind}</span>
+                  <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#121722]`}>{m.kind}</span>
                   {cal && cal.eligible && m.status !== "ACTIVE" && <span className="rounded bg-[#2FC08E]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#2FC08E]">promotion-ready</span>}
                   {cal && cal.demote && m.status === "ACTIVE" && <span className="rounded bg-[#F0525F]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#F0525F]">demotion warranted</span>}
                   <div className="ml-auto flex gap-2">
                     {m.status !== "ACTIVE" && (
-                      <Button size="sm" variant="outline" className="h-7 border-[#2E3C5F] bg-[#151D30] px-2 text-[10.5px] text-[#E9EEF7] hover:bg-[#1B2540]"
+                      <Button size="sm" variant="outline" className="h-7 border-[#2C3648] bg-[#121722] px-2 text-[10.5px] text-[#E6EAF2] hover:bg-[#1A2432]"
                         onClick={() => onAction({ action: "PROMOTE", modelKey: m.key }, `Promote ${m.key}`)}>
                         Promote
                       </Button>
                     )}
                     {m.status === "ACTIVE" && m.key !== prob.baseline.key && (
-                      <Button size="sm" variant="outline" className="h-7 border-[#F0525F]/40 bg-[#151D30] px-2 text-[10.5px] text-[#F0525F] hover:bg-[#2A1A22]"
+                      <Button size="sm" variant="outline" className="h-7 border-[#F0525F]/40 bg-[#121722] px-2 text-[10.5px] text-[#F0525F] hover:bg-[#2A1A22]"
                         onClick={() => onAction({ action: "DEMOTE", modelKey: m.key, reason: "manual demotion from Settings" }, `Demote ${m.key}`)}>
                         Demote
                       </Button>
@@ -791,7 +791,7 @@ function GovernanceCard({ probability, onAction }: { probability: ProbabilityDTO
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className={`text-[13px] font-semibold`}>AI cost & latency governance (A-07)</div>
-        <Button size="sm" variant="outline" className="border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]"
+        <Button size="sm" variant="outline" className="border-[#2C3648] bg-[#121722] text-[#E6EAF2] text-[11px] hover:bg-[#1A2432]"
           onClick={() => onAction({ action: "CLEAR_CACHE" }, "Estimate cache cleared")}>
           Clear estimate cache
         </Button>
@@ -832,7 +832,7 @@ function GovernanceCard({ probability, onAction }: { probability: ProbabilityDTO
                     {fmtCents(p.spentCents)} / {fmtCents(p.monthlyBudgetCents)} · {p.budgetUsedPct}%
                   </span>
                 </div>
-                <div className={`mt-1 h-1.5 w-full rounded-full ${p.budgetUsedPct >= 100 ? "bg-[#F0525F]/30" : "bg-[#151D30]"}`}>
+                <div className={`mt-1 h-1.5 w-full rounded-full ${p.budgetUsedPct >= 100 ? "bg-[#F0525F]/30" : "bg-[#121722]"}`}>
                   <div
                     className={`h-1.5 rounded-full ${p.budgetUsedPct >= 100 ? "bg-[#F0525F]" : "bg-[#00B0F0]"}`}
                     style={{ width: `${Math.min(100, p.budgetUsedPct)}%` }}
@@ -959,7 +959,7 @@ export function StrategyLab({ dash, onAfterChange }: { dash: DashboardDTO | null
       <div className="flex flex-wrap gap-2">
         {robots.map((r) => (
           <button key={r.id} onClick={() => setRobotId(r.id)}
-            className={`rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors ${active.id === r.id ? "border-[#00B0F0] bg-[#00B0F0]/10 " + c.text : `border-[#2E3C5F] bg-[#151D30] ${c.text2} hover:bg-[#1B2540]`}`}>
+            className={`rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors ${active.id === r.id ? "border-[#00B0F0] bg-[#00B0F0]/10 " + c.text : `border-[#2C3648] bg-[#121722] ${c.text2} hover:bg-[#1A2432]`}`}>
             {r.name} <span className={mono + " " + c.text3}>v{r.activeVersion}</span>
           </button>
         ))}
@@ -995,7 +995,7 @@ export function StrategyLab({ dash, onAfterChange }: { dash: DashboardDTO | null
                     </td>
                     <td className="py-1.5">
                       {!v.isActive && (
-                        <Button size="sm" variant="outline" className={`h-6 border-[#2E3C5F] bg-[#151D30] px-2 text-[10px] ${c.text} hover:bg-[#1B2540]`} disabled={labBusy !== null} onClick={() => activate(v.id)}>
+                        <Button size="sm" variant="outline" className={`h-6 border-[#2C3648] bg-[#121722] px-2 text-[10px] ${c.text} hover:bg-[#1A2432]`} disabled={labBusy !== null} onClick={() => activate(v.id)}>
                           Activate
                         </Button>
                       )}
@@ -1106,7 +1106,7 @@ function EquityCurve({ curve, baselineCents }: { curve: CurvePoint[]; baselineCe
   const up = vals[vals.length - 1] >= baselineCents;
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label="Backtest equity curve">
-      <line x1={pad} x2={w - pad} y1={y(baselineCents)} y2={y(baselineCents)} strokeDasharray="4 4" stroke="#2E3C5F" strokeWidth="1" />
+      <line x1={pad} x2={w - pad} y1={y(baselineCents)} y2={y(baselineCents)} strokeDasharray="4 4" stroke="#2C3648" strokeWidth="1" />
       <path d={path} fill="none" stroke={up ? "#2FC08E" : "#F0525F"} strokeWidth="2" strokeLinejoin="round" />
     </svg>
   );
@@ -1210,20 +1210,20 @@ export function LiveTradingCard() {
 
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             <div className="flex gap-2">
-              <Input placeholder="0x… wallet address (registered address-only)" value={walletDraft} onChange={(e) => setWalletDraft(e.target.value)} className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[12px] ${c.text}`} />
-              <Button size="sm" variant="outline" className={`border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} disabled={!/^0x[a-fA-F0-9]{40}$/.test(walletDraft)}
+              <Input placeholder="0x… wallet address (registered address-only)" value={walletDraft} onChange={(e) => setWalletDraft(e.target.value)} className={`h-8 border-[#2C3648] bg-[#121722] text-[12px] ${c.text}`} />
+              <Button size="sm" variant="outline" className={`border-[#2C3648] bg-[#121722] text-[#E6EAF2] text-[11px] hover:bg-[#1A2432]`} disabled={!/^0x[a-fA-F0-9]{40}$/.test(walletDraft)}
                 onClick={() => act({ action: "REGISTER_WALLET", address: walletDraft }).then(() => setWalletDraft(""))}>
                 Register wallet
               </Button>
             </div>
             <div className="flex gap-2">
-              <Input placeholder={`type "${s.consent.phraseEcho}"`} value={confirmText} onChange={(e) => setConfirmText(e.target.value)} className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[12px] ${c.text}`} />
+              <Input placeholder={`type "${s.consent.phraseEcho}"`} value={confirmText} onChange={(e) => setConfirmText(e.target.value)} className={`h-8 border-[#2C3648] bg-[#121722] text-[12px] ${c.text}`} />
               {s.consent.consented ? (
                 <Button size="sm" variant="outline" className={`border-[#F0525F]/50 bg-[#F0525F]/10 ${c.loss} text-[11px] hover:bg-[#F0525F]/20`} onClick={() => act({}, "DELETE", "/api/consent")}>
                   Revoke consent
                 </Button>
               ) : (
-                <Button size="sm" variant="outline" className={`border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} disabled={confirmText !== s.consent.phraseEcho}
+                <Button size="sm" variant="outline" className={`border-[#2C3648] bg-[#121722] text-[#E6EAF2] text-[11px] hover:bg-[#1A2432]`} disabled={confirmText !== s.consent.phraseEcho}
                   onClick={() => act({ confirm: confirmText, walletAddress: walletDraft || s.custody.address, capsAcknowledged: true }, "POST", "/api/consent").then(() => setConfirmText(""))}>
                   Record consent
                 </Button>
@@ -1231,10 +1231,10 @@ export function LiveTradingCard() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" className={`border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} disabled={s.pilot.enabled || !s.consent.consented} onClick={() => act({ action: "ENABLE_PILOT" })}>
+            <Button size="sm" variant="outline" className={`border-[#2C3648] bg-[#121722] text-[#E6EAF2] text-[11px] hover:bg-[#1A2432]`} disabled={s.pilot.enabled || !s.consent.consented} onClick={() => act({ action: "ENABLE_PILOT" })}>
               Enable pilot
             </Button>
-            <Button size="sm" variant="outline" className={`border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} disabled={!s.pilot.enabled} onClick={() => act({ action: "DISABLE_PILOT" })}>
+            <Button size="sm" variant="outline" className={`border-[#2C3648] bg-[#121722] text-[#E6EAF2] text-[11px] hover:bg-[#1A2432]`} disabled={!s.pilot.enabled} onClick={() => act({ action: "DISABLE_PILOT" })}>
               Disable pilot
             </Button>
           </div>
@@ -1249,7 +1249,7 @@ export function LiveTradingCard() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`text-[12px] font-semibold ${c.text}`}>{g.robotName}</span>
                     <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${g.mode === "LIVE_PILOT" ? `${c.loss} bg-[#F0525F]/10` : `${c.paper} bg-[#D9B25C]/10`}`}>{g.mode}</span>
-                    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${g.ready ? `${c.gain} bg-[#2FC08E]/10` : `${c.text3} bg-[#1B2540]`}`}>{g.ready ? "GATE READY" : `GATE CLOSED (${blocking.length})`}</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${g.ready ? `${c.gain} bg-[#2FC08E]/10` : `${c.text3} bg-[#1A2432]`}`}>{g.ready ? "GATE READY" : `GATE CLOSED (${blocking.length})`}</span>
                     {g.dryRun && g.ready && <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.paper} bg-[#D9B25C]/10`}>DRY-RUN (send SAFE)</span>}
                   </div>
                   {blocking.length > 0 && (
@@ -1260,12 +1260,12 @@ export function LiveTradingCard() {
                     </div>
                   )}
                   {blocking.length === 0 && g.mode !== "LIVE_PILOT" && (
-                    <Button size="sm" variant="outline" className={`mt-1.5 border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[10.5px] hover:bg-[#1B2540]`} onClick={() => act({ action: "SET_ROBOT_MODE", robotId: g.robotId, mode: "LIVE_PILOT" })}>
+                    <Button size="sm" variant="outline" className={`mt-1.5 border-[#2C3648] bg-[#121722] text-[#E6EAF2] text-[10.5px] hover:bg-[#1A2432]`} onClick={() => act({ action: "SET_ROBOT_MODE", robotId: g.robotId, mode: "LIVE_PILOT" })}>
                       Flip to LIVE_PILOT
                     </Button>
                   )}
                   {g.mode === "LIVE_PILOT" && (
-                    <Button size="sm" variant="outline" className={`mt-1.5 border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[10.5px] hover:bg-[#1B2540]`} onClick={() => act({ action: "SET_ROBOT_MODE", robotId: g.robotId, mode: "PAPER" })}>
+                    <Button size="sm" variant="outline" className={`mt-1.5 border-[#2C3648] bg-[#121722] text-[#E6EAF2] text-[10.5px] hover:bg-[#1A2432]`} onClick={() => act({ action: "SET_ROBOT_MODE", robotId: g.robotId, mode: "PAPER" })}>
                       Back to paper
                     </Button>
                   )}
@@ -1304,7 +1304,7 @@ export function NotificationsCard() {
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className={`text-[13px] font-semibold`}>Notification taxonomy & anti-storm (P-04)</div>
-        {d && <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#151D30]`}>last 24h · {d.suppressedCount} absorbed</span>}
+        {d && <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#121722]`}>last 24h · {d.suppressedCount} absorbed</span>}
       </div>
       <div className={`mb-3 text-[11.5px] ${c.text3}`}>
         Every notification goes through one taxonomy (family → severity, dedupe window, hourly cap, digest policy). CRITICAL is never capped — a kill-switch event always breaks through. Suppressed repeats are RECORDED (never silently dropped) and counted here.
@@ -1380,13 +1380,13 @@ export function ApiKeysCard() {
         Export your data (robots, orders, ledger, positions, traces — JSON/CSV, venue-labeled per B11). API keys are READ-ONLY by design: they authenticate /api/public/v1/* reads, no write surface exists. Plaintext is shown once and only its SHA-256 hash is stored (S-08 posture). Rate limit 60 req/min per key.
       </div>
       <div className="mb-3 flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[11px] hover:bg-[#1B2540]`} onClick={() => window.open("/api/export?entity=all&format=json", "_blank")}>Export all (JSON)</Button>
-        <Button size="sm" variant="outline" className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[11px] hover:bg-[#1B2540]`} onClick={() => window.open("/api/export?entity=ledger&format=csv", "_blank")}>Export ledger (CSV)</Button>
-        <Button size="sm" variant="outline" className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[11px] hover:bg-[#1B2540]`} onClick={() => window.open("/api/export?entity=orders&format=csv", "_blank")}>Export orders (CSV)</Button>
+        <Button size="sm" variant="outline" className={`h-8 border-[#2C3648] bg-[#121722] text-[11px] hover:bg-[#1A2432]`} onClick={() => window.open("/api/export?entity=all&format=json", "_blank")}>Export all (JSON)</Button>
+        <Button size="sm" variant="outline" className={`h-8 border-[#2C3648] bg-[#121722] text-[11px] hover:bg-[#1A2432]`} onClick={() => window.open("/api/export?entity=ledger&format=csv", "_blank")}>Export ledger (CSV)</Button>
+        <Button size="sm" variant="outline" className={`h-8 border-[#2C3648] bg-[#121722] text-[11px] hover:bg-[#1A2432]`} onClick={() => window.open("/api/export?entity=orders&format=csv", "_blank")}>Export orders (CSV)</Button>
       </div>
       <div className="mb-3 flex gap-2">
-        <Input placeholder="key name (e.g. grafana-read)" value={name} onChange={(e) => setName(e.target.value)} className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[12px] ${c.text}`} />
-        <Button size="sm" variant="outline" className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[11px] hover:bg-[#1B2540]`} disabled={busy} onClick={create}>Create key</Button>
+        <Input placeholder="key name (e.g. grafana-read)" value={name} onChange={(e) => setName(e.target.value)} className={`h-8 border-[#2C3648] bg-[#121722] text-[12px] ${c.text}`} />
+        <Button size="sm" variant="outline" className={`h-8 border-[#2C3648] bg-[#121722] text-[11px] hover:bg-[#1A2432]`} disabled={busy} onClick={create}>Create key</Button>
       </div>
       {plaintext && (
         <div className={`mb-3 rounded-lg border border-[#D9B25C]/40 bg-[#D9B25C]/10 p-2.5 text-[11px] ${c.warn}`}>
@@ -1405,12 +1405,12 @@ export function ApiKeysCard() {
                 <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${k.status === "ACTIVE" ? `${c.gain} bg-[#2FC08E]/10` : `${c.loss} bg-[#F0525F]/10`}`}>{k.status}</span>
                 <span className={`font-semibold ${c.text}`}>{k.name}</span>
                 <span className={`${mono} ${c.text2}`}>{k.prefix}…</span>
-                <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#151D30]`}>{k.scope}</span>
+                <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#121722]`}>{k.scope}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`text-[9.5px] ${c.text3}`}>{k.lastUsedAt ? `used ${new Date(k.lastUsedAt).toLocaleString()}` : "never used"}</span>
                 {k.status === "ACTIVE" && (
-                  <Button size="sm" variant="outline" className={`h-7 border-[#F0525F]/40 bg-[#151D30] px-2 text-[10.5px] text-[#F0525F] hover:bg-[#2A1A22]`} onClick={() => revoke(k.id)}>Revoke</Button>
+                  <Button size="sm" variant="outline" className={`h-7 border-[#F0525F]/40 bg-[#121722] px-2 text-[10.5px] text-[#F0525F] hover:bg-[#2A1A22]`} onClick={() => revoke(k.id)}>Revoke</Button>
                 )}
               </div>
             </div>
@@ -1462,7 +1462,7 @@ export function ComplianceCard() {
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className={`text-[13px] font-semibold`}>Compliance ops — data retention (P-07)</div>
-        <Button size="sm" variant="outline" className={`h-8 border-[#2E3C5F] bg-[#151D30] text-[11px] hover:bg-[#1B2540]`} disabled={busy} onClick={run}>{busy ? "Running…" : "Run retention now"}</Button>
+        <Button size="sm" variant="outline" className={`h-8 border-[#2C3648] bg-[#121722] text-[11px] hover:bg-[#1A2432]`} disabled={busy} onClick={run}>{busy ? "Running…" : "Run retention now"}</Button>
       </div>
       <div className={`mb-3 text-[11.5px] ${c.text3}`}>
         Ephemeral operational data is pruned after its window; financial truth (ledger, orders, fills, positions, reconciliation, retention runs) is NEVER pruned — append-only is the product. Every run is audited (RetentionRun) and notified (COMPLIANCE).
@@ -1477,7 +1477,7 @@ export function ComplianceCard() {
                 <div className="mt-1.5 flex items-center gap-2">
                   <Input type="number" min={p.bounds.min} max={p.bounds.max} defaultValue={p.days}
                     onBlur={(e) => { const v = Number(e.target.value); if (v && v !== p.days) setDays(p.key, v); }}
-                    className={`h-7 w-20 border-[#2E3C5F] bg-[#151D30] text-[12px] ${c.text}`} />
+                    className={`h-7 w-20 border-[#2C3648] bg-[#121722] text-[12px] ${c.text}`} />
                   <span className={`text-[10px] ${c.text3}`}>days ({p.bounds.min}–{p.bounds.max})</span>
                 </div>
               </div>
@@ -1552,7 +1552,7 @@ export function MetricsCard() {
                 <span className="flex items-center gap-2">
                   <span className={`inline-block h-2 w-2 rounded-full ${f.adapter === "LIVE" ? "bg-[#2FC08E]" : "bg-[#55617E]"}`} />
                   {f.label}
-                  <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#151D30]`}>{f.adapter}</span>
+                  <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${c.text3} bg-[#121722]`}>{f.adapter}</span>
                 </span>
                 <span className={mono}>
                   {f.markets} market{f.markets === 1 ? "" : "s"} · {f.lastSyncMinAgo != null ? `last sync ${f.lastSyncMinAgo}m ago` : "never synced"}

@@ -864,6 +864,31 @@ multi-tenants). Strict-mode machine-to-machine note: with BETA_STRICT_AUTH=1
 external schedulers hitting /api/cycle get 401 — the beta instance runs the
 in-process autopilot instead (documented here, not silently assumed).
 
+**Phase 11 — UI redesign ratification (2026-11-18, in flight).** The founder
+supplied a redesign artifact ("FAIDA Predict Redesign": Overview, Venue
+workspace, Robot detail, Venue color system — hues identical to B12, neutrals
+rescaled to #0B0E14→#E6EAF2, type stack Inter / Space Grotesk / JetBrains
+Mono). Review verdict: direction ratified. Artifact defects found in render
+and fixed in implementation, not carried over: template whitespace collapse
+("Open{{venue}}workspace"), ragged net-edge wraps, header-only Volume column,
+full sidebar stacked above content on phones, one blank stray artboard.
+Implemented (overview first, per agreement): neutral rescale across the brand
+layer; type stack via next/font (`--font-inter`, `--font-space-grotesk` as
+`font-display`, `--font-jetbrains` mono); Overview rebuilt — greeting header
+(hydration-safe clock via useSyncExternalStore), KPI band with the segmented
+per-venue exposure bar, compact venue tile row (replaces the 2×3 card grid),
+robots table (alloc + open/max + paper-mark open P&L, sorted), Decision feed
+with venue-hued bars reusing the shared A-08 trace expansion; persistent
+header exposure meter (xl chip + sm–md compact) so the 40% discipline is
+answerable from every view; sidebar gains the venue list and the Mode panel
+with the always-reachable "Pause everything" kill switch (same C19 control).
+Verification: tsc + lint clean; dev compile clean; browser-verified desktop
+(1440) + mobile (390) with live seeded data, venue-tile/sidebar/robot
+navigation into the workspace, feed expansion showing provenance envelope +
+pre-trade risk checks. Non-goals this pass: Venue workspace and Robot-detail
+restyle (views keep the rescaled tokens only), Beta Ops screens unchanged;
+search is still decorative (⌘K surface exists, command palette owed later).
+
 ## 5. Carry-forward register (must never be lost)
 
 These are scheduled spec obligations that no phase may silently drop:

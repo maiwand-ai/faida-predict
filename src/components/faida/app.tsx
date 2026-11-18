@@ -20,7 +20,7 @@ import {
   type ProbabilityDTO,
 } from "./types";
 import { c, card, mono, fmtCents, VenueBadge, venueScopeStyle } from "./ui";
-import { LIVE_VENUE_IDS, ROLE_LABEL, VENUE_LABEL, VENUES } from "@/lib/venues";
+import { LIVE_VENUE_IDS, ROLE_LABEL, VENUE_LABEL, VENUES, venueColor } from "@/lib/venues";
 import { StudioView, TradingView, SettingsView } from "./views";
 import { DashboardView, VenueWorkspace } from "./dashboard";
 import { BetaView } from "./beta";
@@ -175,7 +175,7 @@ export default function FaidaApp() {
   const hasUnknown = (ordersData?.orders ?? []).some((o) => o.state === "UNKNOWN" || o.state === "RECONCILING");
 
   const navItems: Array<{ id: View; label: string; badge?: string }> = [
-    { id: "overview", label: "Dashboard" },
+    { id: "overview", label: "Overview" },
     { id: "markets", label: "Markets" },
     { id: "studio", label: "Robot Studio" },
     { id: "trading", label: "Trading" },
@@ -199,7 +199,7 @@ export default function FaidaApp() {
   };
 
   return (
-    <div className={`min-h-screen ${c.bg} ${c.text} flex flex-col`} style={{ fontFamily: "var(--font-geist-sans)" }}>
+    <div className={`min-h-screen ${c.bg} ${c.text} flex flex-col`} style={{ fontFamily: "var(--font-inter)" }}>
       <div className="flex flex-1">
         {/* ── Sidebar ─────────────────────────────────────────── */}
         <aside className={`sticky top-0 hidden h-screen w-[232px] shrink-0 flex-col ${c.surface} border-r ${c.border} px-3 py-4 md:flex`}>
@@ -222,17 +222,67 @@ export default function FaidaApp() {
                   activeView === n.id ? `${c.elevated} ${c.text}` : `${c.text2} hover:${c.elevated}`
                 }`}
               >
-                <span className={`h-2 w-2 rounded-[3px] ${activeView === n.id ? "bg-[#00B0F0]" : "bg-[#2E3C5F]"}`} />
+                <span className={`h-2 w-2 rounded-[3px] ${activeView === n.id ? "bg-[#00B0F0]" : "bg-[#2C3648]"}`} />
                 {n.label}
               </button>
             ))}
           </nav>
-          <div className="mt-auto border-t ${c.border} pt-3" style={{ borderColor: "#202B45" }}>
+
+          {/* venue list — every venue one click away, hue = identity (B12) */}
+          <div className="mt-4">
+            <div className={`px-2 pb-1.5 text-[9px] font-bold tracking-[0.18em] ${c.text3}`}>VENUES</div>
+            <div className="flex flex-col">
+              {VENUES.map((v) => {
+                const live = v.adapter === "LIVE";
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => { setVenueFocus(v.id); setView("venue"); }}
+                    className="group flex items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-[#121722]"
+                    aria-label={`Open ${v.label} workspace`}
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: venueColor(v.id), opacity: live ? 1 : 0.45 }} />
+                      <span className={`truncate text-[12px] ${live ? c.text2 : c.text3}`}>{v.label}</span>
+                    </span>
+                    <span className={`shrink-0 text-[9px] font-bold tracking-wide ${live ? c.text3 : c.text3}`}>
+                      {live ? "Live" : "Pending"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="mt-auto border-t ${c.border} pt-3" style={{ borderColor: "#1E2533" }}>
+            {/* mode panel — paper state + the platform-wide kill switch always
+                reachable, matching the redesigned shell (C19) */}
+            {(() => {
+              const running = dash?.robots.filter((r) => ["RUNNING", "PAPER_ONLY"].includes(r.status)).length ?? 0;
+              const total = dash?.robots.length ?? 0;
+              const isPaused = dash?.control?.pause.paused ?? false;
+              return (
+                <div className={`mb-2 rounded-lg border px-3 py-2.5 ${c.border} ${c.elevated}`}>
+                  <div className={`flex items-center justify-between text-[10.5px] ${c.text3}`}>
+                    <span>Mode</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${c.paper} bg-[#D9B25C]/10`}>PAPER ONLY</span>
+                  </div>
+                  <div className={`mt-1.5 text-[10.5px] leading-snug ${c.text2}`}>
+                    {running} of {total} robots running. Live trading locked until the Phase 7 gates pass.
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className={`mt-2 h-7 w-full border-[#F0525F]/50 bg-transparent text-[11px] text-[#F0525F] hover:bg-[#F0525F]/10`}
+                    onClick={() => post("/api/control", { action: "PAUSE", reason: "manual pause from sidebar" }, "PLATFORM PAUSED — all cycles and orders refuse until resume")}
+                    disabled={busy !== null || isPaused}
+                  >
+                    ▮▮ {isPaused ? "Paused" : "Pause everything"}
+                  </Button>
+                </div>
+              );
+            })()}
             <div className={`flex justify-between px-2 text-[10.5px] ${c.text3}`}>
               <span>● Venues: {VENUES.filter((v) => v.adapter === "LIVE").map((v) => v.label).join(", ")} · {VENUES.filter((v) => v.adapter === "PENDING").length} planned</span><span className={mono}>data {dash?.marketCount ?? 0}</span>
-            </div>
-            <div className={`mt-1 flex justify-between px-2 text-[10.5px] ${c.text3}`}>
-              <span>Mode</span><span className={`${c.paper}`}>PAPER ONLY</span>
             </div>
             <div className={`mt-1 flex justify-between px-2 text-[10.5px] ${c.text3}`}>
               <span>Outbox pending</span><span className={mono}>{dash?.outboxPending ?? 0}</span>
@@ -254,10 +304,47 @@ export default function FaidaApp() {
                 <div className={`mt-0.5 text-[8px] tracking-[0.14em] ${c.text3}`}>PHASE 10</div>
               </div>
             </div>
+            {/* compact exposure meter between sm and md — below sm the KPI card
+                carries it and the brand keeps the space */}
+            {dash && dash.allocatedCents > 0 && (
+              <span
+                className={`hidden items-center gap-1.5 rounded-full border px-2 py-1 sm:inline-flex md:hidden ${c.border} ${c.elevated}`}
+                title={`Open exposure ${fmtCents(dash.exposureCents)} of ${fmtCents(dash.allocatedCents)} allocated`}
+              >
+                <span className={`h-1.5 w-10 overflow-hidden rounded ${c.elevated}`}>
+                  <span
+                    className={`block h-full rounded ${(dash.exposureCents / dash.allocatedCents) * 100 >= 80 ? "bg-[#E3A63B]" : "bg-[#3E9BF0]"}`}
+                    style={{ width: `${Math.max(2, (dash.exposureCents / dash.allocatedCents) * 100)}%` }}
+                  />
+                </span>
+                <span className={`text-[10px] font-semibold ${mono} ${c.text2}`}>{((dash.exposureCents / dash.allocatedCents) * 100).toFixed(0)}%</span>
+              </span>
+            )}
             <div className={`hidden items-center rounded-lg border px-3 py-1.5 text-[12px] ${c.border} ${c.elevated} ${c.text3} sm:flex`}>
               Search markets, robots, orders…
               <span className={`ml-8 rounded border px-1.5 py-0.5 text-[10px] ${c.borderStrong}`}>⌘K</span>
             </div>
+            {/* persistent exposure meter — the platform's most load-bearing
+                constraint, answerable from every view (redesign ratification) */}
+            {dash && dash.allocatedCents > 0 && (() => {
+              const pct = Math.min(100, (dash.exposureCents / dash.allocatedCents) * 100);
+              const hot = pct >= 80;
+              return (
+                <span
+                  className={`hidden items-center gap-2 rounded-full border px-3 py-1 xl:inline-flex ${c.border} ${c.elevated}`}
+                  title={`Open exposure ${fmtCents(dash.exposureCents)} of ${fmtCents(dash.allocatedCents)} allocated · per-event cap ${dash.exposureLimitPct}%`}
+                >
+                  <span className={`text-[9.5px] font-bold tracking-wider ${c.text3}`}>EXPOSURE</span>
+                  <span className={`h-1.5 w-16 overflow-hidden rounded ${c.elevated}`}>
+                    <span
+                      className={`block h-full rounded ${hot ? "bg-[#E3A63B]" : "bg-[#3E9BF0]"}`}
+                      style={{ width: `${Math.max(2, pct)}%` }}
+                    />
+                  </span>
+                  <span className={`text-[10.5px] font-semibold ${mono} ${hot ? c.warn : c.text2}`}>{pct.toFixed(0)}%</span>
+                </span>
+              );
+            })()}
             <div className="ml-auto flex items-center gap-2">
               <span className={`hidden items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] ${c.border} ${c.elevated} ${c.text2} lg:inline-flex`}>
                 <span className={c.bright}>●</span> Location verified: {dash?.user.country ?? "NL"} (matrix)
@@ -382,7 +469,7 @@ export default function FaidaApp() {
       <nav
         aria-label="Primary mobile navigation"
         className={`fixed inset-x-0 bottom-0 z-30 flex border-t ${c.border} ${c.surface} md:hidden fd-safe-bottom`}
-        style={{ borderColor: "#202B45" }}
+        style={{ borderColor: "#1E2533" }}
       >
         {navItems.map((n) => {
           const lit = activeView === n.id;
@@ -446,7 +533,7 @@ function MarketsView({ markets, onSync, onTrade, busy }: { markets: MarketDTO[];
             <div className={`flex flex-wrap items-center gap-2.5 border-b px-4 py-3 ${c.border}`}>
               <span className="vc-bg h-2 w-2 rounded-[3px]" aria-hidden />
               <VenueBadge venue={v.id} />
-              <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${c.text3} bg-[#151D30]`}>
+              <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${c.text3} bg-[#121722]`}>
                 {ROLE_LABEL[v.role]}
               </span>
               <span className={`text-[10.5px] font-semibold ${v.adapter === "LIVE" ? "vc-text" : c.text3}`}>
@@ -454,7 +541,7 @@ function MarketsView({ markets, onSync, onTrade, busy }: { markets: MarketDTO[];
               </span>
               <span className={`hidden text-[11px] md:inline ${c.text3}`}>{v.note}</span>
               {v.adapter === "LIVE" && (
-                <Button size="sm" variant="outline" className="h-7 border-[#2E3C5F] bg-[#151D30] text-[11px] text-[#E9EEF7] hover:bg-[#1B2540]" onClick={() => onSync(v.id)} disabled={busy === "sync"}>
+                <Button size="sm" variant="outline" className="h-7 border-[#2C3648] bg-[#121722] text-[11px] text-[#E6EAF2] hover:bg-[#1A2432]" onClick={() => onSync(v.id)} disabled={busy === "sync"}>
                   {busy === "sync" ? "Syncing…" : `Sync ${v.label}`}
                 </Button>
               )}
@@ -478,7 +565,7 @@ function MarketsView({ markets, onSync, onTrade, busy }: { markets: MarketDTO[];
                     {rows.map((m) => {
                       const parity = m.yesPriceCents != null && m.noPriceCents != null ? 100 - (m.yesPriceCents + m.noPriceCents) : null;
                       return (
-                        <tr key={m.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#131A2C]`}>
+                        <tr key={m.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#161D2B]`}>
                           <td className="max-w-[380px] px-4 py-2.5">
                             <div className={`truncate ${c.text}`}>{m.question}</div>
                             <div className={`text-[10px] ${c.text3}`}>{m.category}{m.ambiguityFlag ? " · ⚠ ambiguity check" : ""}</div>
@@ -493,7 +580,7 @@ function MarketsView({ markets, onSync, onTrade, busy }: { markets: MarketDTO[];
                             </span>
                           </td>
                           <td className="px-3 py-2.5 text-right">
-                            <Button size="sm" variant="outline" className={`h-7 border-[#2E3C5F] bg-[#151D30] text-[#E9EEF7] text-[11px] hover:bg-[#1B2540]`} onClick={() => onTrade(m)} disabled={m.ambiguityFlag}>
+                            <Button size="sm" variant="outline" className={`h-7 border-[#2C3648] bg-[#121722] text-[#E6EAF2] text-[11px] hover:bg-[#1A2432]`} onClick={() => onTrade(m)} disabled={m.ambiguityFlag}>
                               {m.ambiguityFlag ? "Flagged" : "Trade"}
                             </Button>
                           </td>
@@ -530,7 +617,7 @@ function TradeDialog({ market, onClose, onPlace, busy }: { market: MarketDTO | n
       {/* B12: the ticket inherits the market's venue color — you always know
           which market's room you are placing an order in. */}
       <DialogContent
-        className={`${c.surface} vc-scope overflow-hidden border-[#202B45] text-[#E9EEF7] sm:max-w-[420px]`}
+        className={`${c.surface} vc-scope overflow-hidden border-[#1E2533] text-[#E6EAF2] sm:max-w-[420px]`}
         style={venueScopeStyle(market.venue)}
       >
         <span className="vc-strip -mx-6 -mt-6 mb-1 block h-[3px]" aria-hidden />
@@ -552,11 +639,11 @@ function TradeDialog({ market, onClose, onPlace, busy }: { market: MarketDTO | n
         <div className="mt-3 flex flex-col gap-3">
           <div>
             <Label className={`text-[11px] ${c.text2}`}>Limit price (¢)</Label>
-            <Input type="number" min={1} max={100} value={price} onChange={(e) => setPrice(parseInt(e.target.value || "0", 10))} className={`mt-1 border-[#2E3C5F] bg-[#151D30] ${c.text}`} />
+            <Input type="number" min={1} max={100} value={price} onChange={(e) => setPrice(parseInt(e.target.value || "0", 10))} className={`mt-1 border-[#2C3648] bg-[#121722] ${c.text}`} />
           </div>
           <div>
             <Label className={`text-[11px] ${c.text2}`}>Size ($)</Label>
-            <Input value={sizeDollars} onChange={(e) => setSizeDollars(e.target.value.replace(/[^0-9.]/g, ""))} className={`mt-1 border-[#2E3C5F] bg-[#151D30] ${c.text} ${mono}`} />
+            <Input value={sizeDollars} onChange={(e) => setSizeDollars(e.target.value.replace(/[^0-9.]/g, ""))} className={`mt-1 border-[#2C3648] bg-[#121722] ${c.text} ${mono}`} />
           </div>
           <div className={`flex justify-between rounded-lg border border-dashed px-3 py-2 text-[11.5px] ${c.borderStrong} ${c.text2}`}>
             <span>Est. fee (paper schedule)</span><span className={mono}>$0.00 · taker 0 bps [config]</span>

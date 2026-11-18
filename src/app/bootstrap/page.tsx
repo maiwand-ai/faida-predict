@@ -32,11 +32,11 @@ export default function BootstrapPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#0A0F1C] px-4 text-[#E9EEF7]">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-xl border border-[#202B45] bg-[#0F1523] p-6">
+    <main className="flex min-h-screen items-center justify-center bg-[#0B0E14] px-4 text-[#E6EAF2]">
+      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-xl border border-[#1E2533] bg-[#0E121A] p-6">
         <div className="text-center">
           <div className="text-[18px] font-bold tracking-wide">FAIDA <span className="text-[10px] font-bold tracking-[0.2em] text-[#00B0F0]">PREDICT</span></div>
-          <div className="mt-1 text-[11px] tracking-[0.15em] text-[#64748E]">ONE-TIME OPERATOR PASSWORD</div>
+          <div className="mt-1 text-[11px] tracking-[0.15em] text-[#6B7A94]">ONE-TIME OPERATOR PASSWORD</div>
         </div>
         {done ? (
           <div className="rounded-md border border-[#2FC08E]/40 bg-[#2FC08E]/10 px-3 py-2 text-[12px] text-[#2FC08E]">
@@ -45,17 +45,17 @@ export default function BootstrapPage() {
         ) : (
           <>
             <div className="space-y-2">
-              <label htmlFor="password" className="text-[12px] text-[#9AA8C0]">Operator password (≥10 chars)</label>
+              <label htmlFor="password" className="text-[12px] text-[#8B95A7]">Operator password (≥10 chars)</label>
               <input id="password" type="password" required minLength={10} value={password} onChange={(e) => setPassword(e.target.value)}
-                className="h-9 w-full rounded-md border border-[#202B45] bg-transparent px-3 text-[13px] outline-none focus:border-[#00B0F0]" />
+                className="h-9 w-full rounded-md border border-[#1E2533] bg-transparent px-3 text-[13px] outline-none focus:border-[#00B0F0]" />
             </div>
             {error && <div className="rounded-md border border-[#F0525F]/40 bg-[#F0525F]/10 px-3 py-2 text-[12px] text-[#F0525F]">{error}</div>}
-            <button type="submit" disabled={busy} className="h-9 w-full rounded-md bg-[#00B0F0] text-[13px] font-semibold text-[#0A0F1C] disabled:opacity-50">
+            <button type="submit" disabled={busy} className="h-9 w-full rounded-md bg-[#00B0F0] text-[13px] font-semibold text-[#0B0E14] disabled:opacity-50">
               {busy ? "Setting…" : "Set operator password"}
             </button>
           </>
         )}
-        <div className="text-center text-[11px] text-[#64748E]">
+        <div className="text-center text-[11px] text-[#6B7A94]">
           Already set? <Link href="/login" className="text-[#3E9BF0]">Sign in</Link>
         </div>
       </form>

@@ -5,14 +5,14 @@ import type { CSSProperties, ReactNode } from "react";
 import { VENUES, VENUE_COLOR, VENUE_LABEL, venueColor } from "@/lib/venues";
 
 export const c = {
-  bg: "bg-[#0A0F1C]",
-  surface: "bg-[#0F1523]",
-  elevated: "bg-[#151D30]",
-  border: "border-[#202B45]",
-  borderStrong: "border-[#2E3C5F]",
-  text: "text-[#E9EEF7]",
-  text2: "text-[#9AA8C0]",
-  text3: "text-[#64748E]",
+  bg: "bg-[#0B0E14]",
+  surface: "bg-[#0E121A]",
+  elevated: "bg-[#121722]",
+  border: "border-[#1E2533]",
+  borderStrong: "border-[#2C3648]",
+  text: "text-[#E6EAF2]",
+  text2: "text-[#8B95A7]",
+  text3: "text-[#6B7A94]",
   accent: "text-[#3E9BF0]",
   bright: "text-[#00B0F0]",
   gain: "text-[#2FC08E]",
@@ -64,10 +64,10 @@ export function StateChip({ state }: { state: string }) {
     PARTIALLY_FILLED: `${c.bright} bg-[#00B0F0]/10`,
     SUBMITTED: `${c.accent} bg-[#3E9BF0]/10`,
     VALIDATED: `${c.accent} bg-[#3E9BF0]/10`,
-    CREATED: c.text3 + " bg-[#151D30]",
-    CANCELLED: c.text3 + " bg-[#151D30]",
+    CREATED: c.text3 + " bg-[#121722]",
+    CANCELLED: c.text3 + " bg-[#121722]",
     REJECTED: `${c.loss} bg-[#F0525F]/10`,
-    EXPIRED: c.text3 + " bg-[#151D30]",
+    EXPIRED: c.text3 + " bg-[#121722]",
     RECONCILING: `${c.warn} bg-[#E3A63B]/10`,
     UNKNOWN: `${c.warn} bg-[#E3A63B]/10`,
   };
@@ -87,7 +87,7 @@ export function Pill({ status }: { status: string }) {
     PAUSED_BY_RISK: `${c.warn} bg-[#E3A63B]/10 border-[#E3A63B]/30`,
     PAUSED_BY_AI_BUDGET: `${c.ai} bg-[#8B7CF6]/10 border-[#8B7CF6]/30`,
     ERROR: `${c.loss} bg-[#F0525F]/10 border-[#F0525F]/30`,
-    STOPPED: c.text3 + " bg-[#151D30] border-[#2E3C5F]",
+    STOPPED: c.text3 + " bg-[#121722] border-[#2C3648]",
   };
   const glyph: Record<string, string> = {
     RUNNING: "●", PAPER_ONLY: "◇", PAUSED_BY_USER: "‖", PAUSED_BY_RISK: "‖",
@@ -108,7 +108,7 @@ export function Meter({ label, pct, detail, tone = "accent" }: { label: string; 
         <span>{label}</span>
         <span className={mono}>{Math.round(pct)}%</span>
       </div>
-      <div className="mt-1 h-1.5 rounded bg-[#151D30]">
+      <div className="mt-1 h-1.5 rounded bg-[#121722]">
         <div className={`h-full rounded ${fill}`} style={{ width: `${Math.min(100, Math.max(2, pct))}%` }} />
       </div>
       <div className={`mt-1 text-[10px] ${c.text3}`}>{detail}</div>

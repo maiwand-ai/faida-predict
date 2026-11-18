@@ -11,7 +11,7 @@
 // Every element names its venue (B11). The venue grid is driven by the
 // registry rollup (`venues` in /api/dashboard), never by scattered data.
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   type DashboardDTO,
@@ -21,12 +21,12 @@ import {
   FAMILY_LABEL,
 } from "./types";
 import { c, card, mono, fmtCents, Pill, Meter, SectionTitle, VenueBadge, StateChip, venueScopeStyle } from "./ui";
-import { ROLE_LABEL, VENUES } from "@/lib/venues";
+import { ROLE_LABEL, VENUE_LABEL, VENUES } from "@/lib/venues";
 
 // B12: role chips are neutral gray — the venue's own color (badge, card strip,
 // workspace interior) carries the identity, so role text never fights the hue.
 function roleChipClass(_role: string): string {
-  return `${c.text3} bg-[#151D30]`;
+  return `${c.text3} bg-[#121722]`;
 }
 
 function pnlClass(v: number | null): string {
@@ -39,7 +39,12 @@ function pnlText(v: number | null): string {
   return `${v > 0 ? "+" : ""}${fmtCents(v)}`;
 }
 
-// ── Dashboard (default view) ─────────────────────────────────────────────────
+// ── Dashboard (default view) — redesigned overview ───────────────────────────
+// Structure follows the ratified redesign: greeting header, KPI band with the
+// segmented exposure bar, compact venue tile row, robots table + decision
+// feed, then the in-trade detail with the risk/activity rail. Every number is
+// registry- or ledger-driven (B9/B11/B12/D-03) — nothing on this page is mock.
+
 export function DashboardView(props: {
   dash: DashboardDTO | null;
   markets: MarketDTO[];
@@ -53,6 +58,14 @@ export function DashboardView(props: {
 }) {
   const { dash, onCycle, onReconcile, hasUnknown, onSync, onControl, onOpenVenue } = props;
   const [intervalSec, setIntervalSec] = useState(60);
+  // Greeting + date live in the browser clock; the server snapshot renders
+  // a neutral string so server and client HTML stay identical (no hydration
+  // drift) — useSyncExternalStore keeps this lint-clean (no setState-in-effect).
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   if (!dash) return <DashboardSkeleton />;
   const exposurePct = dash.allocatedCents > 0 ? (dash.exposureCents / dash.allocatedCents) * 100 : 0;
   const aiProvider = dash.providers.find((p) => p.enabled) ?? dash.providers[0];
@@ -61,60 +74,111 @@ export function DashboardView(props: {
   const auto = ctl?.autopilot;
   const lastRun = auto?.lastRun ?? null;
 
+  // per-robot open-position rollup for the robots table (paper marks)
+  const robotStats = new Map<string, { open: number; pnl: number }>();
+  for (const p of dash.positions) {
+    const name = p.robot?.name ?? "—";
+    const cur = robotStats.get(name) ?? { open: 0, pnl: 0 };
+    cur.open += 1;
+    cur.pnl += p.unrealizedCents ?? 0;
+    robotStats.set(name, cur);
+  }
+  const robotsSorted = [...dash.robots].sort((a, b) => {
+    const pa = robotStats.get(a.name)?.pnl ?? null;
+    const pb = robotStats.get(b.name)?.pnl ?? null;
+    if (pa == null && pb == null) return a.name.localeCompare(b.name);
+    if (pa == null) return 1;
+    if (pb == null) return -1;
+    return pb - pa;
+  });
+
   // "In trade now" — venue, market and robot per open position + marks.
   const positions = dash.positions;
   const venuesInTrade = new Set(positions.map((p) => p.market?.venue ?? "?")).size;
   const totalUnrealized = positions.reduce((a, p) => a + (p.unrealizedCents ?? 0), 0);
   const liveVenues = VENUES.filter((v) => v.adapter === "LIVE");
+  const pendingVenues = VENUES.filter((v) => v.adapter === "PENDING");
   const activeRobots = dash.robots.filter((r) => ["RUNNING", "PAPER_ONLY"].includes(r.status)).length;
   const pausedRobots = dash.robots.filter((r) => r.status.startsWith("PAUSED")).length;
 
+  // today's P&L context: decisions + fills recorded today (browser clock)
+  const todayKey = new Date().toDateString();
+  const decisionsToday = dash.traces.filter((t) => new Date(t.createdAt).toDateString() === todayKey).length;
+  const fillsToday = dash.orders.filter((o) => o.state === "FILLED" && new Date(o.createdAt).toDateString() === todayKey).length;
+  const todayPct = dash.balanceCents > 0 ? (dash.todayFlowCents / dash.balanceCents) * 100 : 0;
+  const allocatedPct = dash.balanceCents > 0 ? (dash.allocatedCents / dash.balanceCents) * 100 : 0;
+
+  const firstName = (dash.user.name ?? "Founder").split(" ")[0];
+  const hour = mounted ? new Date().getHours() : -1;
+  const greeting = hour < 0 ? "Welcome back" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const dateStr = mounted ? new Date().toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" }) : "—";
+  const walletAddr = dash.wallet?.address ?? "";
+  const walletShort = walletAddr ? `${walletAddr.slice(0, 6)}…${walletAddr.slice(-5)}` : "no wallet linked";
+
+  // segmented exposure bar — one segment per venue with open notional (B12)
+  const exposureSegments = VENUES.map((v) => {
+    const s = dash.venues.find((x) => x.venue === v.id);
+    return { id: v.id, hex: v.hex, cents: s?.exposureCents ?? 0 };
+  }).filter((s) => s.cents > 0);
+  const exposureTotal = exposureSegments.reduce((a, s) => a + s.cents, 0) || 1;
+
   return (
     <div className="flex flex-col gap-5">
-      {/* title row */}
-      <div className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[19px] font-semibold">Dashboard</h1>
-        <span className={`text-[12px] ${c.text3}`}>all values labeled SIMULATED / PAPER — nothing here is live money</span>
-        <div className="ml-auto flex gap-2">
-          <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1B2540]`} onClick={() => onSync()} disabled={props.busy === "sync"}>
+      {/* greeting header */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-[22px] font-bold tracking-tight">
+            {greeting}, {firstName}
+          </h1>
+          <p className={`mt-0.5 text-[12.5px] ${c.text2}`}>{dateStr} · Paper mode, no real money moves</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1A2432]`} onClick={() => onSync()} disabled={props.busy === "sync"}>
             {props.busy === "sync" ? "Syncing…" : "Sync all venues"}
           </Button>
-          <Button size="sm" className="bg-[#00B0F0] font-semibold text-[#001040] hover:bg-[#2FC1F5]" onClick={onCycle} disabled={props.busy !== null}>
+          <Button size="sm" className="bg-[#3E9BF0] font-semibold text-[#071018] hover:bg-[#5FADEF]" onClick={onCycle} disabled={props.busy !== null}>
             Run robot cycle
           </Button>
         </div>
       </div>
 
-      {/* KPI band — balance, exposure, today, in-trade (MT5-equivalent cockpit row) */}
+      {/* KPI band — balance, allocation, exposure (segmented by venue), today */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="TOTAL PAPER BALANCE" value={fmtCents(dash.balanceCents)} tag="SIMULATED" />
+        <Kpi label="PAPER BALANCE" value={fmtCents(dash.balanceCents)} sub={`Self-custody wallet · ${walletShort}`} tag="SIMULATED" />
         <Kpi
-          label="RISK EXPOSURE"
-          value={fmtCents(dash.exposureCents)}
-          tag="OPEN POSITIONS"
-          meter={{ pct: exposurePct, detail: `${dash.exposureLimitPct}% per-event cap in effect` }}
+          label="ALLOCATED TO ROBOTS"
+          value={fmtCents(dash.allocatedCents)}
+          sub={`${allocatedPct.toFixed(0)}% of balance · ${dash.robots.length} robot${dash.robots.length === 1 ? "" : "s"}`}
+          tag="ALLOC"
         />
-        <Kpi label="TODAY NET FLOW" value={fmtCents(dash.todayFlowCents)} tag="PAPER LEDGER" tone={dash.todayFlowCents < 0 ? "loss" : "gain"} />
         <Kpi
-          label="IN TRADE NOW"
-          value={`${positions.length} position${positions.length === 1 ? "" : "s"} · ${venuesInTrade} venue${venuesInTrade === 1 ? "" : "s"}`}
-          tag={`MARK ${pnlText(totalUnrealized)}`}
-          tone={totalUnrealized > 0 ? "gain" : totalUnrealized < 0 ? "loss" : "text"}
+          label="OPEN EXPOSURE"
+          value={fmtCents(dash.exposureCents)}
+          sub={`${exposurePct.toFixed(0)}% of allocation · per-event cap ${dash.exposureLimitPct}%`}
+          tag="OPEN"
+          bar={exposureSegments.length > 0 ? { segments: exposureSegments, total: exposureTotal } : undefined}
+        />
+        <Kpi
+          label="TODAY'S P&L"
+          value={pnlText(dash.todayFlowCents)}
+          sub={`${todayPct >= 0 ? "+" : ""}${todayPct.toFixed(2)}% · ${decisionsToday} decision${decisionsToday === 1 ? "" : "s"}, ${fillsToday} fill${fillsToday === 1 ? "" : "s"}`}
+          tag="PAPER LEDGER"
+          tone={dash.todayFlowCents < 0 ? "loss" : dash.todayFlowCents > 0 ? "gain" : "text"}
         />
       </div>
 
       {/* status strip — passive, glanceable (MT5 status-bar equivalent) */}
       <div className={`${card} flex flex-wrap items-center gap-2 px-4 py-2.5`}>
-        <span className={`rounded px-2 py-1 text-[10px] font-bold tracking-wide ${auto?.enabled ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#151D30]`}`}>
+        <span className={`rounded px-2 py-1 text-[10px] font-bold tracking-wide ${auto?.enabled ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#121722]`}`}>
           AUTOPILOT {auto?.enabled ? `ON · every ${auto.intervalSec}s` : "OFF"}
         </span>
         <span className={`rounded px-2 py-1 text-[10px] font-bold tracking-wide ${c.accent} bg-[#3E9BF0]/10`}>
           {liveVenues.length} ADAPTER{liveVenues.length === 1 ? "" : "S"} LIVE · {liveVenues.map((v) => v.short).join(" / ")}
         </span>
-        <span className={`rounded px-2 py-1 text-[10px] font-bold tracking-wide ${c.text2} bg-[#151D30]`}>
+        <span className={`rounded px-2 py-1 text-[10px] font-bold tracking-wide ${c.text2} bg-[#121722]`}>
           {dash.marketCount} MARKETS SYNCED
         </span>
-        <span className={`rounded px-2 py-1 text-[10px] font-bold tracking-wide ${c.text2} bg-[#151D30]`}>
+        <span className={`rounded px-2 py-1 text-[10px] font-bold tracking-wide ${c.text2} bg-[#121722]`}>
           {activeRobots} ROBOTS ACTIVE · {pausedRobots} PAUSED
         </span>
         {dash.openAlerts > 0 && (
@@ -141,17 +205,82 @@ export function DashboardView(props: {
         </div>
       )}
 
-      {/* venue grid — the hub: pick a venue → its workspace (robots, markets, orders) */}
-      <div>
-        <SectionTitle right={<span className={`text-[11px] ${c.text3}`}>registry-driven (B9) · venue-scoped robots (B11) · color-coded venues (B12)</span>}>
-          Venues — select a venue to manage its robots, markets and orders
+      {/* venues — compact tile row: one hue per venue, everything else neutral */}
+      <section>
+        <SectionTitle right={<span className={`text-[11px] ${c.text3}`}>registry-driven (B9) · venue-scoped robots (B11) · one hue per venue (B12)</span>}>
+          Venues — {liveVenues.length} live · {pendingVenues.length} pending
         </SectionTitle>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {VENUES.map((v) => {
             const stat = dash.venues.find((s) => s.venue === v.id);
-            return <VenueCard key={v.id} venueDef={v} stat={stat} onOpen={() => onOpenVenue(v.id)} />;
+            return <VenueTile key={v.id} venueDef={v} stat={stat} onOpen={() => onOpenVenue(v.id)} />;
           })}
         </div>
+      </section>
+
+      {/* robots table + decision feed — the two working surfaces, side by side */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <div className={`${card} overflow-hidden`}>
+            <div className="flex items-center justify-between px-4 pt-3 pb-2">
+              <span className={`text-[13px] font-semibold ${c.text}`}>Robots</span>
+              <span className={`text-[10.5px] ${c.text3}`}>
+                {activeRobots} active · {pausedRobots} paused · open P&L is the paper mark
+              </span>
+            </div>
+            <div className="fd-scroll max-h-[420px] overflow-y-auto">
+              <table className="w-full">
+                <thead className={`sticky top-0 ${c.surface}`}>
+                  <tr className={`border-b text-left text-[10px] tracking-wider ${c.border} ${c.text3}`}>
+                    <th className="px-4 py-2.5 font-semibold">ROBOT</th>
+                    <th className="px-3 py-2.5 font-semibold">VENUE</th>
+                    <th className="hidden px-3 py-2.5 font-semibold sm:table-cell">STRATEGY</th>
+                    <th className="px-3 py-2.5 font-semibold">STATUS</th>
+                    <th className="hidden px-3 py-2.5 font-semibold md:table-cell">ALLOC</th>
+                    <th className="px-3 py-2.5 font-semibold">OPEN</th>
+                    <th className="px-4 py-2.5 font-semibold">OPEN P&L</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {robotsSorted.map((r) => {
+                    const rs = robotStats.get(r.name);
+                    const pnl = rs && rs.open > 0 ? rs.pnl : null;
+                    return (
+                      <tr key={r.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#161D2B]`}>
+                        <td className="px-4 py-2.5">
+                          <button
+                            className={`font-semibold ${c.text} hover:underline`}
+                            onClick={() => onOpenVenue(r.venue)}
+                            title={`Open the ${VENUE_LABEL[r.venue] ?? r.venue} workspace`}
+                          >
+                            {r.name}
+                          </button>
+                        </td>
+                        <td className="px-3 py-2.5"><VenueBadge venue={r.venue} /></td>
+                        <td className={`hidden px-3 py-2.5 sm:table-cell ${c.text2}`}>{FAMILY_LABEL[r.family] ?? r.family}</td>
+                        <td className="px-3 py-2.5"><Pill status={r.status} /></td>
+                        <td className={`hidden px-3 py-2.5 md:table-cell ${mono} ${c.text2}`}>{fmtCents(r.allocatedCents)}</td>
+                        <td className={`px-3 py-2.5 ${mono} ${c.text}`}>
+                          {rs?.open ?? 0}
+                          <span className={`text-[10px] ${c.text3}`}>/{r.maxOpenPositions}</span>
+                        </td>
+                        <td className={`px-4 py-2.5 ${mono} font-semibold ${pnlClass(pnl)}`}>{pnlText(pnl)}</td>
+                      </tr>
+                    );
+                  })}
+                  {robotsSorted.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className={`px-4 py-8 text-center text-[12px] ${c.text3}`}>
+                        No robots yet — Robot Studio → New robot starts the creation wizard.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <DecisionFeed traces={dash.traces} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -159,7 +288,7 @@ export function DashboardView(props: {
         <div className="lg:col-span-2">
           <div className={`${card} overflow-hidden`}>
             <div className="flex items-center justify-between px-4 pt-3 pb-2">
-              <span className={`text-[13px] font-semibold tracking-wide ${c.text}`}>In trade now — venue · market · robot</span>
+              <span className={`text-[13px] font-semibold ${c.text}`}>In trade now — venue · market · robot</span>
               <span className={`text-[10px] ${c.text3}`}>marks = venue's last synced price (paper)</span>
             </div>
             <div className="fd-scroll max-h-[360px] overflow-y-auto">
@@ -179,7 +308,7 @@ export function DashboardView(props: {
                   {positions.map((p) => {
                     const mark = p.side === "YES" ? p.market?.yesPriceCents : p.market?.noPriceCents;
                     return (
-                      <tr key={p.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#131A2C]`}>
+                      <tr key={p.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#161D2B]`}>
                         <td className="px-4 py-2.5">{p.market?.venue ? <VenueBadge venue={p.market.venue} /> : "—"}</td>
                         <td className={`max-w-[240px] px-3 py-2.5 ${c.text}`}>
                           <div className="truncate">{p.market?.question}</div>
@@ -220,7 +349,7 @@ export function DashboardView(props: {
             </div>
           </div>
           <div className={`${card} p-4`}>
-            <SectionTitle right={hasUnknown ? <Button size="sm" variant="outline" className={`h-7 border-[#E3A63B]/50 bg-[#151D30] text-[#E3A63B] hover:bg-[#1B2540]`} onClick={onReconcile}>Resolve now</Button> : undefined}>
+            <SectionTitle right={hasUnknown ? <Button size="sm" variant="outline" className={`h-7 border-[#E3A63B]/50 bg-[#121722] text-[#E3A63B] hover:bg-[#1A2432]`} onClick={onReconcile}>Resolve now</Button> : undefined}>
               Recent activity
             </SectionTitle>
             <div className="flex flex-col">
@@ -233,6 +362,9 @@ export function DashboardView(props: {
                   <div className={`ml-3.5 mt-0.5 text-[10px] ${c.text3}`}>{n.body.slice(0, 90)}</div>
                 </div>
               ))}
+              {dash.notifications.length === 0 && (
+                <div className={`py-3 text-center text-[11.5px] ${c.text3}`}>No notifications — all clear.</div>
+              )}
             </div>
           </div>
         </div>
@@ -248,12 +380,12 @@ export function DashboardView(props: {
           <div className="flex flex-wrap items-center gap-2">
             {[60, 120, 300].map((s) => (
               <button key={s} onClick={() => setIntervalSec(s)}
-                className={`rounded border px-2 py-1 text-[10.5px] transition-colors ${intervalSec === s ? "border-[#00B0F0] bg-[#00B0F0]/10 text-[#00B0F0]" : `border-[#2E3C5F] ${c.text3} hover:bg-[#1B2540]`}`}>
+                className={`rounded border px-2 py-1 text-[10.5px] transition-colors ${intervalSec === s ? "border-[#00B0F0] bg-[#00B0F0]/10 text-[#00B0F0]" : `border-[#2C3648] ${c.text3} hover:bg-[#1A2432]`}`}>
                 {s}s
               </button>
             ))}
             {auto?.enabled ? (
-              <Button size="sm" variant="outline" className={`h-7 border-[#2E3C5F] bg-[#151D30] ${c.text} hover:bg-[#1B2540]`} onClick={() => onControl({ action: "AUTOPILOT_STOP" }, "Autopilot stopped")} disabled={props.busy !== null}>
+              <Button size="sm" variant="outline" className={`h-7 border-[#2C3648] bg-[#121722] ${c.text} hover:bg-[#1A2432]`} onClick={() => onControl({ action: "AUTOPILOT_STOP" }, "Autopilot stopped")} disabled={props.busy !== null}>
                 Stop autopilot
               </Button>
             ) : (
@@ -267,81 +399,86 @@ export function DashboardView(props: {
               ? `last run ${new Date(lastRun.at).toLocaleTimeString()} — ${lastRun.skipped ? `skipped (${lastRun.skipped})` : `${lastRun.cycles} robots · ${lastRun.trades} trade · ${lastRun.noTrades} no-trade${lastRun.errors ? ` · ${lastRun.errors} ERR` : ""}`}`
               : "autopilot never ran — press Start"}
           </div>
-          <Button size="sm" variant="outline" className={`h-7 shrink-0 border-[#F0525F]/50 bg-transparent text-[#F0525F] hover:bg-[#F0525F]/10`} onClick={() => onControl({ action: "PAUSE", reason: "manual pause from Dashboard" }, "PLATFORM PAUSED — all cycles and orders refuse until resume")} disabled={props.busy !== null || paused}>
+          <Button size="sm" variant="outline" className={`h-7 shrink-0 border-[#F0525F]/50 bg-transparent text-[#F0525F] hover:bg-[#F0525F]/10`} onClick={() => onControl({ action: "PAUSE", reason: "manual pause from Overview" }, "PLATFORM PAUSED — all cycles and orders refuse until resume")} disabled={props.busy !== null || paused}>
             {paused ? "Paused" : "Global pause"}
           </Button>
-        </div>
-      </div>
-
-      {/* decision traces */}
-      <div className={card}>
-        <div className="p-4 pb-2"><SectionTitle>Decision traces — every robot decision, trade or no-trade (A-08)</SectionTitle></div>
-        <div className="flex flex-col px-4 pb-4">
-          {dash.traces.slice(0, 5).map((t) => (
-            <TraceRow key={t.id} t={t} />
-          ))}
-          {dash.traces.length === 0 && <div className={`py-4 text-center text-[12px] ${c.text3}`}>No cycles run yet — press “Run robot cycle”.</div>}
         </div>
       </div>
     </div>
   );
 }
 
-// ── venue card (dashboard grid) — B12: each venue wears its own color ────────
-function VenueCard({ venueDef: v, stat, onOpen }: { venueDef: (typeof VENUES)[number]; stat: VenueStatDTO | undefined; onOpen: () => void }) {
-  const inTrade = (stat?.openPositions ?? 0) > 0;
+// ── venue tile (compact overview row) — one hue per venue, density wins ──────
+// Replaces the old 2×3 card grid: after week one the operator knows the
+// venues, so the overview spends its space on robots + decisions instead.
+function VenueTile({ venueDef: v, stat, onOpen }: { venueDef: (typeof VENUES)[number]; stat: VenueStatDTO | undefined; onOpen: () => void }) {
   const pending = v.adapter === "PENDING";
+  const pnl = stat && stat.openPositions > 0 ? stat.unrealizedCents : null;
   return (
     <button
       onClick={onOpen}
       aria-label={`Open ${v.label} workspace`}
       style={venueScopeStyle(v.id)}
-      className={`vc-scope ${card} venue-card group relative flex flex-col gap-2.5 overflow-hidden text-left ${pending ? "vc-pending" : ""} ${inTrade ? "vc-border" : ""}`}
+      className={`vc-scope ${card} venue-card group flex flex-col overflow-hidden text-left ${pending ? "vc-pending" : ""}`}
     >
-      {/* venue identity strip — the card's color bar */}
-      <span className={`vc-strip block h-[3px] w-full shrink-0 ${pending ? "opacity-80" : ""}`} />
-      {inTrade && (
-        <span className="vc-chip absolute right-3 top-3.5 rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide">IN TRADE</span>
-      )}
-      <div className="flex flex-col gap-2.5 px-4 pb-4 pt-2.5">
-        <div className="flex flex-wrap items-center gap-2 pr-14">
-          <VenueBadge venue={v.id} />
-          <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${roleChipClass(v.role)}`}>{ROLE_LABEL[v.role]}</span>
-          <span className={`text-[10.5px] font-semibold ${pending ? c.text3 : "vc-text"}`}>
-            {pending ? "○ adapter pending" : "● adapter live"}
+      <span className="vc-strip block h-[3px] w-full shrink-0" aria-hidden />
+      <div className="flex flex-1 flex-col gap-1.5 px-3.5 pb-3 pt-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className={`truncate text-[13px] font-semibold ${c.text}`}>{v.label}</span>
+          <span className={`vc-chip shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${pending ? "opacity-80" : ""}`}>
+            {pending ? "PENDING" : "LIVE"}
           </span>
         </div>
-        <div className={`line-clamp-2 text-[10.5px] leading-snug ${c.text3}`}>{v.note}</div>
-        <div className={`mt-0.5 grid grid-cols-3 gap-2 border-t pt-2.5 text-center ${c.border}`}>
-          <div>
-            <div className={`text-[9px] tracking-wider ${c.text3}`}>MARKETS</div>
-            <div className={`text-[13px] font-semibold ${mono} ${c.text}`}>{stat?.markets ?? 0}</div>
-          </div>
-          <div>
-            <div className={`text-[9px] tracking-wider ${c.text3}`}>ROBOTS</div>
-            <div className={`text-[13px] font-semibold ${mono} ${c.text}`}>
-              {stat?.robotsActive ?? 0}
-              <span className={`text-[10px] ${c.text3}`}>/{stat?.robotsTotal ?? 0}</span>
-            </div>
-          </div>
-          <div>
-            <div className={`text-[9px] tracking-wider ${c.text3}`}>IN TRADE</div>
-            <div className={`text-[13px] font-semibold ${mono} ${inTrade ? "vc-text" : c.text}`}>
-              {stat?.openPositions ?? 0}
-              <span className={`text-[9.5px] font-normal ${c.text3}`}> · {fmtCents(stat?.exposureCents ?? 0)}</span>
-            </div>
-          </div>
+        <div className={`flex items-center justify-between text-[10px] ${c.text3}`}>
+          <span className={mono}>{stat?.markets ?? 0} mkt · {stat?.robotsActive ?? 0}/{stat?.robotsTotal ?? 0} rbts</span>
+          <span className={mono} title="Open notional on this venue (paper)">{fmtCents(stat?.exposureCents ?? 0)}</span>
         </div>
-        <div className={`flex items-center justify-between text-[10.5px] ${c.text3}`}>
-          <span>
-            unrealized <span className={`${mono} font-semibold ${pnlClass(stat ? (stat.openPositions > 0 ? stat.unrealizedCents : null) : null)}`}>
-              {stat && stat.openPositions > 0 ? pnlText(stat.unrealizedCents) : "—"}
-            </span> <span className={c.text3}>(paper mark)</span>
-          </span>
-          <span className={`font-semibold vc-text opacity-0 transition-opacity group-hover:opacity-100`}>Open workspace →</span>
+        <div className={`mt-auto flex items-center justify-between border-t pt-1.5 text-[10px] ${c.border} ${c.text3}`}>
+          <span>open P&L</span>
+          <span className={`${mono} font-semibold ${pnlClass(pnl)}`}>{pnlText(pnl)}</span>
         </div>
       </div>
     </button>
+  );
+}
+
+// ── Decision feed — the highest-value surface: every robot decision with its
+// reason, venue-hued bar for scannability (redesign ratification). Rows reuse
+// the shared TraceRow, so expanding one shows the full A-08 evidence.
+function DecisionFeed({ traces }: { traces: TraceDTO[] }) {
+  return (
+    <div className={`${card} overflow-hidden`}>
+      <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
+        <span className={`text-[13px] font-semibold ${c.text}`}>Decision feed</span>
+        <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold tracking-wide ${c.bright}`}>
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00B0F0] opacity-60" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#00B0F0]" />
+          </span>
+          LIVE
+        </span>
+      </div>
+      <div className="fd-scroll max-h-[420px] overflow-y-auto px-4 pb-3">
+        {traces.length === 0 ? (
+          <div className={`py-8 text-center text-[12px] ${c.text3}`}>
+            No decisions yet — run a robot cycle and every verdict lands here with its risk checks.
+          </div>
+        ) : (
+          traces.slice(0, 8).map((t) => (
+            <div key={t.id} className="flex gap-2.5">
+              <span
+                className="vc-scope mt-2 h-8 w-[3px] shrink-0 rounded-full vc-bg"
+                style={t.market?.venue ? venueScopeStyle(t.market.venue) : undefined}
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1">
+                <TraceRow t={t} />
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -383,7 +520,7 @@ export function VenueWorkspace(props: {
     // entering a different market visibly changes the room.
     <div className={`vc-scope flex flex-col gap-4 ${live ? "" : "vc-pending"}`} style={venueScopeStyle(venueId)}>
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1B2540]`} onClick={onBack}>
+        <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1A2432]`} onClick={onBack}>
           ← Back to dashboard
         </Button>
         <span className={`text-[12px] ${c.text3}`}>venue workspace — everything on this venue in one place (B11)</span>
@@ -404,11 +541,11 @@ export function VenueWorkspace(props: {
         </div>
         <div className="relative flex shrink-0 flex-wrap gap-2">
           {live && (
-            <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1B2540]`} onClick={() => onSyncVenue(v.id)} disabled={busy === "sync"}>
+            <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1A2432]`} onClick={() => onSyncVenue(v.id)} disabled={busy === "sync"}>
               {busy === "sync" ? "Syncing…" : `Sync ${v.label}`}
             </Button>
           )}
-          <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1B2540]`} onClick={onCycle} disabled={busy !== null}>
+          <Button variant="outline" size="sm" className={`${c.borderStrong} ${c.elevated} ${c.text} hover:bg-[#1A2432]`} onClick={onCycle} disabled={busy !== null}>
             Run robot cycle
           </Button>
           <Button
@@ -507,7 +644,7 @@ export function VenueWorkspace(props: {
                     const thin =
                       m.yesTouchDepthCents != null && m.yesTouchDepthCents < 5000;
                     return (
-                    <tr key={m.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#131A2C]`}>
+                    <tr key={m.id} className={`border-b text-[12px] last:border-0 ${c.border} hover:bg-[#161D2B]`}>
                       <td className={`max-w-[210px] px-4 py-2.5 sm:max-w-[300px] ${c.text}`}>
                         <div className="truncate">{m.question}</div>
                         <div className={`text-[10px] ${c.text3}`}>
@@ -531,7 +668,7 @@ export function VenueWorkspace(props: {
                         </span>
                       </td>
                       <td className="px-3 py-2.5 text-right">
-                        <Button size="sm" variant="outline" className={`h-7 border-[#2E3C5F] bg-[#151D30] text-[11px] text-[#E9EEF7] hover:bg-[#1B2540]`} onClick={() => onTrade(m)} disabled={m.ambiguityFlag}>
+                        <Button size="sm" variant="outline" className={`h-7 border-[#2C3648] bg-[#121722] text-[11px] text-[#E6EAF2] hover:bg-[#1A2432]`} onClick={() => onTrade(m)} disabled={m.ambiguityFlag}>
                           {m.ambiguityFlag ? "Flagged" : "Trade"}
                         </Button>
                       </td>
@@ -662,7 +799,7 @@ function TraceRow({ t }: { t: TraceDTO }) {
   return (
     <div className={`border-b py-2.5 last:border-0 ${c.border}`}>
       <button onClick={() => setOpen((o) => !o)} className="flex w-full flex-wrap items-center gap-2 text-left" aria-expanded={open}>
-        <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${t.decision === "TRADE" ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#151D30]`}`}>{t.decision}</span>
+        <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${t.decision === "TRADE" ? `${c.bright} bg-[#00B0F0]/10` : `${c.text3} bg-[#121722]`}`}>{t.decision}</span>
         <ModelChip modelKey={t.modelKey} provenance={t.provenance} />
         <span className={`text-[12px] font-semibold ${c.text}`}>{t.robot?.name}</span>
         {t.market?.venue && <VenueBadge venue={t.market.venue} withLabel={false} />}
@@ -688,7 +825,7 @@ function TraceDetail({ t }: { t: TraceDTO }) {
     </div>
   );
   return (
-    <div className="mt-2 rounded-lg border border-[#202B45] bg-[#0D1425] p-3">
+    <div className="mt-2 rounded-lg border border-[#1E2533] bg-[#10151F] p-3">
       <div className="grid grid-cols-1 gap-x-6 gap-y-1 md:grid-cols-2">
         <div>
           <div className={`mb-1 text-[10px] font-bold tracking-wider ${c.text3}`}>PROVENANCE ENVELOPE (A-02)</div>
@@ -790,7 +927,7 @@ function ModelChip({ modelKey, provenance }: { modelKey?: string | null; provena
     <span
       title={`${modelKey}${cache ? " · cache " + cache : ""}${flagged ? " · A-06 screening FLAGGED" : ""}`}
       className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide ${
-        isAI ? `text-[#C9A6FF] bg-[#C9A6FF]/10` : `${c.text3} bg-[#151D30]`
+        isAI ? `text-[#C9A6FF] bg-[#C9A6FF]/10` : `${c.text3} bg-[#121722]`
       }`}
     >
       {label}
@@ -800,34 +937,55 @@ function ModelChip({ modelKey, provenance }: { modelKey?: string | null; provena
   );
 }
 
-function Kpi({ label, value, tag, meter, tone = "text" }: { label: string; value: string; tag: string; meter?: { pct: number; detail: string }; tone?: "text" | "gain" | "loss" }) {
+// redesigned KPI card — label / big mono number / optional segmented bar /
+// honest context line. The segment bar splits open exposure by venue hue.
+function Kpi({ label, value, sub, tag, tone = "text", bar }: {
+  label: string;
+  value: string;
+  sub: string;
+  tag?: string;
+  tone?: "text" | "gain" | "loss";
+  bar?: { segments: Array<{ id: string; hex: string; cents: number }>; total: number };
+}) {
   return (
     <div className={`${card} p-4`}>
       <div className={`flex items-center justify-between text-[10px] font-semibold tracking-wider ${c.text3}`}>
         <span>{label}</span>
-        <span className={`rounded px-1.5 py-0.5 text-[9px] ${c.bright} bg-[#00B0F0]/10`}>{tag}</span>
+        {tag && <span className={`rounded px-1.5 py-0.5 text-[9px] ${c.text3} bg-[#121722]`}>{tag}</span>}
       </div>
-      <div className={`mt-2 text-[20px] font-semibold ${mono} ${tone === "gain" ? c.gain : tone === "loss" ? c.loss : c.text}`}>{value}</div>
-      {meter && (
-        <div className="mt-2">
-          <div className={`h-1.5 rounded bg-[#151D30]`}>
-            <div className="h-full rounded bg-[#3E9BF0]" style={{ width: `${Math.min(100, Math.max(2, meter.pct))}%` }} />
-          </div>
-          <div className={`mt-1 text-[10px] ${c.text3}`}>{meter.detail}</div>
+      <div className={`mt-2 text-[21px] font-semibold ${mono} ${tone === "gain" ? c.gain : tone === "loss" ? c.loss : c.text}`}>{value}</div>
+      {bar && (
+        <div className="mt-2 flex h-1.5 gap-px overflow-hidden rounded bg-[#121722]" role="img" aria-label="Open exposure split by venue">
+          {bar.segments.map((s) => (
+            <span
+              key={s.id}
+              className="h-full"
+              style={{ width: `${Math.max(2, (s.cents / bar.total) * 100)}%`, backgroundColor: s.hex }}
+              title={`${s.id}: ${fmtCents(s.cents)}`}
+            />
+          ))}
         </div>
       )}
+      <div className={`mt-1.5 text-[10px] ${c.text3}`}>{sub}</div>
     </div>
   );
 }
 
 function DashboardSkeleton() {
   return (
-    <div className="flex flex-col gap-4 py-10">
-      <div className={`h-6 w-40 animate-pulse rounded ${c.elevated}`} />
+    <div className="flex flex-col gap-4 py-8">
+      <div className={`h-7 w-56 animate-pulse rounded ${c.elevated}`} />
+      <div className={`h-4 w-72 animate-pulse rounded ${c.elevated}`} />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => <div key={i} className={`h-24 animate-pulse rounded-xl ${c.elevated}`} />)}
+        {[0, 1, 2, 3].map((i) => <div key={i} className={`h-28 animate-pulse rounded-xl ${c.elevated}`} />)}
       </div>
-      <div className={`h-64 animate-pulse rounded-xl ${c.elevated}`} />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        {[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className={`h-24 animate-pulse rounded-xl ${c.elevated}`} />)}
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className={`h-80 animate-pulse rounded-xl ${c.elevated} lg:col-span-2`} />
+        <div className={`h-80 animate-pulse rounded-xl ${c.elevated}`} />
+      </div>
     </div>
   );
 }
