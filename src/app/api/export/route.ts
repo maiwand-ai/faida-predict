@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
   const positions = want("positions")
     ? await db.position.findMany({
         orderBy: { openedAt: "asc" },
-        where: { robot: { userId: user.id } },
+        where: { OR: [{ robot: { userId: user.id } }, { userId: user.id }] },
         include: { market: { select: { venue: true, question: true } }, robot: { select: { name: true } } },
       })
     : [];
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
   if (want("ledger")) payload.ledger = ledger;
   if (want("positions"))
     payload.positions = positions.map((p) => ({
-      id: p.id, venue: p.market.venue, market: p.market.question, robot: p.robot.name,
+      id: p.id, venue: p.market.venue, market: p.market.question, robot: p.robot?.name ?? "manual",
       side: p.side, sizeCents: p.sizeCents, avgPriceCents: p.avgPriceCents, status: p.status,
       openedAt: p.openedAt, closedAt: p.closedAt,
     }));

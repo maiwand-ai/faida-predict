@@ -15,7 +15,7 @@
 import { db } from "@/lib/db";
 import { parityGapCents } from "@/lib/money";
 import { feeDragPts } from "@/lib/venue/rules";
-import { placePaperOrder } from "./paper";
+import { closePaperPosition, placePaperOrder } from "./paper";
 import { placeLiveOrder } from "@/lib/live/execute";
 import { preTradeRiskChecks } from "@/lib/risk";
 import { estimateForMarket } from "@/lib/probability/estimate";
@@ -55,11 +55,20 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
   // pick the most liquid live market on THIS robot's venue (B11 venue scoping)
   // without an open position on the chosen side
   const market = await db.market.findFirst({
-    where: { venue: robot.venue, ambiguityFlag: false, resolvedAt: null, yesPriceCents: { not: null } },
+    where: {
+      venue: robot.venue,
+      ambiguityFlag: false,
+      resolvedAt: null,
+      yesPriceCents: { not: null },
+      positions: { none: { robotId: robot.id, status: "OPEN" } },
+    },
     orderBy: { volumeCents: "desc" },
   });
   if (!market) {
-    return { robotId, robotName: robot.name, decision: "NO_TRADE", reason: `no eligible live market on ${robot.venue}`, traceId: "-" };
+    const pauseNow = await getPauseState();
+    const exits = robot.mode === "LIVE_PILOT" || pauseNow.paused ? [] : await managePaperExits(robot.id, robot.activeVersion);
+    const note = exits.length ? ` · closed ${exits.length} position${exits.length === 1 ? "" : "s"}` : "";
+    return { robotId, robotName: robot.name, decision: "NO_TRADE", reason: `no eligible live market on ${robot.venue}${note}`, traceId: "-" };
   }
 
   // ── global pause gate (C19/S-07): checked FIRST, propagation measured ────
@@ -106,6 +115,10 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
   }
 
   try {
+    // ── exit management (paper robots): review open positions first ───────
+    const exits = robot.mode === "LIVE_PILOT" ? [] : await managePaperExits(robot.id, robot.activeVersion);
+    const exitNote = exits.length ? ` · closed ${exits.length} position${exits.length === 1 ? "" : "s"}` : "";
+
     // ── staleness gate (S-10): refuse decisions on stale market data ───────
     const stalenessMs = await getStalenessThresholdMs();
     const ageMs = Date.now() - market.updatedAt.getTime();
@@ -243,7 +256,7 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
       }
     }
 
-    return { robotId, robotName: robot.name, decision, reason, traceId: trace.id };
+    return { robotId, robotName: robot.name, decision, reason: reason + exitNote, traceId: trace.id };
   } finally {
     await releaseRobotLease(robot.id, holder);
   }
@@ -258,6 +271,81 @@ export async function runAllCycles(): Promise<CycleSummary[]> {
     } catch (e) {
       out.push({ robotId: r.id, robotName: r.name, decision: "NO_TRADE", reason: `cycle error: ${String(e)}`, traceId: "-" });
     }
+  }
+  return out;
+}
+
+// ── Exit management (paper robots) ───────────────────────────────────────────
+// Every cycle reviews the robot's open positions and closes those whose
+// thesis is gone, using the robot's active strategy version:
+//   • edge on the held side fell below exitEdgePts (same estimator chain as
+//     entries, so the exit sees the same model the entry saw), or
+//   • the position has been held for holdTicksMax recorded price ticks, or
+//   • the market's close date has passed.
+// Each exit is a paper sell at the current price (closePaperPosition) and a
+// DecisionTrace with decision "EXIT" and the reason, so it shows up in the
+// robot's journal like every other decision.
+async function managePaperExits(robotId: string, activeVersion: number): Promise<Array<{ positionId: string; pnlCents: number }>> {
+  const positions = await db.position.findMany({ where: { robotId, status: "OPEN" }, include: { market: true } });
+  if (positions.length === 0) return [];
+  const sv = await db.strategyVersion.findFirst({ where: { robotId, version: activeVersion } });
+  const cfg = sv ? parseConfig(sv.config) : { ...DEFAULT_CONFIG };
+  const robot = await db.robot.findUnique({ where: { id: robotId }, select: { venue: true } });
+  const out: Array<{ positionId: string; pnlCents: number }> = [];
+  for (const p of positions) {
+    const m = p.market;
+    const mark = p.side === "YES" ? m.yesPriceCents : m.noPriceCents;
+    if (mark == null) continue; // cannot price it — keep and retry next cycle
+    const heldTicks = await db.marketPriceTick.count({ where: { marketId: m.id, capturedAt: { gt: p.openedAt } } });
+    const closed = m.closeDate != null && m.closeDate.getTime() <= Date.now();
+    let why: string | null = null;
+    let estPct: number | null = null;
+    let heldEdge: number | null = null;
+    let modelKey: string | null = null;
+    let provenance: string | null = null;
+    if (closed) {
+      why = "market close date has passed";
+    } else if (heldTicks >= cfg.holdTicksMax) {
+      why = `time stop: held ${heldTicks} ticks ≥ max ${cfg.holdTicksMax}`;
+    } else {
+      const est = await estimateForMarket({
+        question: m.question,
+        yesPriceCents: m.yesPriceCents,
+        noPriceCents: m.noPriceCents,
+        marketId: m.id,
+        venue: robot?.venue ?? m.venue,
+        dataSource: m.dataSource,
+        estimatorTiltPct: cfg.estimatorTiltPct,
+      });
+      estPct = est.estimatePct;
+      modelKey = est.modelKey;
+      provenance = JSON.stringify(est.provenance);
+      // edge on the side we hold: YES = estimate − YES price; NO = (100 − estimate) − NO price
+      heldEdge = p.side === "YES" ? est.estimatePct - mark : 100 - est.estimatePct - mark;
+      if (heldEdge < cfg.exitEdgePts) why = `edge on held ${p.side} side is ${heldEdge.toFixed(1)} pts, below exit threshold ${cfg.exitEdgePts} pts`;
+    }
+    if (!why) continue;
+    const res = await closePaperPosition({ positionId: p.id, reason: why });
+    const reason = res.ok
+      ? `exit: closed ${p.side} on "${m.question.slice(0, 50)}" at ${mark}¢ (entry ${p.avgPriceCents}¢) — ${why}; realized ${res.pnlCents >= 0 ? "+" : ""}${res.pnlCents}¢${res.feeCents ? `, fee ${res.feeCents}¢` : ""}`
+      : `exit attempt failed — ${res.reason} (${why})`;
+    await db.decisionTrace.create({
+      data: {
+        robotId,
+        marketId: m.id,
+        strategyVersionId: sv?.id ?? null,
+        trigger: "SCHEDULE_TICK",
+        modelEstimatePct: estPct,
+        marketPriceCents: m.yesPriceCents,
+        edgeNetPct: heldEdge != null ? Math.round(heldEdge) : null,
+        decision: res.ok ? "EXIT" : "NO_TRADE",
+        reason,
+        riskChecks: JSON.stringify([{ check: "EXIT_RULES", passed: true, detail: why }]),
+        modelKey,
+        provenance,
+      },
+    });
+    if (res.ok) out.push({ positionId: p.id, pnlCents: res.pnlCents });
   }
   return out;
 }

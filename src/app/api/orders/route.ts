@@ -3,7 +3,8 @@
 // the full pipeline (eligibility -> risk -> machine -> fill -> ledger -> outbox).
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { placePaperOrder } from "@/lib/engine/paper";
+import { getPauseState } from "@/lib/control";
+import { closePaperPosition, placePaperOrder } from "@/lib/engine/paper";
 import { simulateLostSubmission } from "@/lib/engine/reconcile";
 import { resolveAuth } from "@/lib/auth";
 
@@ -32,7 +33,8 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const user = auth.ctx.user;
   const body = (await req.json()) as {
-    action?: "PLACE" | "SIMULATE_ACK_LOSS";
+    action?: "PLACE" | "SIMULATE_ACK_LOSS" | "CLOSE_POSITION";
+    positionId?: string;
     marketId?: string;
     side?: "BUY_YES" | "BUY_NO";
     priceCents?: number;
@@ -40,6 +42,21 @@ export async function POST(req: NextRequest) {
     robotId?: string | null;
     nonce?: string;
   };
+
+  // Close one of the user's open paper positions at the current price
+  // (robot or manual). The global pause blocks it like any other order.
+  if (body.action === "CLOSE_POSITION") {
+    if (!body.positionId) return NextResponse.json({ ok: false, error: "positionId required" }, { status: 400 });
+    const pos = await db.position.findUnique({ where: { id: body.positionId }, include: { robot: { select: { userId: true, mode: true } } } });
+    if (!pos || (pos.userId ?? pos.robot?.userId) !== user.id) return NextResponse.json({ ok: false, error: "position not found" }, { status: 404 });
+    if (pos.robot?.mode === "LIVE_PILOT") return NextResponse.json({ ok: false, error: "live-pilot positions close through the live path" }, { status: 422 });
+    const pause = await getPauseState();
+    if (pause.paused) return NextResponse.json({ ok: false, error: `platform paused: ${pause.reason ?? "manual pause"}` }, { status: 422 });
+    const res = await closePaperPosition({ positionId: pos.id, reason: "closed manually" });
+    return res.ok
+      ? NextResponse.json({ ok: true, state: "FILLED", orderId: res.orderId, proceedsCents: res.proceedsCents, pnlCents: res.pnlCents, feeCents: res.feeCents })
+      : NextResponse.json({ ok: false, error: res.reason }, { status: 422 });
+  }
 
   if (body.action === "SIMULATE_ACK_LOSS") {
     try {

@@ -35,7 +35,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
       include: { robot: { select: { name: true } } },
     }),
     db.position.findMany({
-      where: { marketId: id, robot: { userId: user.id } },
+      where: { marketId: id, OR: [{ robot: { userId: user.id } }, { userId: user.id }] },
       orderBy: { openedAt: "desc" },
       take: 50,
       include: { robot: { select: { id: true, name: true } } },

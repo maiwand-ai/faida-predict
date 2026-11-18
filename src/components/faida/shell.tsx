@@ -134,22 +134,32 @@ export function Sidebar(props: {
     const btnCls = `group flex w-full items-center gap-3 rounded-xl text-left text-[15px] font-medium transition-colors ${
       collapsed ? "h-11 justify-center" : "h-11 px-3"
     } ${on ? "bg-[#2583FF]/14 text-[var(--fd-strong)]" : "text-[var(--fd-text2)] hover:bg-[color:var(--fd-ink)]/[0.04] hover:text-[var(--fd-strong)]"}`;
+    // the label always opens the section (and expands it); the chevron alone
+    // collapses or expands the sub-menu
     const main = (
-      <button
-        className={btnCls}
-        aria-current={on && !g.children ? "page" : undefined}
-        aria-expanded={g.children && !collapsed ? expanded : undefined}
-        onClick={() => {
-          if (g.children && !collapsed) {
-            setOpen((o) => ({ ...o, [g.id]: !expanded }));
-            if (!on) onNavigate(g.to);
-          } else onNavigate(g.to);
-        }}
-      >
-        <span className={on ? "text-[var(--fd-blue-text)]" : "text-[var(--fd-text3)] group-hover:text-[var(--fd-text-soft)]"}>{g.icon}</span>
-        {!collapsed && <span className="flex-1 truncate">{g.label}</span>}
-        {!collapsed && g.children && <ChevronDown size={16} className={`text-[var(--fd-text3)] transition-transform ${expanded ? "rotate-180" : ""}`} />}
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          className={`${btnCls} flex-1`}
+          aria-current={on && !g.children ? "page" : undefined}
+          onClick={() => {
+            if (g.children && !collapsed) setOpen((o) => ({ ...o, [g.id]: true }));
+            onNavigate(g.to);
+          }}
+        >
+          <span className={on ? "text-[#2583FF]" : "text-[var(--fd-text3)] group-hover:text-[var(--fd-text-soft)]"}>{g.icon}</span>
+          {!collapsed && <span className="flex-1 truncate">{g.label}</span>}
+        </button>
+        {!collapsed && g.children && (
+          <button
+            onClick={() => setOpen((o) => ({ ...o, [g.id]: !expanded }))}
+            aria-expanded={expanded}
+            aria-label={`${expanded ? "Collapse" : "Expand"} ${g.label}`}
+            className="grid h-11 w-9 shrink-0 place-items-center rounded-xl text-[var(--fd-text3)] hover:bg-[color:var(--fd-ink)]/[0.04] hover:text-[var(--fd-strong)]"
+          >
+            <ChevronDown size={16} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
+          </button>
+        )}
+      </div>
     );
     return (
       <li key={g.id}>

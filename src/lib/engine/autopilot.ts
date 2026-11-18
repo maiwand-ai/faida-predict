@@ -51,19 +51,10 @@ function scheduleTimer(intervalSec: number): void {
   g.__faidaAutopilotTimer = setTimeout(() => void tick(), intervalSec * 1000);
 }
 
-async function tick(): Promise<void> {
-  g.__faidaAutopilotTimer = undefined;
-  if (g.__faidaAutopilotBusy) {
-    // previous run still in flight — re-arm without stacking cycles
-    const state = await getAutopilotState();
-    if (state.enabled) scheduleTimer(state.intervalSec);
-    return;
-  }
-  g.__faidaAutopilotBusy = true;
-  try {
-    const state = await getAutopilotState();
-    if (!state.enabled) return; // stopped while we slept
-
+// One autopilot pass: every eligible robot cycles, unresolved orders are
+// reconciled and the outbox drains. Shared by the in-process timer (long-running
+// server) and the scheduled tick (serverless, see lib/engine/scheduler.ts).
+export async function runAutopilotOnce(): Promise<AutopilotLastRun> {
     const pause = await getPauseState();
     let lastRun: AutopilotLastRun;
     if (pause.paused) {
@@ -82,6 +73,23 @@ async function tick(): Promise<void> {
         reconciled: reconcile.length,
       };
     }
+  return lastRun;
+}
+
+async function tick(): Promise<void> {
+  g.__faidaAutopilotTimer = undefined;
+  if (g.__faidaAutopilotBusy) {
+    // previous run still in flight — re-arm without stacking cycles
+    const state = await getAutopilotState();
+    if (state.enabled) scheduleTimer(state.intervalSec);
+    return;
+  }
+  g.__faidaAutopilotBusy = true;
+  try {
+    const state = await getAutopilotState();
+    if (!state.enabled) return; // stopped while we slept
+
+    const lastRun = await runAutopilotOnce();
     await setAutopilotState({ lastRun });
   } catch {
     // a failed tick must never kill the loop; next interval retries

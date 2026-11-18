@@ -42,6 +42,7 @@ export function useAnalytics(dash: DashboardDTO | null, ledgerAll: LedgerRowDTO[
     // daily P&L buckets (UTC)
     const byDay = new Map<string, number>();
     for (const l of inRange) {
+      if (l.type !== "SETTLEMENT" && l.type !== "FEE") continue; // realized P&L only; buying is not a loss
       const k = l.createdAt.slice(0, 10);
       byDay.set(k, (byDay.get(k) ?? 0) + l.amountCents);
     }
@@ -186,7 +187,7 @@ export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue }: {
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <Panel title="Daily P&L" subtitle="Net ledger flow per UTC day">
+        <Panel title="Daily P&L" subtitle="Realized gains and losses minus fees, per UTC day">
           {a.daily.length === 0 ? (
             <EmptyState compact title="No daily P&L in this range" />
           ) : (

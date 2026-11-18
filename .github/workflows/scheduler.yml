@@ -1,0 +1,29 @@
+# Keeps FAIDA Predict running when nobody has the app open: every 10 minutes
+# it calls the scheduled tick, which refreshes venue market data (when older
+# than 10 min) and runs the autopilot if you turned it on and it is due.
+# The tick never does more than your own settings schedule.
+#
+# Optional hardening: set a CRON_SECRET environment variable in Vercel and the
+# same value as a repository secret named CRON_SECRET; the endpoint then
+# rejects calls without it.
+name: Scheduled tick
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Call /api/cron/tick
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL || 'https://faida-predict.vercel.app' }}
+        run: |
+          if [ -n "$CRON_SECRET" ]; then AUTH=(-H "Authorization: Bearer $CRON_SECRET"); else AUTH=(); fi
+          code=$(curl -s -o response.json -w "%{http_code}" --max-time 120 "${AUTH[@]}" "$APP_URL/api/cron/tick")
+          echo "HTTP $code"; cat response.json; echo
+          test "$code" = "200"

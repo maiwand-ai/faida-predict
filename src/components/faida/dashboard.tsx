@@ -64,8 +64,9 @@ export function DashboardView(props: {
   onOpenMarket: (marketId: string) => void;
   onNavigate: (n: Nav) => void;
   onRobotStatus: (id: string, status: string, name: string) => void;
+  onClosePosition: (positionId: string) => void;
 }) {
-  const { dash, markets, ledger, busy, onSync, onCycle, onReconcile, hasUnknown, onControl, onOpenVenue, onOpenRobot, onOpenMarket, onNavigate, onRobotStatus } = props;
+  const { dash, markets, ledger, busy, onSync, onCycle, onReconcile, hasUnknown, onControl, onOpenVenue, onOpenRobot, onOpenMarket, onNavigate, onRobotStatus, onClosePosition } = props;
   const [intervalSec, setIntervalSec] = useState(60);
   const [perf, setPerf] = useState<(typeof PERF_RANGES)[number]["id"]>("ALL");
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
@@ -312,7 +313,7 @@ export function DashboardView(props: {
       {positions.length > 0 && (
         <Panel title="In trade now" pad={false} subtitle="Marks use each venue's last synced price">
           <TableWrap minWidth={820}>
-            <thead><tr><th className={th}>Venue</th><th className={th}>Market</th><th className={th}>Robot</th><th className={th}>Side</th><th className={`${th} text-right`}>Size</th><th className={`${th} text-right`}>Entry → mark</th><th className={`${th} text-right`}>P&L</th></tr></thead>
+            <thead><tr><th className={th}>Venue</th><th className={th}>Market</th><th className={th}>Robot</th><th className={th}>Side</th><th className={`${th} text-right`}>Size</th><th className={`${th} text-right`}>Entry → mark</th><th className={`${th} text-right`}>P&L</th><th className={th}><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>
               {positions.map((p) => {
                 const mark = p.side === "YES" ? p.market?.yesPriceCents : p.market?.noPriceCents;
@@ -320,11 +321,12 @@ export function DashboardView(props: {
                   <tr key={p.id} className={trow}>
                     <td className={td}>{p.market?.venue ? <VenueTag venue={p.market.venue} /> : "—"}</td>
                     <td className={`${td} max-w-[320px] truncate`}>{p.market?.question}</td>
-                    <td className={`${td} text-[var(--fd-text-soft)]`}>{p.robot?.name}</td>
+                    <td className={`${td} text-[var(--fd-text-soft)]`}>{p.robot?.name ?? "Manual"}</td>
                     <td className={td}><Badge tone={p.side === "YES" ? "green" : "red"}>{p.side}</Badge></td>
                     <td className={`${td} fd-num text-right`}>{money(p.sizeCents)}</td>
                     <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{p.avgPriceCents}¢ → {mark != null ? `${mark}¢` : "—"}</td>
                     <td className={`${td} fd-num text-right font-semibold ${toneText[toneOf(p.unrealizedCents)]}`}>{p.unrealizedCents != null ? money(p.unrealizedCents, { sign: true }) : "—"}</td>
+                    <td className={`${td} text-right`}><button className={btn.small} disabled={busy !== null} onClick={() => onClosePosition(p.id)}>Close</button></td>
                   </tr>
                 );
               })}
@@ -714,7 +716,7 @@ export function VenueWorkspace(props: {
                 return (
                   <tr key={p.id} className={trow}>
                     <td className={`${td} max-w-[320px] truncate`}>{p.market?.question}</td>
-                    <td className={`${td} text-[var(--fd-text-soft)]`}>{p.robot?.name}</td>
+                    <td className={`${td} text-[var(--fd-text-soft)]`}>{p.robot?.name ?? "Manual"}</td>
                     <td className={td}><Badge tone={p.side === "YES" ? "green" : "red"}>{p.side}</Badge></td>
                     <td className={`${td} fd-num text-right`}>{money(p.sizeCents)}</td>
                     <td className={`${td} fd-num text-right text-[var(--fd-text-soft)]`}>{p.avgPriceCents}¢ → {mark != null ? `${mark}¢` : "—"}</td>
