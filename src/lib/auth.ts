@@ -114,8 +114,15 @@ async function userFromToken(token: string): Promise<User | null> {
 
 // ── Request resolution ──────────────────────────────────────────────────────
 
+// Strict mode removes the founder fallback, so every request needs a signed-in
+// session. It is ON by default on the production deployment (Vercel sets
+// VERCEL_ENV=production) and can be turned off there with BETA_STRICT_AUTH=0;
+// elsewhere (local dev, previews) it stays opt-in with BETA_STRICT_AUTH=1.
 export function strictAuth(): boolean {
-  return process.env.BETA_STRICT_AUTH === "1";
+  const flag = process.env.BETA_STRICT_AUTH;
+  if (flag === "1") return true;
+  if (flag === "0") return false;
+  return process.env.VERCEL_ENV === "production";
 }
 
 /**
