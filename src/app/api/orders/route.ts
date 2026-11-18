@@ -13,14 +13,16 @@ export async function GET(req: NextRequest) {
   const auth = await resolveAuth(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const user = auth.ctx.user;
+  // optional ?limit= (read-only, capped) for history views; defaults unchanged
+  const lim = Math.min(1000, Math.max(0, parseInt(req.nextUrl.searchParams.get("limit") ?? "", 10) || 0));
   const [orders, ledger] = await Promise.all([
     db.order.findMany({
       where: { mode: "PAPER", userId: user.id },
       orderBy: { createdAt: "desc" },
-      take: 40,
+      take: lim || 40,
       include: { market: { select: { question: true, venue: true } }, robot: { select: { name: true } } },
     }),
-    db.ledgerEntry.findMany({ where: { mode: "PAPER", userId: user.id }, orderBy: { createdAt: "desc" }, take: 30 }),
+    db.ledgerEntry.findMany({ where: { mode: "PAPER", userId: user.id }, orderBy: { createdAt: "desc" }, take: lim || 30 }),
   ]);
   return NextResponse.json({ orders, ledger });
 }

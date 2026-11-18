@@ -39,6 +39,8 @@ export interface LedgerRowDTO {
   balanceAfterCents: number;
   memo: string | null;
   createdAt: string;
+  // FILL / FEE entries reference the order that produced them
+  refId?: string | null;
 }
 
 export interface TraceDTO {
@@ -167,6 +169,10 @@ export interface MarketDTO {
   yesTakerFeeBps: number | null;
   noTakerFeeBps: number | null;
   eventKey: string | null;
+  resolutionSource?: string | null;
+  updatedAt?: string;
+  // 24h YES move from recorded ticks (GET /api/markets); null = no tick in window
+  change24hCents?: number | null;
 }
 
 export interface EligibilityRuleDTO {

@@ -2,27 +2,27 @@
 
 // Shared brand primitives for the FAIDA Predict UI.
 import type { CSSProperties, ReactNode } from "react";
-import { VENUES, VENUE_COLOR, VENUE_LABEL, venueColor } from "@/lib/venues";
+import { VENUES, VENUE_LABEL, venueColor } from "@/lib/venues";
 
 export const c = {
-  bg: "bg-[#0B0E14]",
-  surface: "bg-[#0E121A]",
-  elevated: "bg-[#121722]",
-  border: "border-[#1E2533]",
-  borderStrong: "border-[#2C3648]",
-  text: "text-[#E6EAF2]",
-  text2: "text-[#8B95A7]",
-  text3: "text-[#6B7A94]",
-  accent: "text-[#3E9BF0]",
-  bright: "text-[#00B0F0]",
-  gain: "text-[#2FC08E]",
-  loss: "text-[#F0525F]",
-  warn: "text-[#E3A63B]",
-  ai: "text-[#8B7CF6]",
-  paper: "text-[#D9B25C]",
+  bg: "bg-[#080B12]",
+  surface: "bg-[#111827]",
+  elevated: "bg-[#161F2D]",
+  border: "border-[#1E2A3D]",
+  borderStrong: "border-[#253247]",
+  text: "text-[#E8EDF5]",
+  text2: "text-[#9AA6B8]",
+  text3: "text-[#7C889B]",
+  accent: "text-[#2583FF]",
+  bright: "text-[#08D9E8]",
+  gain: "text-[#00D69A]",
+  loss: "text-[#FF5268]",
+  warn: "text-[#FFB547]",
+  ai: "text-[#9B7BFF]",
+  paper: "text-[#FFB547]",
 };
 
-export const card = `${c.surface} border ${c.border} rounded-xl`;
+export const card = `${c.surface} border ${c.border} rounded-2xl`;
 export const mono = "font-mono tabular-nums";
 
 // B12: scope helper — set the venue accent (--vc) on any surface. Pair with the
@@ -59,17 +59,17 @@ export function VenueBadge({ venue, withLabel = true }: { venue: string; withLab
 
 export function StateChip({ state }: { state: string }) {
   const map: Record<string, string> = {
-    FILLED: `${c.gain} bg-[#2FC08E]/10`,
-    OPEN: `${c.bright} bg-[#00B0F0]/10`,
-    PARTIALLY_FILLED: `${c.bright} bg-[#00B0F0]/10`,
-    SUBMITTED: `${c.accent} bg-[#3E9BF0]/10`,
-    VALIDATED: `${c.accent} bg-[#3E9BF0]/10`,
-    CREATED: c.text3 + " bg-[#121722]",
-    CANCELLED: c.text3 + " bg-[#121722]",
-    REJECTED: `${c.loss} bg-[#F0525F]/10`,
-    EXPIRED: c.text3 + " bg-[#121722]",
-    RECONCILING: `${c.warn} bg-[#E3A63B]/10`,
-    UNKNOWN: `${c.warn} bg-[#E3A63B]/10`,
+    FILLED: `${c.gain} bg-[#00D69A]/10`,
+    OPEN: `${c.bright} bg-[#2583FF]/10`,
+    PARTIALLY_FILLED: `${c.bright} bg-[#2583FF]/10`,
+    SUBMITTED: `${c.accent} bg-[#2583FF]/10`,
+    VALIDATED: `${c.accent} bg-[#2583FF]/10`,
+    CREATED: c.text3 + " bg-[#161F2D]",
+    CANCELLED: c.text3 + " bg-[#161F2D]",
+    REJECTED: `${c.loss} bg-[#FF5268]/10`,
+    EXPIRED: c.text3 + " bg-[#161F2D]",
+    RECONCILING: `${c.warn} bg-[#FFB547]/10`,
+    UNKNOWN: `${c.warn} bg-[#FFB547]/10`,
   };
   return (
     <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[12px] font-bold tracking-wide ${map[state] ?? c.text2}`}>
@@ -81,13 +81,13 @@ export function StateChip({ state }: { state: string }) {
 
 export function Pill({ status }: { status: string }) {
   const map: Record<string, string> = {
-    RUNNING: `${c.bright} bg-[#00B0F0]/10 border-[#00B0F0]/30`,
-    PAPER_ONLY: `${c.paper} bg-[#D9B25C]/10 border-[#D9B25C]/30`,
-    PAUSED_BY_USER: `${c.warn} bg-[#E3A63B]/10 border-[#E3A63B]/30`,
-    PAUSED_BY_RISK: `${c.warn} bg-[#E3A63B]/10 border-[#E3A63B]/30`,
+    RUNNING: `${c.bright} bg-[#2583FF]/10 border-[#2583FF]/30`,
+    PAPER_ONLY: `${c.paper} bg-[#FFB547]/10 border-[#FFB547]/30`,
+    PAUSED_BY_USER: `${c.warn} bg-[#FFB547]/10 border-[#FFB547]/30`,
+    PAUSED_BY_RISK: `${c.warn} bg-[#FFB547]/10 border-[#FFB547]/30`,
     PAUSED_BY_AI_BUDGET: `${c.ai} bg-[#8B7CF6]/10 border-[#8B7CF6]/30`,
-    ERROR: `${c.loss} bg-[#F0525F]/10 border-[#F0525F]/30`,
-    STOPPED: c.text3 + " bg-[#121722] border-[#2C3648]",
+    ERROR: `${c.loss} bg-[#FF5268]/10 border-[#FF5268]/30`,
+    STOPPED: c.text3 + " bg-[#161F2D] border-[#253247]",
   };
   const glyph: Record<string, string> = {
     RUNNING: "●", PAPER_ONLY: "◇", PAUSED_BY_USER: "‖", PAUSED_BY_RISK: "‖",
@@ -101,14 +101,14 @@ export function Pill({ status }: { status: string }) {
 }
 
 export function Meter({ label, pct, detail, tone = "accent" }: { label: string; pct: number; detail: string; tone?: "accent" | "warn" | "ai" }) {
-  const fill = tone === "warn" ? "bg-[#E3A63B]" : tone === "ai" ? "bg-[#8B7CF6]" : "bg-[#3E9BF0]";
+  const fill = tone === "warn" ? "bg-[#FFB547]" : tone === "ai" ? "bg-[#8B7CF6]" : "bg-[#2583FF]";
   return (
     <div>
       <div className={`flex justify-between text-[13px] ${c.text2}`}>
         <span>{label}</span>
         <span className={mono}>{Math.round(pct)}%</span>
       </div>
-      <div className="mt-1 h-1.5 rounded bg-[#121722]">
+      <div className="mt-1 h-1.5 rounded bg-[#161F2D]">
         <div className={`h-full rounded ${fill}`} style={{ width: `${Math.min(100, Math.max(2, pct))}%` }} />
       </div>
       <div className={`mt-1 text-[12px] ${c.text3}`}>{detail}</div>

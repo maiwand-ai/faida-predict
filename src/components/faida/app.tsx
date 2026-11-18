@@ -3,13 +3,7 @@
 // FAIDA Predict — UI shell. Single page: venue-first Dashboard (default),
 // per-venue Workspace, Markets, Robot Studio, Trading, Settings.
 import { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   type DashboardDTO,
   type MarketDTO,
@@ -19,12 +13,18 @@ import {
   type EligibilityRuleDTO,
   type ProbabilityDTO,
 } from "./types";
-import { c, card, mono, fmtCents, VenueBadge, venueScopeStyle } from "./ui";
-import { LIVE_VENUE_IDS, ROLE_LABEL, VENUE_LABEL, VENUES, venueColor } from "@/lib/venues";
-import { StudioView, TradingView, SettingsView } from "./views";
+import { LIVE_VENUE_IDS, VENUE_LABEL } from "@/lib/venues";
+import { TradingView, SettingsView } from "./views";
+import { StudioView } from "./studio";
 import { DashboardView, VenueWorkspace } from "./dashboard";
 import { RobotDetail } from "./robot";
 import { BetaView } from "./beta";
+import { MarketsView, MarketDetail, TradeDialog } from "./markets";
+import { RobotsView } from "./robots";
+import { AnalyticsView } from "./analytics";
+import { RiskCenter } from "./risk";
+import { IntelligenceView } from "./intel";
+import { MobileNav, NavDrawer, SearchPalette, Sidebar, TopBar, type Nav, type OperatingMode } from "./shell";
 
 // Tolerant JSON parse — a transient empty body (dev recompile race, network
 // hiccup) must never surface as an uncaught promise rejection (D-07).
@@ -39,11 +39,16 @@ async function safeJson<T = unknown>(res: Response): Promise<T | null> {
 // ── overview-local helpers ──────────────────────────────────────────────
 
 // ── main app ─────────────────────────────────────────────────────────────────
-type View = "overview" | "venue" | "markets" | "studio" | "trading" | "settings" | "beta" | "robot";
-
 export default function FaidaApp() {
   const { toast } = useToast();
-  const [view, setView] = useState<View>("overview");
+  // navigation: a view plus an optional tab (sidebar sub-links pick the tab)
+  const [nav, setNav] = useState<Nav>({ view: "overview" });
+  const view = nav.view;
+  const [marketFocus, setMarketFocus] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [live, setLive] = useState<{ armSwitch: string; pilot: { enabled: boolean }; consent: { consented: boolean } } | null>(null);
   const [dash, setDash] = useState<DashboardDTO | null>(null);
   const [markets, setMarkets] = useState<MarketDTO[]>([]);
   const [ordersData, setOrdersData] = useState<{ orders: OrderRowDTO[]; ledger: LedgerRowDTO[] } | null>(null);
@@ -83,7 +88,7 @@ export default function FaidaApp() {
   }, []);
   const refreshOrders = useCallback(async () => {
     try {
-      const res = await fetch("/api/orders");
+      const res = await fetch("/api/orders?limit=500");
       if (res.ok) setOrdersData(await safeJson<{ orders: OrderRowDTO[]; ledger: LedgerRowDTO[] }>(res));
     } catch { /* transient */ }
   }, []);
@@ -108,16 +113,28 @@ export default function FaidaApp() {
     } catch { /* transient */ }
   }, []);
 
+  // live-trading status drives the global mode indicator (operator-only API;
+  // a refusal simply means paper mode for this viewer)
+  const refreshLive = useCallback(async () => {
+    try {
+      const res = await fetch("/api/live");
+      setLive(res.ok ? await safeJson(res) : null);
+    } catch { /* transient */ }
+  }, []);
+
   useEffect(() => {
     refreshDashboard();
     refreshMarkets();
     refreshOrders();
     refreshProbability();
     refreshMe();
+    refreshRisk();
+    refreshLive();
     const t = setInterval(refreshDashboard, 15000);
     const t5 = setInterval(refreshProbability, 15000);
-    return () => { clearInterval(t); clearInterval(t5); };
-  }, [refreshDashboard, refreshMarkets, refreshOrders, refreshProbability, refreshMe]);
+    const t6 = setInterval(refreshLive, 30000);
+    return () => { clearInterval(t); clearInterval(t5); clearInterval(t6); };
+  }, [refreshDashboard, refreshMarkets, refreshOrders, refreshProbability, refreshMe, refreshRisk, refreshLive]);
 
   const post = useCallback(
     async (url: string, body: unknown, okMsg: string) => {
@@ -202,333 +219,271 @@ export default function FaidaApp() {
   };
 
   const hasUnknown = (ordersData?.orders ?? []).some((o) => o.state === "UNKNOWN" || o.state === "RECONCILING");
+  const isOperator = me?.role === "OPERATOR";
+  const paused = dash?.control?.pause.paused ?? false;
+  const mode: OperatingMode = paused
+    ? "PAUSED"
+    : live?.armSwitch === "ARMED" && live.pilot?.enabled && live.consent?.consented
+      ? "LIVE"
+      : live?.pilot?.enabled
+        ? "RESTRICTED"
+        : "PAPER";
 
-  const navItems: Array<{ id: View; label: string; badge?: string }> = [
-    { id: "overview", label: "Overview" },
-    { id: "markets", label: "Markets" },
-    { id: "studio", label: "Robot Studio" },
-    { id: "trading", label: "Trading" },
-    { id: "beta", label: "Beta Ops" },
-    { id: "settings", label: "Settings" },
-  ];
-  // while inside a venue workspace or robot detail, keep the origin nav lit
-  const activeView: View = view === "venue" ? "overview" : view === "robot" ? "studio" : view;
+  const navigate = useCallback(
+    (n: Nav) => {
+      setNav(n);
+      setDrawerOpen(false);
+      if (n.view === "settings" || n.view === "risk") { refreshRisk(); refreshEligibility(); refreshProbability(); }
+      if (n.view === "trading" || n.view === "analytics") refreshOrders();
+      if (n.view === "markets") refreshMarkets();
+      if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+    },
+    [refreshRisk, refreshEligibility, refreshProbability, refreshOrders, refreshMarkets],
+  );
+  const openVenue = (venueId: string) => { setVenueFocus(venueId); navigate({ view: "venue", tab: venueId }); };
+  const openRobot = (robotId: string) => { setRobotFocus(robotId); navigate({ view: "robot" }); };
+  const openMarket = (marketId: string) => { setMarketFocus(marketId); navigate({ view: "market" }); };
+  const pauseAll = () => post("/api/control", { action: "PAUSE", reason: "manual pause from navigation" }, "Everything paused: robot cycles and new orders stop until you resume");
+  const signOut = async () => { await fetch("/api/auth/logout", { method: "POST" }); await refreshMe(); toast({ title: "Signed out" }); };
+  const runCycle = () => post("/api/cycle", {}, "Robot cycle executed");
 
-  // C18 mobile shell (Phase 9): compact glyph per bottom-tab item — the phone
-  // carries no sidebar, so the five platform views live in a fixed bottom
-  // tab bar with safe-area padding and ≥44px touch targets.
-  const navGlyph: Record<View, string> = {
-    overview: "◱",
-    venue: "◱",
-    robot: "◇",
-    markets: "≡",
-    studio: "◇",
-    trading: "⇄",
-    beta: "⊙",
-    settings: "⚙",
-  };
+  const sidebar = (inDrawer: boolean) => (
+    <Sidebar
+      nav={nav}
+      onNavigate={navigate}
+      onOpenVenue={openVenue}
+      dash={dash}
+      mode={mode}
+      isOperator={isOperator}
+      collapsed={inDrawer ? false : collapsed}
+      onToggleCollapsed={inDrawer ? undefined : () => setCollapsed((v) => !v)}
+      onPause={pauseAll}
+      busy={busy !== null}
+      inDrawer={inDrawer}
+    />
+  );
 
   return (
-    <div className={`min-h-screen ${c.bg} ${c.text} flex flex-col`} style={{ fontFamily: "var(--font-inter)" }}>
-      <div className="flex flex-1">
-        {/* ── Sidebar ─────────────────────────────────────────── */}
-        <aside className={`sticky top-0 hidden h-screen w-[232px] shrink-0 flex-col ${c.surface} border-r ${c.border} px-3 py-4 md:flex`}>
-          <div className="mb-5 flex items-center gap-2.5 px-2">
-            <Image src="/brand/logo_mark.png" alt="FAIDA Predict mark" width={32} height={32} className="object-contain" />
-            <div>
-              <div className="flex items-baseline gap-1.5">
-                <span className={`text-[16px] font-bold tracking-wide ${c.text}`}>FAIDA</span>
-                <span className={`text-[11px] font-bold tracking-[0.2em] ${c.bright}`}>PREDICT</span>
-              </div>
-              <div className={`mt-0.5 text-[11px] tracking-[0.15em] ${c.text3}`}>PAPER TRADING</div>
-            </div>
-          </div>
-          <nav className="flex flex-col gap-1">
-            {navItems.map((n) => (
-              <button
-                key={n.id}
-                onClick={() => { setView(n.id); if (n.id === "settings") { refreshRisk(); refreshEligibility(); } if (n.id === "trading") refreshOrders(); }}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[16px] transition-colors ${
-                  activeView === n.id ? `${c.elevated} ${c.text}` : `${c.text2} hover:${c.elevated}`
-                }`}
-              >
-                <span className={`h-2 w-2 rounded-[3px] ${activeView === n.id ? "bg-[#00B0F0]" : "bg-[#2C3648]"}`} />
-                {n.label}
-              </button>
-            ))}
-          </nav>
+    <div className="flex min-h-screen bg-[#080B12] text-[#E8EDF5]" style={{ fontFamily: "var(--font-inter)" }}>
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-[#2583FF] focus:px-3 focus:py-2 focus:text-white">Skip to content</a>
+      <aside className={`sticky top-0 hidden h-screen shrink-0 border-r border-[#1A2333] bg-[#0D121C] transition-[width] duration-200 md:block ${collapsed ? "w-[76px]" : "w-[268px]"}`}>
+        {sidebar(false)}
+      </aside>
+      <NavDrawer open={drawerOpen} onOpenChange={setDrawerOpen}>{sidebar(true)}</NavDrawer>
 
-          {/* venue list — every venue one click away, hue = identity (B12) */}
-          <div className="mt-4">
-            <div className={`px-2 pb-1.5 text-[11px] font-bold tracking-[0.18em] ${c.text3}`}>VENUES</div>
-            <div className="flex flex-col">
-              {VENUES.map((v) => {
-                const live = v.adapter === "LIVE";
-                return (
-                  <button
-                    key={v.id}
-                    onClick={() => { setVenueFocus(v.id); setView("venue"); }}
-                    className="group flex items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-[#121722]"
-                    aria-label={`Open ${v.label} workspace`}
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: venueColor(v.id), opacity: live ? 1 : 0.45 }} />
-                      <span className={`truncate text-[15px] ${live ? c.text : c.text3}`}>{v.label}</span>
-                    </span>
-                    <span className={`shrink-0 text-[11px] font-bold tracking-wide ${live ? c.text3 : c.text3}`}>
-                      {live ? "Live" : v.id === "DRIFT_BET" ? "Suspended" : "Soon"}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="mt-auto border-t ${c.border} pt-3" style={{ borderColor: "#1E2533" }}>
-            {/* mode panel — paper state + the platform-wide kill switch always
-                reachable, matching the redesigned shell (C19) */}
-            {(() => {
-              const running = dash?.robots.filter((r) => ["RUNNING", "PAPER_ONLY"].includes(r.status)).length ?? 0;
-              const total = dash?.robots.length ?? 0;
-              const isPaused = dash?.control?.pause.paused ?? false;
-              return (
-                <div className={`mb-2 rounded-lg border px-3 py-2.5 ${c.border} ${c.elevated}`}>
-                  <div className={`flex items-center justify-between text-[12.5px] ${c.text3}`}>
-                    <span>Mode</span>
-                    <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide ${c.paper} bg-[#D9B25C]/10`}>PAPER ONLY</span>
-                  </div>
-                  <div className={`mt-1.5 text-[12.5px] leading-snug ${c.text2}`}>
-                    {running} of {total} robots running. Live trading stays locked until every safety check passes.
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className={`mt-2 h-9 w-full border-[#F0525F]/50 bg-transparent text-[13px] text-[#F0525F] hover:bg-[#F0525F]/10`}
-                    onClick={() => post("/api/control", { action: "PAUSE", reason: "manual pause from sidebar" }, "PLATFORM PAUSED — all cycles and orders refuse until resume")}
-                    disabled={busy !== null || isPaused}
-                  >
-                    ▮▮ {isPaused ? "Paused" : "Pause everything"}
-                  </Button>
-                </div>
-              );
-            })()}
-          </div>
-        </aside>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar dash={dash} mode={mode} me={me} onOpenSearch={() => setSearchOpen(true)} onOpenMenu={() => setDrawerOpen(true)} onNavigate={navigate} onSignOut={signOut} />
 
-        {/* ── Main ─────────────────────────────────────────────── */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className={`sticky top-0 z-10 flex h-16 items-center gap-3 border-b ${c.border} ${c.surface} px-4 sm:px-5`}>
-            {/* C18 mobile header (Phase 9): brand mark + phase always reachable on phones */}
-            <div className="flex items-center gap-2 md:hidden">
-              <Image src="/brand/logo_mark.png" alt="FAIDA Predict mark" width={26} height={26} className="object-contain" />
-              <div className="leading-none">
-                <div className="flex items-baseline gap-1">
-                  <span className={`text-[15px] font-bold ${c.text}`}>FAIDA</span>
-                  <span className={`text-[11px] font-bold tracking-[0.18em] ${c.bright}`}>PREDICT</span>
-                </div>
-                <div className={`mt-0.5 text-[11px] tracking-[0.14em] ${c.text3}`}>PAPER TRADING</div>
-              </div>
-            </div>
-            {/* compact exposure meter between sm and md — below sm the KPI card
-                carries it and the brand keeps the space */}
-            {dash && dash.allocatedCents > 0 && (
-              <span
-                className={`hidden items-center gap-1.5 rounded-full border px-2 py-1 sm:inline-flex md:hidden ${c.border} ${c.elevated}`}
-                title={`Open exposure ${fmtCents(dash.exposureCents)} of ${fmtCents(dash.allocatedCents)} allocated`}
-              >
-                <span className={`h-1.5 w-10 overflow-hidden rounded ${c.elevated}`}>
-                  <span
-                    className={`block h-full rounded ${(dash.exposureCents / dash.allocatedCents) * 100 >= 80 ? "bg-[#E3A63B]" : "bg-[#3E9BF0]"}`}
-                    style={{ width: `${Math.max(2, (dash.exposureCents / dash.allocatedCents) * 100)}%` }}
-                  />
-                </span>
-                <span className={`text-[12px] font-semibold ${mono} ${c.text2}`}>{((dash.exposureCents / dash.allocatedCents) * 100).toFixed(0)}%</span>
-              </span>
-            )}
-            <div className={`hidden min-w-0 max-w-[420px] flex-1 items-center justify-between whitespace-nowrap rounded-xl border px-4 py-2.5 text-[15px] ${c.border} ${c.elevated} ${c.text3} sm:flex`}>
-              Search markets, robots, orders…
-              <span className={`ml-4 rounded border px-1.5 py-0.5 text-[12px] ${c.borderStrong}`}>⌘K</span>
-            </div>
-            {/* persistent exposure meter — the platform's most load-bearing
-                constraint, answerable from every view (redesign ratification) */}
-            {dash && dash.allocatedCents > 0 && (() => {
-              const pct = Math.min(100, (dash.exposureCents / dash.allocatedCents) * 100);
-              const hot = pct >= 80;
-              return (
-                <span
-                  className={`hidden items-center gap-2 rounded-full border px-3 py-1 xl:inline-flex ${c.border} ${c.elevated}`}
-                  title={`Open exposure ${fmtCents(dash.exposureCents)} of ${fmtCents(dash.allocatedCents)} allocated · per-event cap ${dash.exposureLimitPct}%`}
-                >
-                  <span className={`text-[11.5px] font-bold tracking-wider ${c.text3}`}>EXPOSURE</span>
-                  <span className={`h-1.5 w-16 overflow-hidden rounded ${c.elevated}`}>
-                    <span
-                      className={`block h-full rounded ${hot ? "bg-[#E3A63B]" : "bg-[#3E9BF0]"}`}
-                      style={{ width: `${Math.max(2, pct)}%` }}
-                    />
-                  </span>
-                  <span className={`text-[12.5px] font-semibold ${mono} ${hot ? c.warn : c.text2}`}>{pct.toFixed(0)}%</span>
-                </span>
-              );
-            })()}
-            <div className="ml-auto flex items-center gap-2">
-              <span className={`hidden items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[14px] ${c.border} ${c.elevated} ${c.text2} 2xl:inline-flex`}>
-                <span className={c.bright}>●</span> {dash?.user.country ?? "NL"} verified
-              </span>
-              <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[12px] sm:px-3 sm:text-[13px] border-[#D9B25C]/40 bg-[#D9B25C]/10 ${c.paper} font-semibold`}>
-                ◇ Paper mode
-              </span>
-              {/* Phase 10: acting identity — session user with honest role; logout revokes server-side */}
-              {me && (
-                <span className={`hidden items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[14px] ${c.border} ${c.elevated} ${c.text2} xl:inline-flex`}>
-                  <span className={mono}>{me.email.length > 24 ? me.email.slice(0, 22) + "…" : me.email}</span>
-                  <span className={`rounded px-1 py-0.5 text-[11px] font-bold ${me.role === "OPERATOR" ? "bg-[#00B0F0]/15 text-[#00B0F0]" : "bg-[#2FC08E]/15 text-[#2FC08E]"}`}>{me.role}</span>
-                </span>
-              )}
-              {me?.via === "FOUNDER_FALLBACK" && (
-                <Link href="/login" className={`hidden whitespace-nowrap rounded-full border px-3 py-1.5 text-[14px] ${c.border} ${c.warn} lg:inline-flex`}>Sign in</Link>
-              )}
-              <button
-                onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); await refreshMe(); toast({ title: "Signed out" }); }}
-                className={`h-9 w-9 shrink-0 rounded-full border text-[14px] ${c.border} ${c.text3} hover:${c.text2}`}
-                aria-label="Sign out"
-              >⏻</button>
-            </div>
+        {mode === "PAUSED" && (
+          <div role="alert" className="flex flex-wrap items-center gap-3 border-b border-[#FF5268]/40 bg-[#FF5268]/10 px-4 py-3 sm:px-8">
+            <span className="text-[14.5px] font-semibold text-[#FF7A8B]">Emergency pause is on.</span>
+            <span className="text-[14px] text-[#E8EDF5]/80">Robot cycles and new orders are refused until you resume. Reason: {dash?.control?.pause.reason ?? "manual pause"}</span>
+            <button onClick={() => post("/api/control", { action: "RESUME" }, "Platform resumed")} disabled={busy !== null} className="ml-auto h-9 rounded-lg border border-[#FF5268]/50 px-3 text-[14px] font-semibold text-[#FF7A8B] hover:bg-[#FF5268]/15 disabled:opacity-50">
+              Resume
+            </button>
           </div>
+        )}
 
-          <main className="mx-auto w-full max-w-[1320px] flex-1 px-3 py-5 sm:px-8 sm:py-7 pb-24 md:pb-5">
-            {view === "overview" && (
-              <DashboardView
-                dash={dash}
-                markets={markets}
-                onSync={syncMarkets}
-                busy={busy}
-                onCycle={() => post("/api/cycle", {}, "Robot cycle executed")}
-                onReconcile={() => post("/api/cycle", { action: "RECONCILE" }, "Reconciliation pass complete")}
-                hasUnknown={hasUnknown}
-                onControl={(body, msg) => post("/api/control", body, msg)}
-                onOpenVenue={(venueId) => { setVenueFocus(venueId); setView("venue"); }}
-                onOpenRobot={(robotId) => { setRobotFocus(robotId); setView("robot"); }}
-              />
-            )}
-            {view === "venue" && venueFocus && (
-              <VenueWorkspace
-                venueId={venueFocus}
-                dash={dash}
-                markets={markets}
-                busy={busy}
-                onBack={() => setView("overview")}
-                onSyncVenue={(v) => syncMarkets(v)}
-                onCycle={() => post("/api/cycle", {}, "Robot cycle executed")}
-                onTrade={(m) => setTradeMarket(m)}
-                onCreateRobot={(v) => { setStudioVenue(v); setView("studio"); }}
-                onControl={(body, msg) => post("/api/control", body, msg)}
-                onOpenRobot={(robotId) => { setRobotFocus(robotId); setView("robot"); }}
-              />
-            )}
-            {view === "robot" && robotFocus && (
-              <RobotDetail
-                key={robotFocus}
-                robotId={robotFocus}
-                busy={busy}
-                onBack={() => setView(venueFocus ? "venue" : "overview")}
-                onBackLabel={venueFocus ? "Venue workspace" : "Overview"}
-                onOpenVenue={(venueId) => { setVenueFocus(venueId); setView("venue"); }}
-                onCycleRobot={(rid, name) => post(`/api/robots/${rid}/cycle`, {}, `${name} cycle executed`)}
-                onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, `${name} → ${status.replace("_", " ").toLowerCase()}`)}
-              />
-            )}
-            {view === "markets" && (
-              <MarketsView markets={markets} onSync={syncMarkets} busy={busy} onTrade={(m) => setTradeMarket(m)} />
-            )}
-            {view === "studio" && (
-              <StudioView key={studioVenue ?? "any"} initialVenue={studioVenue ?? undefined} dash={dash} onCreate={(payload) => post("/api/robots", payload, "Robot created as PAPER_ONLY draft")} onAfterChange={refreshDashboard} onAction={post} />
-            )}
-            {view === "trading" && (
-              <TradingView
-                markets={markets}
-                ordersData={ordersData}
-                busy={busy}
-                onPlace={(payload) => post("/api/orders", payload, "Paper order filled")}
-                onSimulateAckLoss={(marketId) => post("/api/orders", { action: "SIMULATE_ACK_LOSS", marketId }, "Synthetic order lost venue ack → UNKNOWN")}
-                onReconcile={() => post("/api/cycle", { action: "RECONCILE" }, "Reconciliation pass complete")}
-                hasUnknown={hasUnknown}
-                onTradeSomething={() => setView("markets")}
-              />
-            )}
-            {view === "beta" && (
-              <BetaView
-                me={me}
-                onToast={toast}
-              />
-            )}
+        <main id="main" className="fd-fade-in mx-auto w-full max-w-[1480px] flex-1 px-3 py-5 pb-28 sm:px-6 sm:py-7 md:pb-8 lg:px-8" key={`${nav.view}:${nav.view === "venue" ? nav.tab : ""}`}>
+          {view === "overview" && (
+            <DashboardView
+              dash={dash}
+              markets={markets}
+              ledger={ordersData?.ledger ?? []}
+              onSync={syncMarkets}
+              busy={busy}
+              onCycle={runCycle}
+              onReconcile={() => post("/api/cycle", { action: "RECONCILE" }, "Reconciliation pass complete")}
+              hasUnknown={hasUnknown}
+              onControl={(body, msg) => post("/api/control", body, msg)}
+              onOpenVenue={openVenue}
+              onOpenRobot={openRobot}
+              onOpenMarket={openMarket}
+              onNavigate={navigate}
+              onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, `${name} → ${status.replace("_", " ").toLowerCase()}`)}
+            />
+          )}
+          {view === "venue" && venueFocus && (
+            <VenueWorkspace
+              venueId={venueFocus}
+              dash={dash}
+              markets={markets}
+              busy={busy}
+              onBack={() => navigate({ view: "overview" })}
+              onSyncVenue={(v) => syncMarkets(v)}
+              onCycle={runCycle}
+              onTrade={(m) => setTradeMarket(m)}
+              onOpenMarket={openMarket}
+              onCreateRobot={(v) => { setStudioVenue(v); navigate({ view: "studio" }); }}
+              onControl={(body, msg) => post("/api/control", body, msg)}
+              onOpenRobot={openRobot}
+            />
+          )}
+          {view === "robot" && robotFocus && (
+            <RobotDetail
+              key={robotFocus}
+              robotId={robotFocus}
+              busy={busy}
+              onBack={() => navigate({ view: "robots" })}
+              onBackLabel="My Robots"
+              onOpenVenue={openVenue}
+              onOpenMarket={openMarket}
+              onEditStrategy={() => navigate({ view: "studio", tab: "library" })}
+              onCycleRobot={(rid, name) => post(`/api/robots/${rid}/cycle`, {}, `${name} cycle executed`)}
+              onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, `${name} → ${status.replace("_", " ").toLowerCase()}`)}
+            />
+          )}
+          {view === "robots" && (
+            <RobotsView
+              dash={dash}
+              busy={busy}
+              onOpenRobot={openRobot}
+              onCreate={() => navigate({ view: "studio" })}
+              onOpenVenue={openVenue}
+              onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, `${name} → ${status.replace("_", " ").toLowerCase()}`)}
+              onCycleRobot={(rid, name) => post(`/api/robots/${rid}/cycle`, {}, `${name} cycle executed`)}
+            />
+          )}
+          {view === "markets" && (
+            <MarketsView
+              markets={markets}
+              dash={dash}
+              tab={nav.tab ?? "trending"}
+              onTab={(t) => setNav({ view: "markets", tab: t })}
+              onSync={syncMarkets}
+              busy={busy}
+              onTrade={(m) => setTradeMarket(m)}
+              onOpenMarket={openMarket}
+            />
+          )}
+          {view === "market" && marketFocus && (
+            <MarketDetail
+              key={marketFocus}
+              marketId={marketFocus}
+              dash={dash}
+              busy={busy}
+              onBack={() => navigate({ view: "markets", tab: "trending" })}
+              onOpenMarket={openMarket}
+              onOpenRobot={openRobot}
+              onOpenVenue={openVenue}
+              onPlace={(p) => post("/api/orders", p, "Paper order filled")}
+            />
+          )}
+          {view === "studio" && (
+            <StudioView
+              key={studioVenue ?? "any"}
+              initialVenue={studioVenue ?? undefined}
+              dash={dash}
+              markets={markets}
+              tab={nav.tab}
+              onTab={(t) => setNav({ view: "studio", tab: t })}
+              onCreate={(payload) => post("/api/robots", payload, "Robot created as PAPER_ONLY draft")}
+              onAfterChange={refreshDashboard}
+              onAction={post}
+              onOpenRobot={openRobot}
+            />
+          )}
+          {view === "trading" && (
+            <TradingView
+              markets={markets}
+              dash={dash}
+              ordersData={ordersData}
+              busy={busy}
+              tab={nav.tab ?? "positions"}
+              onTab={(t) => setNav({ view: "trading", tab: t })}
+              onPlace={(payload) => post("/api/orders", payload, "Paper order filled")}
+              onSimulateAckLoss={(marketId) => post("/api/orders", { action: "SIMULATE_ACK_LOSS", marketId }, "Synthetic order lost venue ack → UNKNOWN")}
+              onReconcile={() => post("/api/cycle", { action: "RECONCILE" }, "Reconciliation pass complete")}
+              hasUnknown={hasUnknown}
+              onTradeSomething={() => navigate({ view: "markets", tab: "trending" })}
+              onOpenMarket={openMarket}
+              onOpenRobot={openRobot}
+            />
+          )}
+          {view === "analytics" && (
+            <AnalyticsView dash={dash} ordersData={ordersData} onOpenRobot={openRobot} onOpenVenue={openVenue} />
+          )}
+          {view === "intel" && (
+            <IntelligenceView
+              dash={dash}
+              markets={markets}
+              probability={probability}
+              tab={nav.tab ?? "research"}
+              onTab={(t) => setNav({ view: "intel", tab: t })}
+              onOpenMarket={openMarket}
+              onOpenRobot={openRobot}
+              onNavigate={navigate}
+            />
+          )}
+          {view === "risk" && (
+            <RiskCenter
+              dash={dash}
+              riskView={riskView}
+              probability={probability}
+              ordersData={ordersData}
+              live={live}
+              mode={mode}
+              tab={nav.tab ?? "overview"}
+              onTab={(t) => setNav({ view: "risk", tab: t })}
+              busy={busy}
+              onControl={(body, msg) => post("/api/control", body, msg)}
+              onOpenRobot={openRobot}
+              onOpenVenue={openVenue}
+              onNavigate={navigate}
+            />
+          )}
+          {view === "beta" && <BetaView me={me} onToast={toast} />}
           {view === "settings" && (
-              <SettingsView
-                dash={dash}
-                riskView={riskView}
-                eligibility={eligibility}
-                probability={probability}
-                onSaveRisk={async (key, value) => {
-                  await fetch("/api/risk", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ key, value }) });
-                  toast({ title: "Risk limit updated", description: `${key} → clamped to platform max if looser` });
-                  refreshRisk(); refreshDashboard();
-                }}
-                onSaveProvider={async (payload) => {
-                  const res = await fetch("/api/settings/ai", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
-                  const json = await safeJson<{ ok?: boolean; error?: string }>(res);
-                  if (res.ok && json?.ok) toast({ title: "AI provider saved" });
-                  else toast({ title: "Refused", description: String(json?.error ?? "empty response"), variant: "destructive" });
-                  refreshDashboard();
-                }}
-                onFlipCountry={async (country, allowed) => {
-                  const res = await fetch("/api/eligibility", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ country, allowed }) });
-                  const json = await safeJson<{ ok?: boolean; error?: string }>(res);
-                  if (res.ok && json?.ok) toast({ title: `${country} ${allowed ? "allowed" : "blocked"}` });
-                  else toast({ title: "Refused", description: String(json?.error ?? "empty response"), variant: "destructive" });
-                  refreshEligibility();
-                }}
-                onProbabilityAction={async (body, okMsg) => {
-                  const res = await fetch("/api/probability", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-                  const json = await safeJson<{ ok?: boolean; error?: string; detail?: string }>(res);
-                  if (res.ok && json?.ok) toast({ title: okMsg, description: json.detail ?? "" });
-                  else toast({ title: "Refused", description: String(json?.error ?? json?.detail ?? "empty response"), variant: "destructive" });
-                  refreshProbability();
-                }}
-                onOpenRisk={() => { refreshRisk(); refreshProbability(); }}
-              />
-            )}
-          </main>
-          <footer className={`hidden border-t ${c.border} px-6 py-3 text-center text-[13px] ${c.text3} md:block`}>
-            FAIDA Predict · Paper trading, no real money moves. Live trading stays locked until every safety check passes and you give consent.
-          </footer>
-        </div>
+            <SettingsView
+              dash={dash}
+              riskView={riskView}
+              eligibility={eligibility}
+              probability={probability}
+              tab={nav.tab ?? "general"}
+              onTab={(t) => setNav({ view: "settings", tab: t })}
+              mode={mode}
+              me={me}
+              onSaveRisk={async (key, value) => {
+                await fetch("/api/risk", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ key, value }) });
+                toast({ title: "Risk limit updated", description: `${key} → clamped to platform max if looser` });
+                refreshRisk(); refreshDashboard();
+              }}
+              onSaveProvider={async (payload) => {
+                const res = await fetch("/api/settings/ai", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+                const json = await safeJson<{ ok?: boolean; error?: string }>(res);
+                if (res.ok && json?.ok) toast({ title: "AI provider saved" });
+                else toast({ title: "Refused", description: String(json?.error ?? "empty response"), variant: "destructive" });
+                refreshDashboard();
+              }}
+              onFlipCountry={async (country, allowed) => {
+                const res = await fetch("/api/eligibility", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ country, allowed }) });
+                const json = await safeJson<{ ok?: boolean; error?: string }>(res);
+                if (res.ok && json?.ok) toast({ title: `${country} ${allowed ? "allowed" : "blocked"}` });
+                else toast({ title: "Refused", description: String(json?.error ?? "empty response"), variant: "destructive" });
+                refreshEligibility();
+              }}
+              onProbabilityAction={async (body, okMsg) => {
+                const res = await fetch("/api/probability", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+                const json = await safeJson<{ ok?: boolean; error?: string; detail?: string }>(res);
+                if (res.ok && json?.ok) toast({ title: okMsg, description: json.detail ?? "" });
+                else toast({ title: "Refused", description: String(json?.error ?? json?.detail ?? "empty response"), variant: "destructive" });
+                refreshProbability();
+              }}
+              onOpenRisk={() => { refreshRisk(); refreshProbability(); }}
+            />
+          )}
+        </main>
+        <footer className="hidden border-t border-[#1A2333] px-8 py-3.5 text-[13px] text-[#7C889B] md:flex md:flex-wrap md:items-center md:justify-between md:gap-3">
+          <span>FAIDA Predict · Intelligent. Transparent. Controlled. <span className="ml-2 rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[11.5px] tracking-wide">PHASE 10</span></span>
+          <span className="flex flex-wrap items-center gap-4">
+            <span>{mode === "LIVE" ? "Live trading active within pilot ceilings" : "No real money moves in paper mode"}</span>
+            <span>Robots active: <span className="fd-num text-[#C9D2DE]">{dash?.robots.filter((r) => r.status === "RUNNING" || r.status === "PAPER_ONLY").length ?? 0}</span></span>
+          </span>
+        </footer>
       </div>
 
-      {/* ── C18 mobile bottom tab bar (Phase 9): the phone's only nav; mirrors
-          the sidebar. Safe-area padded, ≥44px touch targets. ── */}
-      <nav
-        aria-label="Primary mobile navigation"
-        className={`fixed inset-x-0 bottom-0 z-30 flex border-t ${c.border} ${c.surface} md:hidden fd-safe-bottom`}
-        style={{ borderColor: "#1E2533" }}
-      >
-        {navItems.map((n) => {
-          const lit = activeView === n.id;
-          return (
-            <button
-              key={n.id}
-              onClick={() => { setView(n.id); if (n.id === "settings") { refreshRisk(); refreshEligibility(); } if (n.id === "trading") refreshOrders(); }}
-              className={`flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[12px] transition-colors ${
-                lit ? c.text : c.text3
-              }`}
-              aria-current={lit ? "page" : undefined}
-            >
-              <span className={`text-[17px] leading-none ${lit ? "text-[#00B0F0]" : ""}`}>{navGlyph[n.id]}</span>
-              <span className={lit ? "font-semibold" : ""}>{n.label}</span>
-              <span className={`h-0.5 w-6 rounded-full ${lit ? "bg-[#00B0F0]" : "bg-transparent"}`} />
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* trade dialog — key remount resets the form per market (no effect needed) */}
+      <MobileNav nav={nav} onNavigate={navigate} onMore={() => setDrawerOpen(true)} />
+      <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} dash={dash} markets={markets} onNavigate={navigate} onOpenMarket={openMarket} onOpenRobot={openRobot} onOpenVenue={openVenue} />
       <TradeDialog key={tradeMarket?.id ?? "closed"} market={tradeMarket} onClose={() => setTradeMarket(null)} onPlace={(p) => post("/api/orders", p, "Paper order filled")} busy={busy} />
     </div>
   );
@@ -548,153 +503,3 @@ function summarize(json: Record<string, unknown>): string {
   return "";
 }
 
-// ── Markets ──────────────────────────────────────────────────────────────────
-// B9/B11: one separate section per venue — the user always sees which market
-// they are entering, and which venue a robot would be created for.
-function MarketsView({ markets, onSync, onTrade, busy }: { markets: MarketDTO[]; onSync: (venue?: string) => void; onTrade: (m: MarketDTO) => void; busy: string | null }) {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-[21px] font-semibold">Market discovery</h1>
-        <span className={`text-[14px] ${c.text3}`}>one section per venue — read-only market data via per-venue adapters (S-05: MARKET_DATA_ONLY)</span>
-        <Button size="sm" className="ml-auto bg-[#00B0F0] font-semibold text-[#001040] hover:bg-[#2FC1F5]" onClick={() => onSync()} disabled={busy === "sync"}>
-          {busy === "sync" ? "Syncing…" : "Sync all venues"}
-        </Button>
-      </div>
-      {VENUES.map((v) => {
-        const rows = markets.filter((m) => m.venue === v.id);
-        return (
-          // B12: each venue section wears its venue color (strip, dot, live text).
-          <div key={v.id} className={`${card} vc-scope overflow-hidden`} style={venueScopeStyle(v.id)}>
-            <span className={`vc-strip block h-[3px] w-full ${v.adapter === "LIVE" ? "" : "opacity-80"}`} aria-hidden />
-            {/* venue section header */}
-            <div className={`flex flex-wrap items-center gap-2.5 border-b px-4 py-3 ${c.border}`}>
-              <span className="vc-bg h-2 w-2 rounded-[3px]" aria-hidden />
-              <VenueBadge venue={v.id} />
-              <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide ${c.text3} bg-[#121722]`}>
-                {ROLE_LABEL[v.role]}
-              </span>
-              <span className={`text-[12.5px] font-semibold ${v.adapter === "LIVE" ? "vc-text" : c.text3}`}>
-                {v.adapter === "LIVE" ? "● adapter live" : "○ adapter pending"}
-              </span>
-              <span className={`hidden text-[13px] md:inline ${c.text3}`}>{v.note}</span>
-              {v.adapter === "LIVE" && (
-                <Button size="sm" variant="outline" className="h-7 border-[#2C3648] bg-[#121722] text-[13px] text-[#E6EAF2] hover:bg-[#1A2432]" onClick={() => onSync(v.id)} disabled={busy === "sync"}>
-                  {busy === "sync" ? "Syncing…" : `Sync ${v.label}`}
-                </Button>
-              )}
-              <span className={`text-[13px] ${mono} ${c.text2}`}>{rows.length} market{rows.length === 1 ? "" : "s"}</span>
-            </div>
-            {rows.length > 0 ? (
-              <div className="fd-scroll max-h-[420px] overflow-y-auto">
-                <table className="w-full">
-                  <thead className={`sticky top-0 ${c.surface}`}>
-                    <tr className={`border-b text-left text-[12px] tracking-wider ${c.border} ${c.text3}`}>
-                      <th className="px-4 py-2.5 font-semibold">MARKET</th>
-                      <th className="px-3 py-2.5 font-semibold">YES</th>
-                      <th className="px-3 py-2.5 font-semibold">NO</th>
-                      <th className="hidden px-3 py-2.5 font-semibold sm:table-cell">PARITY</th>
-                      <th className="hidden px-3 py-2.5 font-semibold sm:table-cell">VOLUME</th>
-                      <th className="hidden px-3 py-2.5 font-semibold md:table-cell">SOURCE</th>
-                      <th className="px-3 py-2.5" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((m) => {
-                      const parity = m.yesPriceCents != null && m.noPriceCents != null ? 100 - (m.yesPriceCents + m.noPriceCents) : null;
-                      return (
-                        <tr key={m.id} className={`border-b text-[14px] last:border-0 ${c.border} hover:bg-[#161D2B]`}>
-                          <td className="max-w-[380px] px-4 py-2.5">
-                            <div className={`truncate ${c.text}`}>{m.question}</div>
-                            <div className={`text-[12px] ${c.text3}`}>{m.category}{m.ambiguityFlag ? " · ⚠ ambiguity check" : ""}</div>
-                          </td>
-                          <td className={`px-3 py-2.5 ${mono} ${c.text}`}>{m.yesPriceCents ?? "—"}¢</td>
-                          <td className={`px-3 py-2.5 ${mono} ${c.text2}`}>{m.noPriceCents ?? "—"}¢</td>
-                          <td className={`hidden px-3 py-2.5 sm:table-cell ${mono} ${parity != null && parity > 0 ? c.gain : c.text3}`}>{parity != null ? `${parity >= 0 ? "+" : ""}${parity}¢` : "—"}</td>
-                          <td className={`hidden px-3 py-2.5 sm:table-cell ${mono} ${c.text2}`}>{m.volumeCents != null ? fmtCents(m.volumeCents) : "—"}</td>
-                          <td className="hidden px-3 py-2.5 md:table-cell">
-                            <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${m.dataSource.endsWith("_LIVE") ? `${c.bright} bg-[#00B0F0]/10` : `${c.warn} bg-[#E3A63B]/10`}`}>
-                              {m.dataSource.endsWith("_LIVE") ? "LIVE" : "CACHED"}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2.5 text-right">
-                            <Button size="sm" variant="outline" className={`h-7 border-[#2C3648] bg-[#121722] text-[#E6EAF2] text-[13px] hover:bg-[#1A2432]`} onClick={() => onTrade(m)} disabled={m.ambiguityFlag}>
-                              {m.ambiguityFlag ? "Flagged" : "Trade"}
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className={`px-4 py-7 text-center text-[14px] ${c.text3}`}>
-                {v.adapter === "LIVE"
-                  ? `No ${v.label} markets cached yet — press “Sync ${v.label}” above.`
-                  : `No ${v.label} markets yet — the adapter ships per the B9 roadmap. Robots can be scoped here once it lands.`}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ── Trade dialog ─────────────────────────────────────────────────────────────
-function TradeDialog({ market, onClose, onPlace, busy }: { market: MarketDTO | null; onClose: () => void; onPlace: (p: unknown) => void; busy: string | null }) {
-  const [side, setSide] = useState<"BUY_YES" | "BUY_NO">("BUY_YES");
-  const [price, setPrice] = useState<number>(market?.yesPriceCents ?? 50);
-  const [sizeDollars, setSizeDollars] = useState("25.00");
-  if (!market) return null;
-  const sizeCents = Math.round(parseFloat(sizeDollars || "0") * 100);
-  const valid = Number.isInteger(price) && price >= 1 && price <= 100 && Number.isInteger(sizeCents) && sizeCents > 0;
-  return (
-    <Dialog open={!!market} onOpenChange={(v) => !v && onClose()}>
-      {/* B12: the ticket inherits the market's venue color — you always know
-          which market's room you are placing an order in. */}
-      <DialogContent
-        className={`${c.surface} vc-scope overflow-hidden border-[#1E2533] text-[#E6EAF2] sm:max-w-[420px]`}
-        style={venueScopeStyle(market.venue)}
-      >
-        <span className="vc-strip -mx-6 -mt-6 mb-1 block h-[3px]" aria-hidden />
-        <DialogHeader>
-          <DialogTitle className="text-[16px]">Manual paper order — always net of fees</DialogTitle>
-        </DialogHeader>
-        <div className={`text-[13px] ${c.text2}`}>{market.question}</div>
-        <div className={`mt-1 flex items-center gap-1.5 text-[12.5px] ${c.text3}`}>
-          entering via <VenueBadge venue={market.venue} />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => { setSide("BUY_YES"); setPrice(market.yesPriceCents ?? 50); }} className={`rounded-lg border py-2.5 text-[14.5px] font-semibold transition-colors ${side === "BUY_YES" ? "vc-border vc-tint vc-text" : `${c.borderStrong} ${c.elevated} ${c.text2}`}`}>
-            Buy YES · {market.yesPriceCents ?? "—"}¢
-          </button>
-          <button onClick={() => { setSide("BUY_NO"); setPrice(market.noPriceCents ?? 50); }} className={`rounded-lg border py-2.5 text-[14.5px] font-semibold transition-colors ${side === "BUY_NO" ? "vc-border vc-tint vc-text" : `${c.borderStrong} ${c.elevated} ${c.text2}`}`}>
-            Buy NO · {market.noPriceCents ?? "—"}¢
-          </button>
-        </div>
-        <div className="mt-3 flex flex-col gap-3">
-          <div>
-            <Label className={`text-[13px] ${c.text2}`}>Limit price (¢)</Label>
-            <Input type="number" min={1} max={100} value={price} onChange={(e) => setPrice(parseInt(e.target.value || "0", 10))} className={`mt-1 border-[#2C3648] bg-[#121722] ${c.text}`} />
-          </div>
-          <div>
-            <Label className={`text-[13px] ${c.text2}`}>Size ($)</Label>
-            <Input value={sizeDollars} onChange={(e) => setSizeDollars(e.target.value.replace(/[^0-9.]/g, ""))} className={`mt-1 border-[#2C3648] bg-[#121722] ${c.text} ${mono}`} />
-          </div>
-          <div className={`flex justify-between rounded-lg border border-dashed px-3 py-2 text-[13.5px] ${c.borderStrong} ${c.text2}`}>
-            <span>Est. fee (paper schedule)</span><span className={mono}>$0.00 · taker 0 bps [config]</span>
-          </div>
-          <div className={`flex justify-between text-[14px] ${c.text}`}>
-            <span>Est. total</span><span className={mono}>{fmtCents(sizeCents)}</span>
-          </div>
-          <Button className="vc-btn font-semibold" disabled={!valid || busy !== null} onClick={() => onPlace({ marketId: market.id, side, priceCents: price, sizeCents, nonce: crypto.randomUUID() })}>
-            Place paper order
-          </Button>
-          <div className={`text-[12px] ${c.text3}`}>Robot entry additionally requires the edge gate, liquidity and risk checks — this ticket is the manual path (C4.5 eligibility applies).</div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
