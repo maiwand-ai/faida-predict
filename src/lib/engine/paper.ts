@@ -52,7 +52,7 @@ export async function placePaperOrder(input: PlacePaperOrderInput): Promise<Plac
   // ── 1b. global pause gate (C19/S-07): no order path bypasses the switch ──
   const pause = await getPauseState();
   if (pause.paused) {
-    return { ok: false, stage: "PLATFORM", reason: `platform paused (C19): ${pause.reason ?? "manual pause"}` };
+    return { ok: false, stage: "PLATFORM", reason: `platform paused: ${pause.reason ?? "manual pause"}` };
   }
 
   // ── 2. idempotency dedupe (S-03): same key returns the original order ────

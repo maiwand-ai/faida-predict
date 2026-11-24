@@ -52,7 +52,7 @@ export const VENUES: VenueDef[] = [
     role: "PRIMARY",
     short: "PM",
     hex: "#3E8EFF", // electric blue — the primary market
-    note: "Primary venue — CLOB REST + WebSocket, USDC on Polygon, API-only; where robots earn (B2)",
+    note: "The largest prediction market. Real money (USDC on Polygon).",
   },
   {
     id: "MANIFOLD",
@@ -61,7 +61,7 @@ export const VENUES: VenueDef[] = [
     role: "HARNESS",
     short: "MF",
     hex: "#14D9C4", // turquoise — play-money harness, fresh and low-stakes
-    note: "Week-one harness, LIVE since Phase 3 — play money, public API; zero-risk environment where new robots prove the full pipeline before the edge gate (B9)",
+    note: "Play money. A safe place for new robots to practice.",
   },
   {
     id: "LIMITLESS",
@@ -70,7 +70,7 @@ export const VENUES: VenueDef[] = [
     role: "FAST_FOLLOW",
     short: "LX",
     hex: "#F26BC8", // magenta — crypto-native Base order book
-    note: "Fast-follow → LIVE since Phase 4 — Base CLOB order book, public REST; thin liquidity handled structurally (min-touch-depth refusal, edge-after-fees, per-market cap) (B9)",
+    note: "Crypto order book on Base. Robots skip markets without enough buyers and sellers.",
   },
   {
     id: "DRIFT_BET",
@@ -79,7 +79,7 @@ export const VENUES: VenueDef[] = [
     role: "FAST_FOLLOW",
     short: "DB",
     hex: "#C6F542", // lime — Solana energy
-    note: "SUSPENDED [VERIFY 2026-11-18] — offline since the April 2026 Drift exploit ($285M, protocol reboot pending two audits); adapter deliberately not built, a dead market cannot pass S-05 — slot #4 substitution awaits founder ratification (B9)",
+    note: "Suspended: offline since the April 2026 exploit.",
   },
   {
     id: "AZURO",
@@ -88,7 +88,7 @@ export const VENUES: VenueDef[] = [
     role: "FAST_FOLLOW",
     short: "AZ",
     hex: "#B18CFF", // lavender — EVM sports
-    note: "Phase 8 — adapter IMPLEMENTED against the SDK-verified V3 contract, venue stays PENDING: Azuro feed hosts are unreachable from the sandbox (origin-level 404, dated evidence in the S-05 compliance row), conformance fixtures cannot be recorded here; flip owed after `record-fixtures-azuro` + `conformance:azuro` pass from an unblocked vantage (B9/S-05)",
+    note: "Coming soon: the connection is built and waiting on a final test against the live feed.",
   },
   {
     id: "KALSHI",
@@ -97,7 +97,7 @@ export const VENUES: VenueDef[] = [
     role: "FAST_FOLLOW",
     short: "KX",
     hex: "#FFB25C", // soft orange — regulated US exchange
-    note: "Fast-follow → LIVE since Phase 9 — CFTC-regulated US exchange, public REST market data (S-05 fixtures recorded from the live feed); the US-persons complement where Polymarket is venue-restricted; key-based auth (RSA/Ed25519) as the platform's second credential kind (B9)",
+    note: "US-regulated exchange (CFTC), in dollars. Practice trading today; real-money orders come later.",
   },
 ];
 

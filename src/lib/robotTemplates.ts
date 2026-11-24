@@ -42,11 +42,11 @@ export const ROBOT_TEMPLATES: RobotTemplate[] = [
     family: "PROBABILITY_EDGE",
     riskProfile: "CONSERVATIVE",
     thesis:
-      "Prices overshoot; the A-03 baseline personality — fading extreme prices toward 50 — is the platform's calibration floor, so start where the math is known.",
+      "Crowds overreact. When a price swings to an extreme, this robot bets it drifts back toward the middle. The simplest, best-understood strategy to start with.",
     behavior:
-      "Each cycle it fades book prices ≥8 pts away from its contrarian estimate, net of fees; exits when the edge disappears or after 12 ticks.",
+      "Enters only when the price is at least 8 points off its own estimate after fees. Leaves when that gap closes, or after 12 checks at the latest.",
     venue: "POLYMARKET",
-    venueWhy: "Deepest books on the lineup — the fade needs real opposing liquidity to fill against (B2).",
+    venueWhy: "Polymarket has the deepest order books, so this robot's bets can actually be filled.",
     nameSuggestion: "Contrarian Fade 01",
     capital: {
       allocatedCents: 200000,
@@ -66,7 +66,7 @@ export const ROBOT_TEMPLATES: RobotTemplate[] = [
     guidedPath: [
       "Create the robot — everything prefilled",
       "Run a first cycle and read the trace",
-      "Run the first backtest (A-05 evidence)",
+      "Test it on past prices",
       "Review results in the Strategy lab below",
     ],
   },
@@ -76,11 +76,11 @@ export const ROBOT_TEMPLATES: RobotTemplate[] = [
     family: "PROBABILITY_EDGE",
     riskProfile: "AGGRESSIVE",
     thesis:
-      "Trade rarely and only on large dislocations — wide margin, fewer decisions, each one worth the fees.",
+      "Trades rarely, and only when a price is badly wrong. Fewer trades, but each one has a wide margin to cover fees.",
     behavior:
-      "Waits for ≥14 pts of model-vs-market edge (harder fade tilt 35), enters up to 3 positions, exits fast when the dislocation closes or after 8 ticks.",
+      "Waits for a gap of 14 points or more, holds at most 3 trades, and gets out fast once the price corrects, or after 8 checks.",
     venue: "POLYMARKET",
-    venueWhy: "Primary venue depth concentrates the dislocations this template hunts (B2).",
+    venueWhy: "The big price swings this robot looks for show up most on Polymarket, the deepest market.",
     nameSuggestion: "Sniper 01",
     capital: {
       allocatedCents: 100000,
@@ -100,7 +100,7 @@ export const ROBOT_TEMPLATES: RobotTemplate[] = [
     guidedPath: [
       "Create the robot — everything prefilled",
       "Run a first cycle and read the trace",
-      "Run the first backtest (A-05 evidence)",
+      "Test it on past prices",
       "Review results in the Strategy lab below",
     ],
   },
@@ -110,11 +110,11 @@ export const ROBOT_TEMPLATES: RobotTemplate[] = [
     family: "MARKET_MAKING",
     riskProfile: "BALANCED",
     thesis:
-      "Market-making posture in paper mode: small caps, many small positions, quick exits — the shape of quoting both sides without live quotes yet.",
+      "Many small, quick trades instead of a few big ones, so no single trade matters much.",
     behavior:
-      "Runs a light fade (tilt 10) with a low 5-pt entry bar, up to 6 tiny positions, exits when the edge narrows below 1 pt or after 20 ticks.",
+      "Enters on small 5-point gaps, holds up to 6 tiny trades, and exits as soon as the gap is under 1 point, or after 20 checks.",
     venue: "POLYMARKET",
-    venueWhy: "MM earns the spread where books are deepest; Polymarket is the only book deep enough to practice on (B2).",
+    venueWhy: "Many small trades need deep order books, and Polymarket has the deepest.",
     nameSuggestion: "Spread Harvester 01",
     capital: {
       allocatedCents: 300000,
@@ -134,7 +134,7 @@ export const ROBOT_TEMPLATES: RobotTemplate[] = [
     guidedPath: [
       "Create the robot — everything prefilled",
       "Run a first cycle and read the trace",
-      "Run the first backtest (A-05 evidence)",
+      "Test it on past prices",
       "Review results in the Strategy lab below",
     ],
   },
@@ -144,11 +144,11 @@ export const ROBOT_TEMPLATES: RobotTemplate[] = [
     family: "AI_RESEARCH",
     riskProfile: "BALANCED",
     thesis:
-      "Let the registered AI model drive estimates while its calibration evidence accrues — on play money, where wrong turns cost nothing.",
+      "Lets the AI make the price estimates, on play money where mistakes cost nothing, while it builds a track record.",
     behavior:
-      "Uses the estimator chain (ACTIVE registry model → screening → cache → fallback), enters at ≥10 pts net edge, exits at 2 pts or after 10 ticks.",
+      "Uses your approved AI model (or a simple fallback if none is set up). Enters on a 10-point gap after fees, exits at 2 points or after 10 checks.",
     venue: "MANIFOLD",
-    venueWhy: "Play-money harness: AI costs and calibration get proven where mistakes are free (B9).",
+    venueWhy: "Manifold is play money, so the AI builds its track record where mistakes cost nothing.",
     nameSuggestion: "AI Scout 01",
     capital: {
       allocatedCents: 150000,
@@ -168,7 +168,7 @@ export const ROBOT_TEMPLATES: RobotTemplate[] = [
     guidedPath: [
       "Create the robot — everything prefilled",
       "Run a first cycle and read the trace",
-      "Run the first backtest (A-05 evidence)",
+      "Test it on past prices",
       "Review results in the Strategy lab below",
     ],
   },

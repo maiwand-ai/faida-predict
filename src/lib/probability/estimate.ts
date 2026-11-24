@@ -52,7 +52,7 @@ function baselineOutput(input: EstimateInput, evHash: string, screening: Provena
   const basis =
     `heuristic: contrarian tilt ${tilt}% of book price toward 50%` +
     (fallbackFrom ? ` [${screeningNote ?? "AI unavailable"} — fell back from ${fallbackFrom}]` : "") +
-    (screening === "FLAGGED" ? ` [A-06 screen: ${reasons.join("; ")}]` : "");
+    (screening === "FLAGGED" ? ` [safety screen: ${reasons.join("; ")}]` : "");
   return {
     estimatePct: est,
     basis,
@@ -88,7 +88,7 @@ export async function estimateForMarket(input: EstimateInput): Promise<EstimateO
   if (active && active.kind === "AI") {
     // A-06 fail-closed: flagged evidence never reaches a prompt
     if (screen.flagged) {
-      return baselineOutput(input, evHash, "FLAGGED", screen.reasons, active.key, "A-06 injection screen flagged the evidence");
+      return baselineOutput(input, evHash, "FLAGGED", screen.reasons, active.key, "the safety screen flagged this market's text");
     }
     const providerRow = await db.aiProvider.findFirst({ where: { name: active.providerName ?? "" } });
     const providerModel = active.providerModel ?? providerRow?.model ?? "";
@@ -105,7 +105,7 @@ export async function estimateForMarket(input: EstimateInput): Promise<EstimateO
         });
         return {
           estimatePct: hit.estimatePct,
-          basis: `${hit.basis} [cache HIT — A-07]`,
+          basis: `${hit.basis} [reused a recent estimate]`,
           modelKey: active.key,
           provenance: {
             modelKey: active.key,

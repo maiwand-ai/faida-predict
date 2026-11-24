@@ -53,7 +53,7 @@ export async function placeLiveOrder(input: PlaceLiveOrderInput): Promise<LiveOr
   // ── 0. global pause (C19): the kill switch gates the live path first ──────
   const pause = await getPauseState();
   if (pause.paused) {
-    return { ok: false, stage: "PLATFORM", reason: `platform paused (C19): ${pause.reason ?? "manual pause"}` };
+    return { ok: false, stage: "PLATFORM", reason: `platform paused: ${pause.reason ?? "manual pause"}` };
   }
 
   // ── 1. the full gate stack, evaluated NOW (not cached) — a consent revoke,
@@ -79,7 +79,7 @@ export async function placeLiveOrder(input: PlaceLiveOrderInput): Promise<LiveOr
 
   // ── 3. market + pilot caps (integer cents only, S-09) ─────────────────────
   const market = await db.market.findUnique({ where: { id: input.marketId } });
-  if (!market || market.venue !== robot.venue) return { ok: false, stage: "GATE", reason: "market not found on the robot's venue (B11)" };
+  if (!market || market.venue !== robot.venue) return { ok: false, stage: "GATE", reason: "market not found on the robot's venue" };
   if (market.ambiguityFlag || market.resolvedAt) return { ok: false, stage: "BOOK", reason: "market ambiguous or already resolved" };
   const pilot = await db.platformControl.findUnique({ where: { key: "LIVE_PILOT" } });
   const pilotState = pilot ? (JSON.parse(pilot.value) as { maxOrderCents: number; maxTotalNotionalCents: number; venues: string[] }) : null;
@@ -119,7 +119,7 @@ export async function placeLiveOrder(input: PlaceLiveOrderInput): Promise<LiveOr
   const bookAgeMs = Date.now() - fetchedAtMs;
   const bestAsk = book.asks?.[0] ? parseFloat(book.asks[0].price) : null;
   const bookChecks: RiskCheckResult[] = [
-    { check: "LIVE_BOOK_FRESH", passed: bookAgeMs <= LIVE_BOOK_FRESHNESS_MS, detail: `book fetched just now (${bookAgeMs}ms old, budget ${LIVE_BOOK_FRESHNESS_MS}ms — B5)` },
+    { check: "LIVE_BOOK_FRESH", passed: bookAgeMs <= LIVE_BOOK_FRESHNESS_MS, detail: `prices fetched just now (${bookAgeMs}ms old; must be under ${LIVE_BOOK_FRESHNESS_MS}ms)` },
     { check: "LIVE_BOOK_PRESENT", passed: bestAsk != null && bestAsk > 0, detail: `best ask ${bestAsk ?? "none"} vs limit ${(input.priceCents / 100).toFixed(2)}` },
     { check: "LIVE_PRICE_SANITY", passed: bestAsk == null || input.priceCents <= Math.round(bestAsk * 100 * 1.02), detail: `limit ${(input.priceCents / 100).toFixed(2)} vs touch ${bestAsk?.toFixed(3) ?? "—"} (max +2% slippage guard)` },
   ];
@@ -204,7 +204,7 @@ export async function placeLiveOrder(input: PlaceLiveOrderInput): Promise<LiveOr
         orderId: created.order.id,
         fromState: "SUBMITTED",
         toState: "SUBMITTED",
-        reason: "audit: signed order payload recorded (sha256 " + signedPayloadHash.slice(0, 16) + "…) — send suppressed by DRY_RUN armor",
+        reason: "audit: signed order payload recorded (sha256 " + signedPayloadHash.slice(0, 16) + "…) — not sent (test mode: real sending is switched off)",
         detail: JSON.stringify({ dryRun: true, signedPayloadHash, wire: { maker: signed.maker, signer: signed.signer, tokenId: signed.tokenId, makerAmount: signed.makerAmount, takerAmount: signed.takerAmount, side: signed.side, signatureType: signed.signatureType, domain: signed.domain } }),
       },
     });

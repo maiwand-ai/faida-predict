@@ -22,10 +22,12 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
+from _faida_env import DB_PATH, BUN, isolate_db  # real DB path, Bun launcher, DB isolation (see _faida_env.py)
+isolate_db()  # restore the database to its pre-run state on exit
 
 BASE = "http://localhost:3000"
 ROOT = Path(__file__).resolve().parent.parent
-DB = str(ROOT / "db" / "custom.db")
+DB = DB_PATH
 GLM_KEY = "ai:GLM/glm-4.6"
 failures = []
 
@@ -62,7 +64,7 @@ def db_query(sql, args=()):
 
 # ── start dev server inside this process tree ────────────────────────────────
 server = subprocess.Popen(
-    ["bun", "run", "dev"],
+    [*BUN, "run", "dev"],
     cwd=ROOT,
     stdout=open("/tmp/devlog5.txt", "w"),
     stderr=subprocess.STDOUT,

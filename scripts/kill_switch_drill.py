@@ -18,9 +18,11 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from _faida_env import DB_PATH, isolate_db  # real DB path, Bun launcher, DB isolation (see _faida_env.py)
+isolate_db()  # restore the database to its pre-run state on exit
 
 BASE = "http://localhost:3000"
-DB = str(Path(__file__).resolve().parent.parent / "db" / "custom.db")
+DB = DB_PATH
 failures = []
 robot_id = None
 

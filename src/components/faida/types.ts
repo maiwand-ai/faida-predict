@@ -383,8 +383,8 @@ export interface ControlStateDTO {
 export const FAMILIES = [
   { id: "PROBABILITY_EDGE", label: "Probability Edge", desc: "Enter when model-vs-market edge exceeds a threshold, net of fees." },
   { id: "MARKET_MAKING", label: "Market-Making", desc: "Quote both sides around a fair value; earn the spread and maker rebates." },
-  { id: "AI_RESEARCH", label: "AI Research", desc: "LLM-driven evidence gathering with sourced citations; trades only after the edge gate." },
-  { id: "ARBITRAGE", label: "Arbitrage (planned)", desc: "YES+NO parity and clustered offsets — deterministic edge, later phase." },
+  { id: "AI_RESEARCH", label: "AI Research", desc: "Uses AI to estimate the odds; trades only when its estimate beats the price by enough." },
+  { id: "ARBITRAGE", label: "Arbitrage (planned)", desc: "Buys both YES and NO when together they cost less than $1. Coming later." },
 ] as const;
 
 // P-03 — Robot template as served by GET /api/robot-templates (venue status

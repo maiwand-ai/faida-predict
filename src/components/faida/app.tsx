@@ -3,6 +3,7 @@
 // FAIDA Predict — UI shell. Single page: venue-first Dashboard (default),
 // per-venue Workspace, Markets, Robot Studio, Trading, Settings.
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import {
   type DashboardDTO,
@@ -16,7 +17,8 @@ import {
 import { LIVE_VENUE_IDS, VENUE_LABEL } from "@/lib/venues";
 import { TradingView, SettingsView } from "./views";
 import { StudioView } from "./studio";
-import { DashboardView, VenueWorkspace } from "./dashboard";
+import { VenueWorkspace } from "./dashboard";
+import { HomeView } from "./home";
 import { RobotDetail } from "./robot";
 import { BetaView } from "./beta";
 import { MarketsView, MarketDetail, TradeDialog } from "./markets";
@@ -24,7 +26,13 @@ import { RobotsView } from "./robots";
 import { AnalyticsView } from "./analytics";
 import { RiskCenter } from "./risk";
 import { IntelligenceView } from "./intel";
-import { MobileNav, NavDrawer, SearchPalette, Sidebar, TopBar, type Nav, type OperatingMode } from "./shell";
+import { MobileNav, SearchPalette, Sidebar, TopBar, type Nav, type OperatingMode } from "./shell";
+import { ReadyMadeRobots } from "./templates";
+import { HelpView } from "./help";
+import { TrackRecordView } from "./trackrecord";
+import { AskFaida } from "./ask";
+import { StrategyLab } from "./views";
+import { Panel } from "./ds";
 
 // Tolerant JSON parse — a transient empty body (dev recompile race, network
 // hiccup) must never surface as an uncaught promise rejection (D-07).
@@ -41,12 +49,12 @@ async function safeJson<T = unknown>(res: Response): Promise<T | null> {
 // ── main app ─────────────────────────────────────────────────────────────────
 export default function FaidaApp() {
   const { toast } = useToast();
+  const router = useRouter();
   // navigation: a view plus an optional tab (sidebar sub-links pick the tab)
   const [nav, setNav] = useState<Nav>({ view: "overview" });
   const view = nav.view;
   const [marketFocus, setMarketFocus] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [live, setLive] = useState<{ armSwitch: string; pilot: { enabled: boolean }; consent: { consented: boolean } } | null>(null);
   const [dash, setDash] = useState<DashboardDTO | null>(null);
@@ -62,6 +70,7 @@ export default function FaidaApp() {
   const [venueFocus, setVenueFocus] = useState<string | null>(null);
   const [robotFocus, setRobotFocus] = useState<string | null>(null);
   const [studioVenue, setStudioVenue] = useState<string | null>(null);
+  const [studioTemplate, setStudioTemplate] = useState<string | null>(null);
   // Phase 10: the acting identity — session user (member or operator) with the
   // honest fallback mode disclosed; drives the Beta Ops view and header chip.
   const [me, setMe] = useState<{ id: string; email: string; role: string; name: string | null; via?: string } | null>(null);
@@ -69,11 +78,11 @@ export default function FaidaApp() {
     try {
       const res = await fetch("/api/auth/me");
       // strict sign-in and no session: send the visitor to the login page
-      if (res.status === 401) { window.location.assign("/login"); return; }
+      if (res.status === 401) { router.replace("/login"); return; }
       const json = await safeJson<{ user: { id: string; email: string; role: string; name: string | null }; via: string }>(res);
       if (json?.user) setMe({ ...json.user, via: json.via });
     } catch { /* transient — next poll recovers */ }
-  }, []);
+  }, [router]);
 
   const refreshDashboard = useCallback(async () => {
     try {
@@ -125,17 +134,21 @@ export default function FaidaApp() {
   }, []);
 
   useEffect(() => {
-    refreshDashboard();
-    refreshMarkets();
-    refreshOrders();
-    refreshProbability();
-    refreshMe();
-    refreshRisk();
-    refreshLive();
+    // first load runs on the same timer machinery as the refresh polls, so no
+    // state is set synchronously inside the effect
+    const boot = setTimeout(() => {
+      refreshDashboard();
+      refreshMarkets();
+      refreshOrders();
+      refreshProbability();
+      refreshMe();
+      refreshRisk();
+      refreshLive();
+    }, 0);
     const t = setInterval(refreshDashboard, 15000);
     const t5 = setInterval(refreshProbability, 15000);
     const t6 = setInterval(refreshLive, 30000);
-    return () => { clearInterval(t); clearInterval(t5); clearInterval(t6); };
+    return () => { clearTimeout(boot); clearInterval(t); clearInterval(t5); clearInterval(t6); };
   }, [refreshDashboard, refreshMarkets, refreshOrders, refreshProbability, refreshMe, refreshRisk, refreshLive]);
 
   const post = useCallback(
@@ -212,7 +225,7 @@ export default function FaidaApp() {
       if (synced > 0) {
         toast({ title: `Synced ${synced} live market${synced === 1 ? "" : "s"}`, description: parts.join(" · ") });
       } else {
-        toast({ title: "Venue APIs unreachable from sandbox", description: "Showing cached/seeded markets — source labeled honestly per D-03", variant: "destructive" });
+        toast({ title: "Couldn't reach the venues", description: "Showing the last saved markets. Each market shows where its data came from.", variant: "destructive" });
       }
       await refreshMarkets();
     } finally {
@@ -234,7 +247,6 @@ export default function FaidaApp() {
   const navigate = useCallback(
     (n: Nav) => {
       setNav(n);
-      setDrawerOpen(false);
       if (n.view === "settings" || n.view === "risk") { refreshRisk(); refreshEligibility(); refreshProbability(); }
       if (n.view === "trading" || n.view === "analytics") refreshOrders();
       if (n.view === "markets") refreshMarkets();
@@ -245,43 +257,33 @@ export default function FaidaApp() {
   const openVenue = (venueId: string) => { setVenueFocus(venueId); navigate({ view: "venue", tab: venueId }); };
   const openRobot = (robotId: string) => { setRobotFocus(robotId); navigate({ view: "robot" }); };
   const openMarket = (marketId: string) => { setMarketFocus(marketId); navigate({ view: "market" }); };
-  const pauseAll = () => post("/api/control", { action: "PAUSE", reason: "manual pause from navigation" }, "Everything paused: robot cycles and new orders stop until you resume");
   const signOut = async () => { await fetch("/api/auth/logout", { method: "POST" }); await refreshMe(); toast({ title: "Signed out" }); };
-  const runCycle = () => post("/api/cycle", {}, "Robot cycle executed");
+  const runCycle = () => post("/api/cycle", {}, "Markets checked: every running robot made its decision");
   const closePosition = (positionId: string) => post("/api/orders", { action: "CLOSE_POSITION", positionId }, "Position closed");
 
-  const sidebar = (inDrawer: boolean) => (
-    <Sidebar
-      nav={nav}
-      onNavigate={navigate}
-      onOpenVenue={openVenue}
-      dash={dash}
-      mode={mode}
-      isOperator={isOperator}
-      collapsed={inDrawer ? false : collapsed}
-      onToggleCollapsed={inDrawer ? undefined : () => setCollapsed((v) => !v)}
-      onPause={pauseAll}
-      busy={busy !== null}
-      inDrawer={inDrawer}
-    />
-  );
+  const createRobot = (opts: { venue?: string; template?: string } = {}) => {
+    setStudioVenue(opts.venue ?? null);
+    setStudioTemplate(opts.template ?? null);
+    navigate({ view: "studio" });
+  };
 
   return (
-    <div className="flex min-h-screen bg-[var(--fd-bg)] text-[var(--fd-text)]" style={{ fontFamily: "var(--font-inter)" }}>
+    <div className="flex min-h-screen text-[var(--fd-text)]" style={{ fontFamily: "var(--font-inter)" }}>
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-[#2583FF] focus:px-3 focus:py-2 focus:text-[var(--fd-strong)]">Skip to content</a>
-      <aside className={`sticky top-0 hidden h-screen shrink-0 border-r border-[var(--fd-line)] bg-[var(--fd-bg2)] transition-[width] duration-200 md:block ${collapsed ? "w-[76px]" : "w-[268px]"}`}>
-        {sidebar(false)}
+      <aside className={`sticky top-0 hidden h-screen shrink-0 py-3 pl-3 transition-[width] duration-200 md:block ${collapsed ? "w-[88px]" : "w-[280px]"}`}>
+        <div className="fd-glass h-full overflow-hidden rounded-3xl border border-[var(--fd-border)] bg-[var(--fd-surface)]">
+          <Sidebar nav={nav} onNavigate={navigate} onOpenVenue={openVenue} dash={dash} mode={mode} isOperator={isOperator} collapsed={collapsed} onToggleCollapsed={() => setCollapsed((v) => !v)} />
+        </div>
       </aside>
-      <NavDrawer open={drawerOpen} onOpenChange={setDrawerOpen}>{sidebar(true)}</NavDrawer>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar dash={dash} mode={mode} me={me} onOpenSearch={() => setSearchOpen(true)} onOpenMenu={() => setDrawerOpen(true)} onNavigate={navigate} onSignOut={signOut} />
+        <TopBar dash={dash} mode={mode} me={me} onOpenSearch={() => setSearchOpen(true)} onNavigate={navigate} onSignOut={signOut} />
 
         {mode === "PAUSED" && (
-          <div role="alert" className="flex flex-wrap items-center gap-3 border-b border-[#FF5268]/40 bg-[#FF5268]/10 px-4 py-3 sm:px-8">
-            <span className="text-[14.5px] font-semibold text-[var(--fd-red-text)]">Emergency pause is on.</span>
-            <span className="text-[14px] text-[var(--fd-text)]/80">Robot cycles and new orders are refused until you resume. Reason: {dash?.control?.pause.reason ?? "manual pause"}</span>
-            <button onClick={() => post("/api/control", { action: "RESUME" }, "Platform resumed")} disabled={busy !== null} className="ml-auto h-9 rounded-lg border border-[#FF5268]/50 px-3 text-[14px] font-semibold text-[var(--fd-red-text)] hover:bg-[#FF5268]/15 disabled:opacity-50">
+          <div role="alert" className="mx-3 mt-1 flex flex-wrap items-center gap-3 rounded-2xl border border-[#FF5268]/40 bg-[#FF5268]/12 px-4 py-3 backdrop-blur sm:mx-6 sm:px-6 lg:mx-8">
+            <span className="text-[14.5px] font-semibold text-[var(--fd-red-text)]">Emergency stop is on.</span>
+            <span className="text-[14px] text-[var(--fd-text)]/80">Robots won&apos;t open new trades until you resume. Reason: {dash?.control?.pause.reason ?? "manual stop"}</span>
+            <button onClick={() => post("/api/control", { action: "RESUME" }, "Resumed: robots can trade again")} disabled={busy !== null} className="ml-auto h-9 rounded-lg border border-[#FF5268]/50 px-3 text-[14px] font-semibold text-[var(--fd-red-text)] hover:bg-[#FF5268]/15 disabled:opacity-50">
               Resume
             </button>
           </div>
@@ -289,22 +291,19 @@ export default function FaidaApp() {
 
         <main id="main" className="fd-fade-in mx-auto w-full max-w-[1480px] flex-1 px-3 py-5 pb-28 sm:px-6 sm:py-7 md:pb-8 lg:px-8" key={`${nav.view}:${nav.view === "venue" ? nav.tab : ""}`}>
           {view === "overview" && (
-            <DashboardView
+            <HomeView
               dash={dash}
-              markets={markets}
               ledger={ordersData?.ledger ?? []}
-              onSync={syncMarkets}
               busy={busy}
+              onSync={syncMarkets}
               onCycle={runCycle}
-              onReconcile={() => post("/api/cycle", { action: "RECONCILE" }, "Reconciliation pass complete")}
-              hasUnknown={hasUnknown}
               onControl={(body, msg) => post("/api/control", body, msg)}
-              onOpenVenue={openVenue}
               onOpenRobot={openRobot}
-              onOpenMarket={openMarket}
+              onOpenVenue={openVenue}
               onNavigate={navigate}
-              onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, `${name} → ${status.replace("_", " ").toLowerCase()}`)}
+              onNewRobot={() => createRobot()}
               onClosePosition={closePosition}
+              onOpenMarket={openMarket}
             />
           )}
           {view === "venue" && venueFocus && (
@@ -313,12 +312,12 @@ export default function FaidaApp() {
               dash={dash}
               markets={markets}
               busy={busy}
-              onBack={() => navigate({ view: "overview" })}
+              onBack={() => navigate({ view: "markets", tab: "trending" })}
               onSyncVenue={(v) => syncMarkets(v)}
               onCycle={runCycle}
               onTrade={(m) => setTradeMarket(m)}
               onOpenMarket={openMarket}
-              onCreateRobot={(v) => { setStudioVenue(v); navigate({ view: "studio" }); }}
+              onCreateRobot={(v) => createRobot({ venue: v })}
               onControl={(body, msg) => post("/api/control", body, msg)}
               onOpenRobot={openRobot}
             />
@@ -332,10 +331,11 @@ export default function FaidaApp() {
               onBackLabel="My Robots"
               onOpenVenue={openVenue}
               onOpenMarket={openMarket}
-              onEditStrategy={() => navigate({ view: "studio", tab: "library" })}
+              onEditStrategy={() => navigate({ view: "robots", tab: "lab" })}
+              onGoLive={() => navigate({ view: "settings", tab: "live" })}
               onClosePosition={closePosition}
-              onCycleRobot={(rid, name) => post(`/api/robots/${rid}/cycle`, {}, `${name} cycle executed`)}
-              onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, `${name} → ${status.replace("_", " ").toLowerCase()}`)}
+              onCycleRobot={(rid, name) => post(`/api/robots/${rid}/cycle`, {}, `${name} checked its markets`)}
+              onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, statusToast(name, status))}
             />
           )}
           {view === "robots" && (
@@ -343,10 +343,14 @@ export default function FaidaApp() {
               dash={dash}
               busy={busy}
               onOpenRobot={openRobot}
-              onCreate={() => navigate({ view: "studio" })}
+              onCreate={() => createRobot()}
               onOpenVenue={openVenue}
-              onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, `${name} → ${status.replace("_", " ").toLowerCase()}`)}
-              onCycleRobot={(rid, name) => post(`/api/robots/${rid}/cycle`, {}, `${name} cycle executed`)}
+              onRobotStatus={(rid, status, name) => patch("/api/robots", { robotId: rid, status }, statusToast(name, status))}
+              onCycleRobot={(rid, name) => post(`/api/robots/${rid}/cycle`, {}, `${name} checked its markets`)}
+              tab={nav.tab ?? "mine"}
+              onTab={(t) => setNav({ view: "robots", tab: t })}
+              readyMade={<ReadyMadeRobots dash={dash} onUse={(id) => createRobot({ template: id })} onBuildOwn={() => createRobot()} />}
+              lab={<Panel title="Test & tune" subtitle="Make a new version of a robot's strategy, then test it on past prices before switching it on."><StrategyLab dash={dash} onAfterChange={refreshDashboard} /></Panel>}
             />
           )}
           {view === "markets" && (
@@ -359,6 +363,7 @@ export default function FaidaApp() {
               busy={busy}
               onTrade={(m) => setTradeMarket(m)}
               onOpenMarket={openMarket}
+              onOpenVenue={openVenue}
             />
           )}
           {view === "market" && marketFocus && (
@@ -371,18 +376,18 @@ export default function FaidaApp() {
               onOpenMarket={openMarket}
               onOpenRobot={openRobot}
               onOpenVenue={openVenue}
-              onPlace={(p) => post("/api/orders", p, "Paper order filled")}
+              onPlace={(p) => post("/api/orders", p, "Practice order filled")}
             />
           )}
           {view === "studio" && (
             <StudioView
-              key={studioVenue ?? "any"}
+              key={`${studioVenue ?? "any"}:${studioTemplate ?? "none"}`}
               initialVenue={studioVenue ?? undefined}
+              initialTemplateId={studioTemplate ?? undefined}
+              onBrowseTemplates={() => navigate({ view: "robots", tab: "ready" })}
               dash={dash}
               markets={markets}
-              tab={nav.tab}
-              onTab={(t) => setNav({ view: "studio", tab: t })}
-              onCreate={(payload) => post("/api/robots", payload, "Robot created as PAPER_ONLY draft")}
+              onCreate={(payload) => post("/api/robots", payload, "Robot created: running with practice money")}
               onAfterChange={refreshDashboard}
               onAction={post}
               onOpenRobot={openRobot}
@@ -396,14 +401,15 @@ export default function FaidaApp() {
               busy={busy}
               tab={nav.tab ?? "positions"}
               onTab={(t) => setNav({ view: "trading", tab: t })}
-              onPlace={(payload) => post("/api/orders", payload, "Paper order filled")}
-              onSimulateAckLoss={(marketId) => post("/api/orders", { action: "SIMULATE_ACK_LOSS", marketId }, "Synthetic order lost venue ack → UNKNOWN")}
-              onReconcile={() => post("/api/cycle", { action: "RECONCILE" }, "Reconciliation pass complete")}
+              onPlace={(payload) => post("/api/orders", payload, "Practice order filled")}
+              onSimulateAckLoss={(marketId) => post("/api/orders", { action: "SIMULATE_ACK_LOSS", marketId }, "Practice drill: an order with a lost reply was created")}
+              onReconcile={() => post("/api/cycle", { action: "RECONCILE" }, "Stuck orders checked with the venue")}
               hasUnknown={hasUnknown}
               onTradeSomething={() => navigate({ view: "markets", tab: "trending" })}
               onOpenMarket={openMarket}
               onOpenRobot={openRobot}
               onClosePosition={closePosition}
+              performance={<AnalyticsView embedded dash={dash} ordersData={ordersData} onOpenRobot={openRobot} onOpenVenue={openVenue} />}
             />
           )}
           {view === "analytics" && (
@@ -414,8 +420,10 @@ export default function FaidaApp() {
               dash={dash}
               markets={markets}
               probability={probability}
-              tab={nav.tab ?? "research"}
+              tab={nav.tab ?? "record"}
               onTab={(t) => setNav({ view: "intel", tab: t })}
+              trackRecord={<TrackRecordView onOpenRobot={openRobot} onNavigate={navigate} />}
+              ask={<AskFaida onOpenMarket={openMarket} onNavigate={navigate} />}
               onOpenMarket={openMarket}
               onOpenRobot={openRobot}
               onNavigate={navigate}
@@ -423,13 +431,14 @@ export default function FaidaApp() {
           )}
           {view === "risk" && (
             <RiskCenter
+              key={nav.tab === "stop" ? "stop" : "safety"}
               dash={dash}
               riskView={riskView}
               probability={probability}
               ordersData={ordersData}
               live={live}
               mode={mode}
-              tab={nav.tab ?? "overview"}
+              tab={nav.tab ?? "check"}
               onTab={(t) => setNav({ view: "risk", tab: t })}
               busy={busy}
               onControl={(body, msg) => post("/api/control", body, msg)}
@@ -439,6 +448,7 @@ export default function FaidaApp() {
             />
           )}
           {view === "beta" && <BetaView me={me} onToast={toast} />}
+          {view === "help" && <HelpView isOperator={isOperator} onToast={toast} />}
           {view === "settings" && (
             <SettingsView
               dash={dash}
@@ -479,20 +489,23 @@ export default function FaidaApp() {
             />
           )}
         </main>
-        <footer className="hidden border-t border-[var(--fd-line)] px-8 py-3.5 text-[13px] text-[var(--fd-text3)] md:flex md:flex-wrap md:items-center md:justify-between md:gap-3">
-          <span>FAIDA Predict · Intelligent. Transparent. Controlled. <span className="ml-2 rounded-md bg-[color:var(--fd-ink)]/[0.05] px-1.5 py-0.5 text-[11.5px] tracking-wide">PHASE 10</span></span>
-          <span className="flex flex-wrap items-center gap-4">
-            <span>{mode === "LIVE" ? "Live trading active within pilot ceilings" : "No real money moves in paper mode"}</span>
-            <span>Robots active: <span className="fd-num text-[var(--fd-text-soft)]">{dash?.robots.filter((r) => r.status === "RUNNING" || r.status === "PAPER_ONLY").length ?? 0}</span></span>
-          </span>
+        <footer className="hidden px-8 py-4 text-[13px] text-[var(--fd-text3)] md:flex md:flex-wrap md:items-center md:justify-between md:gap-3">
+          <span>FAIDA Predict · Intelligent. Transparent. Controlled.</span>
+          <span>{mode === "LIVE" ? "Real money: robots trade within your pilot limits" : "Practice money: no real money moves"}</span>
         </footer>
       </div>
 
-      <MobileNav nav={nav} onNavigate={navigate} onMore={() => setDrawerOpen(true)} />
+      <MobileNav nav={nav} onNavigate={navigate} />
       <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} dash={dash} markets={markets} onNavigate={navigate} onOpenMarket={openMarket} onOpenRobot={openRobot} onOpenVenue={openVenue} />
-      <TradeDialog key={tradeMarket?.id ?? "closed"} market={tradeMarket} onClose={() => setTradeMarket(null)} onPlace={(p) => post("/api/orders", p, "Paper order filled")} busy={busy} />
+      <TradeDialog key={tradeMarket?.id ?? "closed"} market={tradeMarket} onClose={() => setTradeMarket(null)} onPlace={(p) => post("/api/orders", p, "Practice order filled")} busy={busy} />
     </div>
   );
+}
+
+function statusToast(name: string, status: string): string {
+  if (status === "PAUSED_BY_USER") return `${name} paused`;
+  if (status === "PAPER_ONLY" || status === "RUNNING") return `${name} resumed`;
+  return `${name}: ${status.replace(/_/g, " ").toLowerCase()}`;
 }
 
 function summarize(json: Record<string, unknown>): string {

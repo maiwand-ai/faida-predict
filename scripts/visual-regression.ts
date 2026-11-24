@@ -53,13 +53,22 @@ interface ViewDef {
   require?: Array<{ desc: string; sel: string }>;
 }
 
+// Navigation follows the current information architecture: five main
+// sections in the sidebar (Home · Markets · Robots · Portfolio · Insights),
+// Safety + Settings at its foot, and the venue list under the main nav.
+const side = (page: import("playwright").Page, name: string) =>
+  page.locator("aside").getByRole("button", { name, exact: true }).first();
+
 const VIEWS: ViewDef[] = [
   {
-    name: "studio-step1",
+    name: "create-robot",
     mode: "PIXEL",
+    clipHeight: 640,
     goto: async (page) => {
-      await page.getByRole("button", { name: "Robot Studio", exact: true }).first().click({ timeout: 20000 });
-      await page.waitForTimeout(1500);
+      await side(page, "Robots").click({ timeout: 20000 });
+      await page.waitForTimeout(1200);
+      await page.getByRole("button", { name: "New robot", exact: true }).first().click({ timeout: 20000 });
+      await page.waitForTimeout(1800);
     },
   },
   {
@@ -67,52 +76,49 @@ const VIEWS: ViewDef[] = [
     mode: "PIXEL",
     clipHeight: 430,
     goto: async (page) => {
-      await page.getByRole("button", { name: "Settings", exact: true }).first().click({ timeout: 20000 });
+      await side(page, "Settings").click({ timeout: 20000 });
       await page.waitForTimeout(1500);
     },
   },
   {
-    name: "dashboard",
+    name: "home",
     mode: "DOM",
     goto: async (page) => {
-      await page.getByRole("button", { name: "Dashboard", exact: true }).first().click({ timeout: 20000 });
+      await side(page, "Home").click({ timeout: 20000 });
       await page.waitForTimeout(1500);
     },
     require: [
-      { desc: "KPI band renders", sel: "text=TOTAL PAPER BALANCE" },
-      { desc: "venue grid renders", sel: "text=Venues — select a venue to manage its robots, markets and orders" },
-      { desc: "decision traces section", sel: "text=Decision traces" },
-      { desc: "venue badge present (B11)", sel: ".vc-chip" },
+      { desc: "portfolio hero renders", sel: "text=Total value" },
+      { desc: "profit by period renders", sel: "text=Profit from closed bets" },
+      { desc: "venue cards render", sel: "text=Your venues" },
+      { desc: "live activity section", sel: "text=Live activity" },
+      { desc: "robot leaderboard section", sel: "text=Robot leaderboard" },
     ],
   },
   {
-    name: "trading",
+    name: "portfolio",
     mode: "DOM",
     goto: async (page) => {
-      await page.getByRole("button", { name: "Trading", exact: true }).first().click({ timeout: 20000 });
+      await side(page, "Portfolio").click({ timeout: 20000 });
       await page.waitForTimeout(1500);
     },
     require: [
-      { desc: "manual order ticket renders", sel: "text=Manual paper order" },
-      { desc: "venue label visible (B11)", sel: ".vc-chip" },
+      { desc: "practice order ticket entry", sel: "text=New practice order" },
+      { desc: "performance tab present", sel: "role=tab[name=/Performance/]" },
     ],
   },
   {
     name: "venue-workspace",
     mode: "DOM",
     goto: async (page) => {
-      // the venue grid lives on the Dashboard only — return there first
-      await page.getByRole("button", { name: "Dashboard", exact: true }).first().click({ timeout: 20000 });
-      await page.waitForTimeout(1200);
-      // the card is a button whose "Open workspace" hint is opacity-0 until
-      // hover, so click the card button itself.
-      await page.locator("button", { hasText: "Open workspace" }).first().click({ timeout: 20000 });
+      // venues are listed in the sidebar under the main sections
+      await page.locator('nav[aria-label="Main"] button', { hasText: "Polymarket" }).first().click({ timeout: 20000 });
       await page.waitForTimeout(1500);
     },
     require: [
-      { desc: "workspace header names the venue", sel: ".vc-text" },
-      { desc: "workspace robots section", sel: "text=Robots on" },
-      { desc: "workspace decisions section", sel: "text=Recent decisions on" },
+      { desc: "workspace robots section", sel: "text=Robots on Polymarket" },
+      { desc: "workspace decisions section", sel: "text=Recent decisions" },
+      { desc: "workspace venue rules", sel: "text=Venue rules" },
     ],
   },
 ];
@@ -143,7 +149,9 @@ function diffPct(a: Buffer, b: Buffer): number {
 const failures: string[] = [];
 const report: string[] = [];
 
-const browser = await chromium.launch();
+// Playwright's bundled Chromium when installed, else the system Chrome
+const browser = await chromium.launch().catch(() => chromium.launch({ channel: "chrome" }));
+// fresh context = default theme (Aurora, dark), so baselines are stable
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 await page.goto("http://localhost:3000", { waitUntil: "networkidle", timeout: 60000 }).catch(() => {});
 await page.addStyleTag({ content: FREEZE_CSS });

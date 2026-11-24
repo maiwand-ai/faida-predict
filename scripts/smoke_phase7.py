@@ -34,10 +34,12 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from _faida_env import DB_PATH, BUN, isolate_db  # real DB path, Bun launcher, DB isolation (see _faida_env.py)
+isolate_db()  # restore the database to its pre-run state on exit
 
 BASE = "http://localhost:3000"
 ROOT = Path(__file__).resolve().parent.parent
-DB = str(ROOT / "db" / "custom.db")
+DB = DB_PATH
 TEST_ADDR = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"  # Hardhat #0 — matches the injected fixture key
 P7_ENV = {
     "POLYMARKET_SIGNER_KEY": "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
@@ -100,7 +102,7 @@ def ensure_server():
     env = dict(os.environ)
     env.update(P7_ENV)
     subprocess.Popen(
-        ["bun", "run", "dev"],
+        [*BUN, "run", "dev"],
         cwd=ROOT,
         stdout=open("/tmp/devlog7.txt", "w"),
         stderr=subprocess.STDOUT,
@@ -176,7 +178,7 @@ def main():
     check("P7-2 S-08 custody rubric recorded in DECISIONS.md", "S-08" in dec and "custody rubric" in dec.lower())
 
     # ── P7-3: signing chain self-test ────────────────────────────────────────
-    r = subprocess.run(["bun", "scripts/live_selftest.ts"], capture_output=True, text=True, timeout=180)
+    r = subprocess.run([*BUN, "scripts/live_selftest.ts"], capture_output=True, text=True, timeout=180)
     check("P7-3 signing self-test S1–S6 PASS", "SELFTEST PASS" in r.stdout, r.stdout[-160:] if "SELFTEST PASS" not in r.stdout else r.stderr[-160:])
 
     # ── P7-4/P7-5: consent + pilot flow (refusals first) ─────────────────────

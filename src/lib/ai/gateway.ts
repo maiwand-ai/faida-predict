@@ -25,6 +25,38 @@ interface ProviderRow {
 }
 
 export async function estimateWithAi(question: string, marketPct: number, cacheLabel: "NONE" | "MISS" = "NONE"): Promise<EstimateResult | null> {
+  const prompt =
+    `You are a calibrated probability forecaster. Question: "${question}". ` +
+    `A prediction market currently implies ${marketPct}% probability for YES. ` +
+    `Reply with ONLY a number 0-100: your estimate of the true probability. No explanation.`;
+  const out = await runProviders(prompt, 16, cacheLabel, (text, p) => parseEstimate(text, `ai:${p.name}/${p.model}`));
+  return out?.result ?? null;
+}
+
+// Ask FAIDA: an estimate WITH a short plain-language explanation. Same
+// provider order, budget gate and call log as estimateWithAi. The model
+// answers from its training knowledge; it does not browse, and the caller
+// labels it that way. marketPct null = no market price exists for the question.
+export interface ExplainResult { estimatePct: number; reasoning: string; provider: string; model: string }
+export async function explainWithAi(question: string, marketPct: number | null): Promise<ExplainResult | null> {
+  const prompt =
+    `You are a careful, calibrated probability forecaster. Question: "${question}". ` +
+    (marketPct != null ? `A prediction market currently implies ${marketPct}% for YES. ` : `There is no market price for this question. `) +
+    `Give your own probability that the answer is YES, and explain briefly in plain language for a non-expert ` +
+    `(at most 3 short sentences; say what would change your mind; admit uncertainty about recent events you may not know). ` +
+    `Reply exactly in this format:\nPROBABILITY: <0-100>\nREASONING: <text>`;
+  const out = await runProviders(prompt, 300, "NONE", (text, p) => {
+    const pm = text.match(/PROBABILITY:\s*(\d{1,3})/i);
+    const rm = text.match(/REASONING:\s*([\s\S]+)/i);
+    if (!pm) return null;
+    const pct = parseInt(pm[1], 10);
+    if (pct < 0 || pct > 100) return null;
+    return { estimatePct: pct, reasoning: (rm?.[1] ?? "").trim().slice(0, 900), provider: p.name, model: p.model };
+  });
+  return out?.result ?? null;
+}
+
+async function runProviders<T>(prompt: string, maxTokens: number, cacheLabel: "NONE" | "MISS", parse: (text: string, p: ProviderRow) => T | null): Promise<{ result: T } | null> {
   const providers = await db.aiProvider.findMany({
     where: { enabled: true, OR: [{ apiKey: { not: null } }, { name: "GLM" }] }, // GLM runs keyless via SDK
     orderBy: { priority: "asc" },
@@ -38,14 +70,16 @@ export async function estimateWithAi(question: string, marketPct: number, cacheL
     }
     const t0 = Date.now();
     try {
-      const result = await callProvider(p, question, marketPct);
+      const text = await callProvider(p, prompt, maxTokens);
       const latencyMs = Date.now() - t0;
+      const result = text == null ? null : parse(text, p);
+      if (text != null && result == null) console.error(`[ai-gateway] ${p.name} reply not parseable:`, text.slice(0, 120));
       if (result) {
         const before = p.spentCents;
         const after = await db.aiProvider.update({ where: { id: p.id }, data: { spentCents: { increment: 2 } }, select: { spentCents: true } }); // ~$0.02/call bookkeeping
         await logCall({ provider: p.name, model: p.model, latencyMs, costCents: 2, outcome: "OK", cache: cacheLabel });
         await maybeBudgetNotification(p, before, after.spentCents);
-        return result;
+        return { result };
       }
       await logCall({ provider: p.name, model: p.model, latencyMs, costCents: 0, outcome: "FAILED", cache: cacheLabel });
     } catch (e) {
@@ -81,7 +115,7 @@ async function maybeBudgetNotification(p: ProviderRow, before: number, after: nu
         family: "AI_BUDGET",
         severity: "WARNING",
         title: `AI provider ${p.name} hit its monthly budget`,
-        body: `Spend ${after}¢ reached the ${p.monthlyBudgetCents}¢ budget — further AI estimates fall back to the heuristic baseline until the budget is raised or the month resets (A-07).`,
+        body: `Spend ${after}¢ reached the ${p.monthlyBudgetCents}¢ budget — further AI estimates fall back to the heuristic baseline until the budget is raised or the month resets.`,
         dedupeKey: `budget:${p.name}`,
       });
     }
@@ -92,11 +126,9 @@ export function resetBudgetNotificationGuard(): void {
   budgetNotified.clear();
 }
 
-async function callProvider(p: ProviderRow, question: string, marketPct: number): Promise<EstimateResult | null> {
-  const prompt =
-    `You are a calibrated probability forecaster. Question: "${question}". ` +
-    `A prediction market currently implies ${marketPct}% probability for YES. ` +
-    `Reply with ONLY a number 0-100: your estimate of the true probability. No explanation.`;
+// One provider call: returns the raw reply text (null = failed / no answer).
+// Parsing is the caller's job so the same transport serves every prompt.
+async function callProvider(p: ProviderRow, prompt: string, maxTokens: number): Promise<string | null> {
 
   if (p.name === "GLM") {
     // Z.ai GLM via the sandbox SDK — backend only.
@@ -108,9 +140,7 @@ async function callProvider(p: ProviderRow, question: string, marketPct: number)
         messages: [{ role: "user", content: prompt }],
       })) as { choices?: Array<{ message?: { content?: string } }> };
       const text = completion.choices?.[0]?.message?.content ?? "";
-      const parsed = parseEstimate(String(text), `ai:GLM/${p.model}`);
-      if (!parsed) console.error("[ai-gateway] GLM reply not parseable:", String(text).slice(0, 120));
-      return parsed;
+      return text ? String(text) : null;
     } catch (e) {
       console.error("[ai-gateway] GLM adapter failed, falling back:", String(e).slice(0, 200));
       return null;
@@ -128,14 +158,14 @@ async function callProvider(p: ProviderRow, question: string, marketPct: number)
       : { Authorization: `Bearer ${p.apiKey ?? ""}`, "content-type": "application/json" };
   const body =
     p.name === "ANTHROPIC"
-      ? { model: p.model, max_tokens: 16, messages: [{ role: "user", content: prompt }] }
-      : { model: p.model, messages: [{ role: "user", content: prompt }], max_tokens: 16 };
+      ? { model: p.model, max_tokens: maxTokens, messages: [{ role: "user", content: prompt }] }
+      : { model: p.model, messages: [{ role: "user", content: prompt }], max_tokens: maxTokens };
 
   const res = await fetch(endpoint, {
     method: "POST",
     headers,
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(maxTokens > 64 ? 25000 : 12000),
   });
   if (!res.ok) return null;
   const json = (await res.json()) as {
@@ -143,7 +173,7 @@ async function callProvider(p: ProviderRow, question: string, marketPct: number)
     content?: Array<{ text?: string }>;
   };
   const text = json.choices?.[0]?.message?.content ?? json.content?.[0]?.text ?? "";
-  return parseEstimate(text, `ai:${p.name}/${p.model}`);
+  return text || null;
 }
 
 function parseEstimate(text: string, basis: string): EstimateResult | null {

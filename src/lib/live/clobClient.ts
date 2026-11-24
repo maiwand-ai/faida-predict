@@ -146,7 +146,7 @@ export async function buildSignedOrder(params: {
   book: { version?: string | null; neg_risk?: boolean | null };
 }): Promise<SignedOrder> {
   const account: PrivateKeyAccount | null = signerAccount();
-  if (!account) throw new Error("NO_SIGNER: no POLYMARKET_SIGNER_KEY in process env (B1: keys are never stored)");
+  if (!account) throw new Error("NO_SIGNER: no POLYMARKET_SIGNER_KEY in the server environment (keys are never stored)");
   const domain = domainForBook(params.book);
   const order = {
     salt: Math.floor(Math.random() * 1_000_000_000),

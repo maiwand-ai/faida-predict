@@ -51,18 +51,18 @@ export async function GET(req: NextRequest) {
       item: "Zero open S0 and zero open S1 defects",
       status: openS0 === 0 && openS1 === 0 ? "PASS" : "HOLD",
       measured: { openS0, openS1 },
-      source: "BetaDefect table (R-2 triage)",
+      source: "Beta defect list",
     },
     {
       id: 2,
-      item: "≤3 open S2 defects, each with a named fix phase and no workaround older than two rounds",
+      item: "No more than 3 open S2 defects, each with a planned fix and no workaround older than two rounds",
       status: openS2.length <= 3 && staleS2.length === 0 ? "PASS" : "HOLD",
       measured: { openS2: openS2.length, missingFixPhaseOrStale: staleS2.length },
-      source: "BetaDefect table (R-2 triage)",
+      source: "Beta defect list",
     },
     {
       id: 3,
-      item: "No open safety or honesty regressions — B10/C25/C19.1/B1/C4.5 invariants re-verified by the smoke suite within the last 7 days",
+      item: "No open safety regressions: real-money locks, consent, emergency stop, key handling and country rules re-checked by the test suite in the last 7 days",
       status:
         smokeTs && Date.now() - new Date(smokeTs).getTime() <= SEVEN_DAYS_MS
           ? "PASS"
@@ -70,11 +70,11 @@ export async function GET(req: NextRequest) {
             ? "STALE"
             : "UNKNOWN",
       measured: { lastInvariantSmokePass: smokeTs, ageDays: smokeTs ? Math.round((Date.now() - new Date(smokeTs).getTime()) / 86400_000) : null },
-      source: "LAST_INVARIANT_SMOKE_PASS control key, written by the phase smoke on PASS",
+      source: "Last passing run of the test suite",
     },
     {
       id: 4,
-      item: "All six runbooks drilled on the beta instance within the last 14 days (R1–R5 via drill_phase75.py, R6 via demotion_drill.py)",
+      item: "All six incident runbooks practiced on the beta server in the last 14 days",
       status:
         drillTs && Date.now() - new Date(drillTs).getTime() <= FOURTEEN_DAYS_MS
           ? "PASS"
@@ -82,28 +82,28 @@ export async function GET(req: NextRequest) {
             ? "STALE"
             : "UNKNOWN",
       measured: { lastRunbookDrill: drillTs, ageDays: drillTs ? Math.round((Date.now() - new Date(drillTs).getTime()) / 86400_000) : null },
-      source: "LAST_RUNBOOK_DRILL control key, written by the drill scripts on PASS",
+      source: "Last passing runbook drill",
     },
     {
       id: 5,
-      item: "B5 targets met on the founder host: 500-robot load pass (p95 ≤750 ms at protocol concurrency), availability ≥99.5%, production config",
+      item: "Speed targets met on the production server: 500 robots load test (95% of requests under 750 ms), at least 99.5% uptime",
       status: "FOUNDER_HOST",
-      measured: { sandboxReference: "p95 699 ms @ 16-way, 100% availability, 2026-11-18 (Phase 7.5 ledger) — NOT a founder-host number" },
-      source: "founder-host rerun owed before exit (B5 carry-forward)",
+      measured: { sandboxReference: "Development machine: 699 ms, 100% uptime (2026-11-18). Not yet measured on the production server." },
+      source: "Needs a run on the production server",
     },
     {
       id: 6,
-      item: "72-hour soak green on the beta instance (P3.5 acceptance, full variant)",
+      item: "72-hour non-stop run passed on the beta server",
       status: "FOUNDER_HOST",
-      measured: { sandboxReference: "sandbox ran the shortened variant only" },
-      source: "full soak runs on the founder host",
+      measured: { sandboxReference: "Only the short version has run so far" },
+      source: "Needs the full 72-hour run on the production server",
     },
     {
       id: 7,
-      item: "Live-pilot sanity: ≥1 gated live-pilot robot completes a DRY-RUN signed order end-to-end on the founder host with consent + gates + pilot caps verified",
+      item: "Real-money pilot check: at least one robot signs a test order end to end on the production server, with consent, safety checks and pilot limits verified",
       status: "FOUNDER_HOST",
-      measured: { posture: "SAFE — nothing sent while the arm switch is off (B10; founder authorization on the founder host)" },
-      source: "founder-host execution owed",
+      measured: { posture: "Safe: nothing is sent while real sending is switched off" },
+      source: "Needs a run on the production server",
     },
     {
       id: 8,
@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
         pct: signalPct,
         qualifying: qualifying.length,
         linkedMembers: linked.length,
-        note: "unregistered members are excluded from the denominator until they can act (honest counting)",
+        note: "Members who haven't registered yet aren't counted until they can take part",
       },
       source: "RobotSession + BetaFeedback + BetaMember",
     },
@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
   const passCount = items.filter((i) => i.status === "PASS").length;
   return NextResponse.json({
     items,
-    summary: { pass: passCount, total: 8, verdict: passCount === 8 ? "EXIT READY" : "HOLD — the bar gates Phase 8 billing (BETA_PHASE75 §4)" },
-    note: "FOUNDER_HOST items are measured on the founder's host; the sandbox never fakes them. UNKNOWN items need the drill/smoke scripts to record their PASS timestamps.",
+    summary: { pass: passCount, total: 8, verdict: passCount === 8 ? "EXIT READY" : "HOLD: paid plans stay off until every item passes" },
+    note: "Production-server items are measured on the production server only and never faked. UNKNOWN items need their test or drill to run and pass.",
   });
 }

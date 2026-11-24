@@ -6,191 +6,121 @@
 // with a "More" drawer, and the ⌘K search palette. The shell only navigates
 // and displays state; every action still goes through the existing APIs.
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Activity, BarChart3, Bell, Bot, Brain, ChevronDown, ChevronsLeft, ChevronsRight, CircleUser, Compass, Gauge, Home,
-  LayoutDashboard, LineChart, LogOut, Menu, Moon, MoreHorizontal, PauseCircle, Search, Settings, ShieldCheck, Sun, Users, Wallet,
+  BarChart3, Bell, Bot, ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight, CircleUser, Compass, Gauge, HelpCircle, Home,
+  LogOut, Palette, PieChart, Search, Settings, ShieldCheck, Sparkles, Users, Wallet,
 } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import type { DashboardDTO, MarketDTO } from "./types";
 import { VENUES, venueColor } from "@/lib/venues";
 import { ago, Badge, money } from "./ds";
-import { useTheme } from "./theme";
+import { PersonalizeButton } from "./personalize";
+import { systemStatus } from "./status";
 
 export type View =
   | "overview" | "venue" | "markets" | "market" | "studio" | "robots" | "robot"
-  | "trading" | "analytics" | "intel" | "risk" | "settings" | "beta";
+  | "trading" | "analytics" | "intel" | "risk" | "settings" | "beta" | "help";
 
 export type Nav = { view: View; tab?: string };
 
 export type OperatingMode = "PAPER" | "LIVE" | "RESTRICTED" | "PAUSED";
 
-type NavChild = { label: string; to: Nav };
-type NavGroup = { id: string; label: string; icon: ReactNode; to: Nav; children?: NavChild[]; operatorOnly?: boolean };
+type NavItem = { id: string; label: string; hint: string; icon: (size: number) => ReactNode; to: Nav };
 
-const ICON = 18;
-export const NAV: NavGroup[] = [
-  { id: "overview", label: "Overview", icon: <LayoutDashboard size={ICON} />, to: { view: "overview" } },
-  {
-    id: "markets", label: "Markets", icon: <Compass size={ICON} />, to: { view: "markets", tab: "trending" },
-    children: [
-      { label: "Market Discovery", to: { view: "markets", tab: "trending" } },
-      { label: "All Markets", to: { view: "markets", tab: "all" } },
-      { label: "Watchlist", to: { view: "markets", tab: "watchlist" } },
-      { label: "Categories", to: { view: "markets", tab: "categories" } },
-    ],
-  },
-  {
-    id: "studio", label: "Robot Studio", icon: <Bot size={ICON} />, to: { view: "studio" },
-    children: [
-      { label: "Create Robot", to: { view: "studio" } },
-      { label: "My Robots", to: { view: "robots" } },
-      { label: "Strategy Library", to: { view: "studio", tab: "library" } },
-    ],
-  },
-  {
-    id: "trading", label: "Trading", icon: <LineChart size={ICON} />, to: { view: "trading", tab: "positions" },
-    children: [
-      { label: "Positions", to: { view: "trading", tab: "positions" } },
-      { label: "Orders", to: { view: "trading", tab: "orders" } },
-      { label: "Order History", to: { view: "trading", tab: "history" } },
-      { label: "Execution Monitor", to: { view: "trading", tab: "execution" } },
-    ],
-  },
-  {
-    id: "intel", label: "Intelligence", icon: <Brain size={ICON} />, to: { view: "intel", tab: "research" },
-    children: [
-      { label: "AI Research", to: { view: "intel", tab: "research" } },
-      { label: "Market Intelligence", to: { view: "intel", tab: "markets" } },
-      { label: "Decision Feed", to: { view: "intel", tab: "decisions" } },
-      { label: "Analytics", to: { view: "analytics" } },
-    ],
-  },
-  {
-    id: "risk", label: "Risk & Operations", icon: <ShieldCheck size={ICON} />, to: { view: "risk", tab: "overview" },
-    children: [
-      { label: "Risk Center", to: { view: "risk", tab: "overview" } },
-      { label: "Exposure Monitor", to: { view: "risk", tab: "exposure" } },
-      { label: "System Health", to: { view: "risk", tab: "health" } },
-      { label: "Audit Log", to: { view: "risk", tab: "audit" } },
-    ],
-  },
-  { id: "beta", label: "Beta Ops", icon: <Users size={ICON} />, to: { view: "beta" }, operatorOnly: true },
-  { id: "settings", label: "Settings", icon: <Settings size={ICON} />, to: { view: "settings", tab: "general" } },
+// FAIDA Predict's own information architecture, built around the five jobs a
+// prediction-market trader comes to do:
+//   Home      — my profits, my venues, my robots, what just happened
+//   Markets   — find events worth betting on (venues live inside)
+//   Robots    — create, watch and tune robots (templates + tests inside)
+//   Portfolio — my positions, orders, history and performance
+//   Insights  — why: AI probability vs market price, every robot decision
+// Safety and Settings are visited occasionally, so they sit apart at the
+// bottom of the sidebar (and behind the status chip / avatar on mobile).
+export const NAV: NavItem[] = [
+  { id: "overview", label: "Home", hint: "Your profits, venues and robots at a glance", icon: (s) => <Home size={s} />, to: { view: "overview" } },
+  { id: "markets", label: "Markets", hint: "Find events on every venue", icon: (s) => <Compass size={s} />, to: { view: "markets", tab: "trending" } },
+  { id: "robots", label: "Robots", hint: "Create, watch and tune", icon: (s) => <Bot size={s} />, to: { view: "robots" } },
+  { id: "trading", label: "Portfolio", hint: "Positions, history, performance", icon: (s) => <PieChart size={s} />, to: { view: "trading", tab: "positions" } },
+  { id: "intel", label: "Insights", hint: "AI odds and robot decisions", icon: (s) => <Sparkles size={s} />, to: { view: "intel", tab: "record" } },
 ];
 
-// which top-level group a view belongs to (for highlighting)
+export const NAV_FOOT: Array<NavItem & { operatorOnly?: boolean }> = [
+  { id: "risk", label: "Safety", hint: "System check, limits, emergency stop", icon: (s) => <ShieldCheck size={s} />, to: { view: "risk", tab: "check" } },
+  { id: "help", label: "Help", hint: "Which markets you can use, and how", icon: (s) => <HelpCircle size={s} />, to: { view: "help" } },
+  { id: "settings", label: "Settings", hint: "Account, wallet, AI, alerts", icon: (s) => <Settings size={s} />, to: { view: "settings", tab: "general" } },
+  { id: "beta", label: "Beta ops", hint: "Tester cohort and feedback", icon: (s) => <Users size={s} />, to: { view: "beta" }, operatorOnly: true },
+];
+
+// which section a view belongs to (for highlighting)
 export function groupOf(view: View): string {
-  if (view === "venue") return "overview";
-  if (view === "market") return "markets";
-  if (view === "robot" || view === "robots") return "studio";
-  if (view === "analytics") return "intel";
+  if (view === "venue" || view === "market") return "markets";
+  if (view === "robot" || view === "studio") return "robots";
+  if (view === "analytics") return "trading";
   return view;
 }
 
 export const MODE_META: Record<OperatingMode, { label: string; tone: string; hex: string; desc: string }> = {
-  PAPER: { label: "Paper Mode", tone: "amber", hex: "#FFB547", desc: "Simulated orders only. No real money moves." },
-  RESTRICTED: { label: "Restricted", tone: "purple", hex: "#9B7BFF", desc: "Live pilot enabled, sends stay dry-run until armed." },
-  LIVE: { label: "Live Mode", tone: "red", hex: "#FF5268", desc: "Real orders are being sent within pilot ceilings." },
-  PAUSED: { label: "Emergency Pause", tone: "red", hex: "#FF5268", desc: "All robot cycles and new orders are stopped." },
+  PAPER: { label: "Practice money", tone: "amber", hex: "#FFB547", desc: "Paper mode: simulated orders only. No real money moves." },
+  RESTRICTED: { label: "Live (test sends)", tone: "purple", hex: "#9B7BFF", desc: "Live pilot enabled, but orders are not sent until you arm it." },
+  LIVE: { label: "Real money", tone: "red", hex: "#FF5268", desc: "Real orders are being sent within your pilot limits." },
+  PAUSED: { label: "Emergency stop", tone: "red", hex: "#FF5268", desc: "All robots and new orders are stopped." },
 };
-
-function venueStatus(id: string, adapter: string): string {
-  if (adapter === "LIVE") return "Live";
-  return id === "DRIFT_BET" ? "Suspended" : "Coming soon";
-}
 
 // ── Sidebar ───────────────────────────────────────────────────────────────
 export function Sidebar(props: {
   nav: Nav;
   onNavigate: (n: Nav) => void;
-  onOpenVenue: (venueId: string) => void;
   dash: DashboardDTO | null;
   mode: OperatingMode;
-  isOperator: boolean;
   collapsed: boolean;
   onToggleCollapsed?: () => void;
-  onPause: () => void;
-  busy: boolean;
   inDrawer?: boolean;
+  isOperator?: boolean;
+  onOpenVenue?: (id: string) => void;
 }) {
-  const { nav, onNavigate, onOpenVenue, dash, mode, isOperator, collapsed, onToggleCollapsed, onPause, busy, inDrawer } = props;
-  const activeGroup = groupOf(nav.view);
-  const [open, setOpen] = useState<Record<string, boolean>>({ [activeGroup]: true });
-  const running = dash?.robots.filter((r) => r.status === "RUNNING" || r.status === "PAPER_ONLY").length ?? 0;
-  const total = dash?.robots.length ?? 0;
-  const paused = dash?.control?.pause.paused ?? false;
-  const healthy = !!dash && !paused && (dash.outboxPending ?? 0) === 0;
+  const { nav, onNavigate, dash, mode, collapsed, onToggleCollapsed, inDrawer, isOperator, onOpenVenue } = props;
+  const active = groupOf(nav.view);
+  const st = systemStatus(dash);
   const mm = MODE_META[mode];
+  const dot = st.tone === "green" ? "#00D69A" : st.tone === "red" ? "#FF5268" : "#FFB547";
 
-  const item = (g: NavGroup) => {
-    const on = activeGroup === g.id;
-    const expanded = open[g.id] ?? on;
-    const btnCls = `group flex w-full items-center gap-3 rounded-xl text-left text-[15px] font-medium transition-colors ${
-      collapsed ? "h-11 justify-center" : "h-11 px-3"
-    } ${on ? "bg-[#2583FF]/14 text-[var(--fd-strong)]" : "text-[var(--fd-text2)] hover:bg-[color:var(--fd-ink)]/[0.04] hover:text-[var(--fd-strong)]"}`;
-    // the label always opens the section (and expands it); the chevron alone
-    // collapses or expands the sub-menu
-    const main = (
-      <div className="flex items-center gap-1">
-        <button
-          className={`${btnCls} flex-1`}
-          aria-current={on && !g.children ? "page" : undefined}
-          onClick={() => {
-            if (g.children && !collapsed) setOpen((o) => ({ ...o, [g.id]: true }));
-            onNavigate(g.to);
-          }}
-        >
-          <span className={on ? "text-[#2583FF]" : "text-[var(--fd-text3)] group-hover:text-[var(--fd-text-soft)]"}>{g.icon}</span>
-          {!collapsed && <span className="flex-1 truncate">{g.label}</span>}
-        </button>
-        {!collapsed && g.children && (
-          <button
-            onClick={() => setOpen((o) => ({ ...o, [g.id]: !expanded }))}
-            aria-expanded={expanded}
-            aria-label={`${expanded ? "Collapse" : "Expand"} ${g.label}`}
-            className="grid h-11 w-9 shrink-0 place-items-center rounded-xl text-[var(--fd-text3)] hover:bg-[color:var(--fd-ink)]/[0.04] hover:text-[var(--fd-strong)]"
-          >
-            <ChevronDown size={16} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
-          </button>
+  const item = (g: NavItem) => {
+    const on = active === g.id;
+    const isSafety = g.id === "risk";
+    const btn = (
+      <button
+        onClick={() => onNavigate(g.to)}
+        aria-current={on ? "page" : undefined}
+        className={`group flex w-full items-center gap-3 rounded-2xl text-left text-[15px] font-medium transition-colors ${collapsed ? "h-12 justify-center" : "h-12 px-3.5"} ${
+          on ? "bg-[color:var(--fd-ink)]/[0.09] text-[var(--fd-strong)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]" : "text-[var(--fd-text2)] hover:bg-[color:var(--fd-ink)]/[0.04] hover:text-[var(--fd-strong)]"
+        }`}
+      >
+        <span className={`relative ${on ? "text-[var(--fd-brand-text)]" : "text-[var(--fd-text3)] group-hover:text-[var(--fd-text-soft)]"}`}>
+          {g.icon(19)}
+          {isSafety && collapsed && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full" style={{ background: dot }} aria-hidden />}
+        </span>
+        {!collapsed && <span className="flex-1 truncate">{g.label}</span>}
+        {!collapsed && isSafety && (
+          <span className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: st.tone === "green" ? "var(--fd-green-text)" : st.tone === "red" ? "var(--fd-red-text)" : "var(--fd-amber-text)" }}>
+            <span className="h-2 w-2 rounded-full" style={{ background: dot }} aria-hidden />
+            {st.ok ? "OK" : st.issues.length}
+          </span>
         )}
-      </div>
+      </button>
     );
     return (
       <li key={g.id}>
         {collapsed ? (
           <Tooltip>
-            <TooltipTrigger asChild>{main}</TooltipTrigger>
-            <TooltipContent side="right">{g.label}</TooltipContent>
+            <TooltipTrigger asChild>{btn}</TooltipTrigger>
+            <TooltipContent side="right">{g.label} · {isSafety ? st.label : g.hint}</TooltipContent>
           </Tooltip>
-        ) : (
-          main
-        )}
-        {!collapsed && g.children && expanded && (
-          <ul className="mb-1 ml-[22px] mt-1 flex flex-col gap-0.5 border-l border-[var(--fd-border)] pl-3">
-            {g.children.map((ch) => {
-              const childOn = nav.view === ch.to.view && (ch.to.tab == null || nav.tab === ch.to.tab);
-              return (
-                <li key={ch.label}>
-                  <button
-                    onClick={() => onNavigate(ch.to)}
-                    aria-current={childOn ? "page" : undefined}
-                    className={`flex h-9 w-full items-center rounded-lg px-3 text-left text-[14px] transition-colors ${
-                      childOn ? "bg-[color:var(--fd-ink)]/[0.06] font-semibold text-[var(--fd-strong)]" : "text-[var(--fd-text2)] hover:bg-[color:var(--fd-ink)]/[0.04] hover:text-[var(--fd-strong)]"
-                    }`}
-                  >
-                    {ch.label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        ) : btn}
       </li>
     );
   };
@@ -198,7 +128,7 @@ export function Sidebar(props: {
   return (
     <TooltipProvider delayDuration={150}>
       <div className={`flex h-full flex-col ${collapsed ? "px-2.5" : "px-3.5"} py-4`}>
-        <div className={`mb-5 flex items-center ${collapsed ? "justify-center" : "justify-between px-1.5"}`}>
+        <div className={`mb-6 flex items-center ${collapsed ? "justify-center" : "justify-between px-1.5"}`}>
           <button onClick={() => onNavigate({ view: "overview" })} className="flex items-center gap-2.5" aria-label="FAIDA Predict home">
             <Image src="/brand/logo_mark.png" alt="" width={34} height={34} className="object-contain" />
             {!collapsed && (
@@ -216,35 +146,28 @@ export function Sidebar(props: {
         </div>
 
         <nav aria-label="Main" className="fd-scroll -mx-1 flex-1 overflow-y-auto px-1">
-          <ul className="flex flex-col gap-1">{NAV.filter((g) => !g.operatorOnly || isOperator).map(item)}</ul>
+          <ul className="flex flex-col gap-1">{NAV.map(item)}</ul>
 
-          <div className="mt-6">
-            {!collapsed && <div className="mb-2 px-3 text-[11.5px] font-bold uppercase tracking-[0.16em] text-[var(--fd-text3)]">Venues</div>}
+          <div className="mt-5">
+            {!collapsed && <div className="mb-1.5 px-3.5 text-[11.5px] font-bold uppercase tracking-[0.14em] text-[var(--fd-text3)]">Venues</div>}
             <ul className="flex flex-col gap-0.5">
               {VENUES.map((v) => {
                 const live = v.adapter === "LIVE";
-                const st = dash?.venues.find((s) => s.venue === v.id);
-                const on = nav.view === "venue" && (nav.tab === v.id);
-                const content = (
+                const stat = dash?.venues.find((x) => x.venue === v.id);
+                const on = nav.view === "venue" && nav.tab === v.id;
+                const btn = (
                   <button
-                    onClick={() => onOpenVenue(v.id)}
-                    aria-label={`${v.label} workspace, ${venueStatus(v.id, v.adapter)}`}
-                    className={`flex w-full items-center gap-3 rounded-xl text-left transition-colors ${collapsed ? "h-10 justify-center" : "h-10 px-3"} ${
-                      on ? "bg-[color:var(--fd-ink)]/[0.06]" : "hover:bg-[color:var(--fd-ink)]/[0.04]"
-                    }`}
+                    onClick={() => onOpenVenue?.(v.id)}
+                    aria-current={on ? "page" : undefined}
+                    className={`flex w-full items-center gap-3 rounded-xl text-left transition-colors ${collapsed ? "h-10 justify-center" : "h-10 px-3.5"} ${on ? "bg-[color:var(--fd-ink)]/[0.08]" : "hover:bg-[color:var(--fd-ink)]/[0.04]"}`}
                   >
-                    <span className="relative grid h-6 w-6 shrink-0 place-items-center rounded-lg text-[11px] font-bold" style={{ background: `color-mix(in srgb, ${v.hex} ${live ? 22 : 10}%, transparent)`, color: live ? v.hex : `color-mix(in srgb, ${v.hex} 55%, var(--fd-text3))` }}>
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg text-[11px] font-bold" style={{ background: `color-mix(in srgb, ${v.hex} ${live ? 24 : 10}%, transparent)`, color: live ? v.hex : `color-mix(in srgb, ${v.hex} 50%, var(--fd-text3))` }} aria-hidden>
                       {v.label.slice(0, 1)}
-                      <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-[var(--fd-bg2)]" style={{ background: live ? "#00D69A" : v.id === "DRIFT_BET" ? "#FF5268" : "#FFB547" }} />
                     </span>
                     {!collapsed && (
                       <>
-                        <span className={`flex-1 truncate text-[14.5px] ${live ? "text-[var(--fd-text)]" : "text-[var(--fd-text3)]"}`}>{v.label}</span>
-                        {live && (st?.markets ?? 0) > 0 ? (
-                          <span className="fd-num text-[12px] text-[var(--fd-text3)]">{st?.markets}</span>
-                        ) : (
-                          <span className="text-[11.5px] text-[var(--fd-text3)]">{venueStatus(v.id, v.adapter)}</span>
-                        )}
+                        <span className={`flex-1 truncate text-[14px] ${live ? "text-[var(--fd-text-soft)]" : "text-[var(--fd-text3)]"}`}>{v.label}</span>
+                        <span className="fd-num text-[12px] text-[var(--fd-text3)]">{live ? (stat?.markets ?? 0) : v.id === "DRIFT_BET" ? "off" : "soon"}</span>
                       </>
                     )}
                   </button>
@@ -253,10 +176,10 @@ export function Sidebar(props: {
                   <li key={v.id}>
                     {collapsed ? (
                       <Tooltip>
-                        <TooltipTrigger asChild>{content}</TooltipTrigger>
-                        <TooltipContent side="right">{v.label} · {venueStatus(v.id, v.adapter)}</TooltipContent>
+                        <TooltipTrigger asChild>{btn}</TooltipTrigger>
+                        <TooltipContent side="right">{v.label} · {live ? `${stat?.markets ?? 0} markets` : v.id === "DRIFT_BET" ? "Suspended" : "Coming soon"}</TooltipContent>
                       </Tooltip>
-                    ) : content}
+                    ) : btn}
                   </li>
                 );
               })}
@@ -264,22 +187,18 @@ export function Sidebar(props: {
           </div>
         </nav>
 
-        <div className="mt-4 flex flex-col gap-2.5">
+        <ul className="mt-3 flex flex-col gap-1 border-t border-[var(--fd-line)] pt-3">{NAV_FOOT.filter((g) => !g.operatorOnly || isOperator).map(item)}</ul>
+
+        <div className="mt-3 flex flex-col gap-2.5">
           {collapsed ? (
             <>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="mx-auto h-3 w-3 rounded-full" style={{ background: mm.hex }} aria-label={mm.label} />
-                </TooltipTrigger>
-                <TooltipContent side="right">{mm.label}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button onClick={onPause} disabled={busy || paused} className="grid h-11 place-items-center rounded-xl border border-[#FF5268]/40 bg-[#FF5268]/10 text-[var(--fd-red-text)] disabled:opacity-50" aria-label="Pause everything">
-                    <PauseCircle size={18} />
+                  <button onClick={() => onNavigate({ view: "settings", tab: "modes" })} className="mx-auto grid h-10 w-10 place-items-center rounded-xl hover:bg-[color:var(--fd-ink)]/[0.05]" aria-label={mm.label}>
+                    <span className="h-3 w-3 rounded-full" style={{ background: mm.hex }} />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right">{paused ? "Everything is paused" : "Pause everything"}</TooltipContent>
+                <TooltipContent side="right">{mm.label}</TooltipContent>
               </Tooltip>
               {onToggleCollapsed && (
                 <button onClick={onToggleCollapsed} className="grid h-9 place-items-center rounded-lg text-[var(--fd-text3)] hover:bg-[color:var(--fd-ink)]/[0.05] hover:text-[var(--fd-strong)]" aria-label="Expand sidebar">
@@ -288,33 +207,39 @@ export function Sidebar(props: {
               )}
             </>
           ) : (
-            <div className="rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-3.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[12.5px] text-[var(--fd-text3)]">Mode</span>
-                <Badge tone={mm.tone} dot>{mm.label}</Badge>
+            <button onClick={() => onNavigate({ view: "settings", tab: "modes" })} className="rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] p-3.5 text-left transition-colors hover:border-[var(--fd-border2)]" title={mm.desc}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[12.5px] text-[var(--fd-text3)]">Trading with</span>
+                <ChevronRight size={15} className="text-[var(--fd-text3)]" />
               </div>
-              <div className="mt-2.5 flex items-center justify-between text-[13.5px]">
-                <span className="flex items-center gap-2 text-[var(--fd-text-soft)]"><Bot size={15} className="text-[var(--fd-text3)]" /> Robots active</span>
-                <span className="fd-num font-semibold text-[var(--fd-strong)]">{running}/{total}</span>
+              <div className="mt-1.5 flex items-center gap-2 text-[14.5px] font-semibold text-[var(--fd-strong)]">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: mm.hex }} aria-hidden />
+                {mm.label}
               </div>
-              <div className="mt-1.5 flex items-center justify-between text-[13.5px]">
-                <span className="flex items-center gap-2 text-[var(--fd-text-soft)]"><Activity size={15} className="text-[var(--fd-text3)]" /> System</span>
-                <span className={`font-semibold ${healthy ? "text-[var(--fd-green-text)]" : paused ? "text-[var(--fd-red-text)]" : "text-[var(--fd-amber-text)]"}`}>
-                  {!dash ? "Connecting…" : healthy ? "Healthy" : paused ? "Paused" : "Attention"}
-                </span>
-              </div>
-              <button
-                onClick={onPause}
-                disabled={busy || paused}
-                className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#FF5268]/45 bg-[#FF5268]/10 text-[14px] font-semibold text-[var(--fd-red-text)] transition-colors hover:bg-[#FF5268]/18 disabled:opacity-50"
-              >
-                <PauseCircle size={17} /> {paused ? "Everything paused" : "Pause Everything"}
-              </button>
-            </div>
+              <div className="mt-1 text-[12.5px] leading-snug text-[var(--fd-text2)]">{mode === "PAPER" ? "No real money moves." : mm.desc}</div>
+            </button>
           )}
         </div>
       </div>
     </TooltipProvider>
+  );
+}
+
+// status chip: one tap to the system check (like the forex app's header chip)
+export function StatusChip({ dash, onNavigate, className = "inline-flex" }: { dash: DashboardDTO | null; onNavigate: (n: Nav) => void; className?: string }) {
+  const st = systemStatus(dash);
+  const color = st.tone === "green" ? "var(--fd-green-text)" : st.tone === "red" ? "var(--fd-red-text)" : "var(--fd-amber-text)";
+  return (
+    <button
+      onClick={() => onNavigate({ view: "risk", tab: "check" })}
+      className={`items-center gap-2 whitespace-nowrap rounded-full border border-[var(--fd-border)] bg-[var(--fd-bg2)] px-3 py-1.5 text-[13px] font-semibold transition-colors hover:border-[var(--fd-border2)] ${className}`}
+      style={{ color }}
+      title="Open system check"
+    >
+      <span aria-hidden>{st.ok ? "✓" : "!"}</span>
+      <span className="text-[var(--fd-text)]">{st.label}</span>
+      <ChevronRight size={14} className="text-[var(--fd-text3)]" />
+    </button>
   );
 }
 
@@ -324,31 +249,30 @@ export function TopBar(props: {
   mode: OperatingMode;
   me: { email: string; role: string; name: string | null; via?: string } | null;
   onOpenSearch: () => void;
-  onOpenMenu: () => void;
   onNavigate: (n: Nav) => void;
   onSignOut: () => void;
 }) {
-  const { dash, mode, me, onOpenSearch, onOpenMenu, onNavigate, onSignOut } = props;
+  const { dash, mode, me, onOpenSearch, onNavigate, onSignOut } = props;
   const mm = MODE_META[mode];
-  const liveVenues = VENUES.filter((v) => v.adapter === "LIVE");
-  const withData = liveVenues.filter((v) => (dash?.venues.find((s) => s.venue === v.id)?.markets ?? 0) > 0).length;
   const notes = dash?.notifications ?? [];
   const alerts = dash?.openAlerts ?? 0;
-  const theme = useTheme();
   const initials = (me?.name ?? me?.email ?? "?").split(/[\s@.]/).filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join("");
 
   return (
-    <div className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-[var(--fd-line)] bg-[var(--fd-bg2)]/95 px-3 backdrop-blur sm:px-6">
-      <button onClick={onOpenMenu} className="grid h-10 w-10 place-items-center rounded-xl text-[var(--fd-text-soft)] hover:bg-[color:var(--fd-ink)]/[0.05] md:hidden" aria-label="Open menu">
-        <Menu size={20} />
+    <div className="sticky top-0 z-20 flex h-[72px] items-center gap-3 px-3 sm:px-6 lg:px-8 [background:linear-gradient(to_bottom,color-mix(in_srgb,var(--fd-bg)_55%,transparent),transparent)] [backdrop-filter:blur(14px)] [-webkit-backdrop-filter:blur(14px)] [mask-image:linear-gradient(to_bottom,black_75%,transparent)]">
+      <button onClick={() => onNavigate({ view: "overview" })} className="grid h-10 w-10 shrink-0 place-items-center md:hidden" aria-label="FAIDA Predict home">
+        <Image src="/brand/logo_mark.png" alt="" width={30} height={30} className="object-contain" />
+      </button>
+      <button onClick={onOpenSearch} className="grid h-10 w-10 place-items-center rounded-xl text-[var(--fd-text-soft)] hover:bg-[color:var(--fd-ink)]/[0.05] sm:hidden" aria-label="Search">
+        <Search size={19} />
       </button>
       <button
         onClick={onOpenSearch}
-        className="flex h-11 min-w-0 flex-1 items-center gap-3 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface)] px-3.5 text-left text-[14.5px] text-[var(--fd-text3)] transition-colors hover:border-[var(--fd-border2)] sm:max-w-[460px]"
-        aria-label="Search markets, robots, strategies, orders"
+        className="hidden h-11 min-w-0 flex-1 items-center gap-3 rounded-full border border-[var(--fd-border)] bg-[var(--fd-bg2)] px-4 text-left text-[14.5px] text-[var(--fd-text3)] transition-colors hover:border-[var(--fd-border2)] sm:flex sm:max-w-[420px]"
+        aria-label="Search markets, robots and pages"
       >
         <Search size={17} />
-        <span className="flex-1 truncate">Search markets, robots, orders…</span>
+        <span className="flex-1 truncate">Search markets, robots, pages…</span>
         <kbd className="hidden rounded-md border border-[var(--fd-border2)] px-1.5 py-0.5 text-[12px] text-[var(--fd-text2)] sm:inline">⌘K</kbd>
       </button>
 
@@ -360,13 +284,10 @@ export function TopBar(props: {
         >
           <span className="h-2 w-2 rounded-full" style={{ background: mm.hex }} aria-hidden />
           <span className="hidden sm:inline">{mm.label}</span>
-          <span className="sm:hidden">{mode === "PAPER" ? "Paper" : mode === "PAUSED" ? "Paused" : mm.label}</span>
+          <span className="sm:hidden">{mode === "PAPER" ? "Practice" : mode === "PAUSED" ? "Stopped" : mode === "LIVE" ? "Real" : "Live test"}</span>
         </span>
 
-        <span className="hidden items-center gap-2 whitespace-nowrap rounded-full px-3 py-1.5 text-[13.5px] text-[var(--fd-text-soft)] lg:inline-flex" title="Venues with synced market data">
-          <span className={`h-2 w-2 rounded-full ${withData > 0 ? "bg-[#00D69A]" : "bg-[#FFB547]"}`} aria-hidden />
-          {withData}/{liveVenues.length} venues with data
-        </span>
+        <StatusChip dash={dash} onNavigate={onNavigate} className="hidden lg:inline-flex" />
 
         <Popover>
           <PopoverTrigger asChild>
@@ -377,7 +298,7 @@ export function TopBar(props: {
               )}
             </button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-[360px] border-[var(--fd-border2)] bg-[var(--fd-surface)] p-0 text-[var(--fd-text)]">
+          <PopoverContent align="end" className="fd-glass-strong w-[360px] rounded-2xl border-[var(--fd-border2)] p-0 text-[var(--fd-text)]">
             <div className="border-b border-[var(--fd-border)] px-4 py-3 text-[15px] font-semibold">Notifications</div>
             <div className="fd-scroll max-h-[380px] overflow-y-auto">
               {notes.length === 0 ? (
@@ -398,18 +319,9 @@ export function TopBar(props: {
           </PopoverContent>
         </Popover>
 
-        <button
-          onClick={() => theme.setPref(theme.resolved === "dark" ? "light" : "dark")}
-          className="grid h-10 w-10 place-items-center rounded-xl text-[var(--fd-text-soft)] hover:bg-[color:var(--fd-ink)]/[0.05]"
-          aria-label={theme.resolved === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          title={theme.resolved === "dark" ? "Light mode" : "Dark mode"}
-        >
-          {theme.resolved === "dark" ? <Sun size={19} /> : <Moon size={19} />}
-        </button>
+        <span className="hidden sm:block"><PersonalizeButton /></span>
 
-        <button onClick={() => onNavigate({ view: "settings", tab: "general" })} className="hidden h-10 w-10 place-items-center rounded-xl text-[var(--fd-text-soft)] hover:bg-[color:var(--fd-ink)]/[0.05] sm:grid" aria-label="Settings">
-          <Settings size={19} />
-        </button>
+        <SafetyButton dash={dash} onNavigate={onNavigate} />
 
         <Popover>
           <PopoverTrigger asChild>
@@ -418,7 +330,7 @@ export function TopBar(props: {
               <ChevronDown size={15} className="hidden text-[var(--fd-text3)] sm:block" />
             </button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-[280px] border-[var(--fd-border2)] bg-[var(--fd-surface)] p-0 text-[var(--fd-text)]">
+          <PopoverContent align="end" className="fd-glass-strong w-[280px] rounded-2xl border-[var(--fd-border2)] p-0 text-[var(--fd-text)]">
             <div className="border-b border-[var(--fd-border)] px-4 py-3">
               <div className="truncate text-[14.5px] font-semibold">{me?.name ?? "Account"}</div>
               <div className="fd-num truncate text-[12.5px] text-[var(--fd-text2)]">{me?.email ?? "—"}</div>
@@ -438,6 +350,15 @@ export function TopBar(props: {
                   <CircleUser size={16} /> Sign in
                 </Link>
               )}
+              <button onClick={() => onNavigate({ view: "settings", tab: "general" })} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[14px] hover:bg-[color:var(--fd-ink)]/[0.05]">
+                <Settings size={16} /> Settings
+              </button>
+              <button onClick={() => onNavigate({ view: "settings", tab: "general" })} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[14px] hover:bg-[color:var(--fd-ink)]/[0.05] sm:hidden">
+                <Palette size={16} /> Theme & colours
+              </button>
+              <button onClick={() => onNavigate({ view: "help" })} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[14px] hover:bg-[color:var(--fd-ink)]/[0.05]">
+                <HelpCircle size={16} /> Help: where can I trade?
+              </button>
               <button onClick={onSignOut} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[14px] hover:bg-[color:var(--fd-ink)]/[0.05]">
                 <LogOut size={16} /> Sign out
               </button>
@@ -449,49 +370,64 @@ export function TopBar(props: {
   );
 }
 
-// ── Mobile bottom navigation ──────────────────────────────────────────────
-export function MobileNav({ nav, onNavigate, onMore }: { nav: Nav; onNavigate: (n: Nav) => void; onMore: () => void }) {
-  const g = groupOf(nav.view);
-  const items: Array<{ id: string; label: string; icon: ReactNode; to?: Nav }> = [
-    { id: "overview", label: "Home", icon: <Home size={20} />, to: { view: "overview" } },
-    { id: "markets", label: "Markets", icon: <Compass size={20} />, to: { view: "markets", tab: "trending" } },
-    { id: "studio", label: "Robots", icon: <Bot size={20} />, to: { view: "robots" } },
-    { id: "trading", label: "Trading", icon: <LineChart size={20} />, to: { view: "trading", tab: "positions" } },
-    { id: "more", label: "More", icon: <MoreHorizontal size={20} /> },
-  ];
-  const moreActive = !["overview", "markets", "studio", "trading"].includes(g);
+// mobile-only: the sidebar's Safety entry, as a shield with the status dot
+function SafetyButton({ dash, onNavigate }: { dash: DashboardDTO | null; onNavigate: (n: Nav) => void }) {
+  const st = systemStatus(dash);
+  const dot = st.tone === "green" ? "#00D69A" : st.tone === "red" ? "#FF5268" : "#FFB547";
   return (
-    <nav aria-label="Primary mobile navigation" className="fd-safe-bottom fixed inset-x-0 bottom-0 z-30 flex border-t border-[var(--fd-line)] bg-[var(--fd-bg2)]/97 backdrop-blur md:hidden">
-      {items.map((it) => {
-        const lit = it.id === "more" ? moreActive : g === it.id;
-        return (
-          <button
-            key={it.id}
-            onClick={() => (it.to ? onNavigate(it.to) : onMore())}
-            aria-current={lit ? "page" : undefined}
-            className={`flex min-h-[58px] flex-1 flex-col items-center justify-center gap-1 text-[12px] font-medium ${lit ? "text-[var(--fd-strong)]" : "text-[var(--fd-text3)]"}`}
-          >
-            <span className={lit ? "text-[var(--fd-blue-text)]" : ""}>{it.icon}</span>
-            {it.label}
-          </button>
-        );
-      })}
+    <button onClick={() => onNavigate({ view: "risk", tab: "check" })} className="relative grid h-10 w-10 place-items-center rounded-xl text-[var(--fd-text-soft)] hover:bg-[color:var(--fd-ink)]/[0.05] md:hidden" aria-label={`Safety: ${st.label}`}>
+      <ShieldCheck size={19} />
+      <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--fd-bg)]" style={{ background: dot }} aria-hidden />
+    </button>
+  );
+}
+
+// ── Mobile bottom navigation ──────────────────────────────────────────────
+export function MobileNav({ nav, onNavigate }: { nav: Nav; onNavigate: (n: Nav) => void }) {
+  const g = groupOf(nav.view);
+  return (
+    <nav aria-label="Primary mobile navigation" className="fd-safe-bottom pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-2.5 pb-3 md:hidden">
+      <div className="fd-glass-strong pointer-events-auto flex w-full max-w-[560px] rounded-[28px] border border-[var(--fd-border2)] px-1">
+        {NAV.map((it) => {
+          const lit = g === it.id;
+          return (
+            <button
+              key={it.id}
+              onClick={() => onNavigate(it.to)}
+              aria-current={lit ? "page" : undefined}
+              className={`relative flex min-h-[62px] min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${lit ? "text-[var(--fd-brand-text)]" : "text-[var(--fd-text2)]"}`}
+            >
+              {lit && <span className="absolute top-0 h-[3px] w-7 rounded-b-full bg-[var(--fd-brand-text)]" aria-hidden />}
+              {it.icon(20)}
+              <span className="max-w-full truncate px-0.5">{it.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 }
 
-export function NavDrawer({ open, onOpenChange, children }: { open: boolean; onOpenChange: (v: boolean) => void; children: ReactNode }) {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-[300px] border-[var(--fd-line)] bg-[var(--fd-bg2)] p-0 text-[var(--fd-text)]">
-        <SheetHeader className="sr-only">
-          <SheetTitle>Navigation</SheetTitle>
-        </SheetHeader>
-        {children}
-      </SheetContent>
-    </Sheet>
-  );
-}
+const SEARCH_SHORTCUTS: Array<{ label: string; to: Nav }> = [
+  { label: "Create a new robot", to: { view: "studio" } },
+  { label: "Help › Which markets can I use in my country?", to: { view: "help" } },
+  { label: "Robots › Ready-made robots", to: { view: "robots", tab: "ready" } },
+  { label: "Robots › Test & tune", to: { view: "robots", tab: "lab" } },
+  { label: "Markets › Watchlist", to: { view: "markets", tab: "watchlist" } },
+  { label: "Markets › Price gaps between venues", to: { view: "markets", tab: "gaps" } },
+  { label: "Portfolio › Performance", to: { view: "trading", tab: "performance" } },
+  { label: "Portfolio › Money history", to: { view: "trading", tab: "ledger" } },
+  { label: "Portfolio › Orders that need attention", to: { view: "trading", tab: "execution" } },
+  { label: "Insights › Track record & AI accuracy", to: { view: "intel", tab: "record" } },
+  { label: "Ask FAIDA: what are the chances…?", to: { view: "intel", tab: "ask" } },
+  { label: "Insights › Activity log", to: { view: "intel", tab: "decisions" } },
+  { label: "Safety › System check", to: { view: "risk", tab: "check" } },
+  { label: "Safety › Emergency stop", to: { view: "risk", tab: "stop" } },
+  { label: "Safety › Change history", to: { view: "risk", tab: "audit" } },
+  { label: "Settings › Alerts & notifications", to: { view: "settings", tab: "notifications" } },
+  { label: "Settings › Wallet", to: { view: "settings", tab: "custody" } },
+  { label: "Settings › AI providers", to: { view: "settings", tab: "ai" } },
+];
 
 // ── Global search (⌘K) ────────────────────────────────────────────────────
 export function SearchPalette(props: {
@@ -517,7 +453,7 @@ export function SearchPalette(props: {
   }, [open, onOpenChange]);
 
   const pages = useMemo(
-    () => NAV.flatMap((g) => [{ label: g.label, to: g.to }, ...(g.children ?? []).map((ch) => ({ label: `${g.label} › ${ch.label}`, to: ch.to }))]),
+    () => [...NAV, ...NAV_FOOT.filter((g) => !g.operatorOnly)].map((g) => ({ label: g.label, to: g.to })).concat(SEARCH_SHORTCUTS),
     [],
   );
   const go = (fn: () => void) => { fn(); onOpenChange(false); };
@@ -552,7 +488,7 @@ export function SearchPalette(props: {
           {VENUES.map((v) => (
             <CommandItem key={v.id} value={`venue ${v.label}`} onSelect={() => go(() => onOpenVenue(v.id))}>
               <span className="h-2 w-2 rounded-full" style={{ background: v.hex }} aria-hidden /> {v.label}
-              <span className="ml-auto text-[12px] text-[var(--fd-text3)]">{venueStatus(v.id, v.adapter)}</span>
+              <span className="ml-auto text-[12px] text-[var(--fd-text3)]">{v.adapter === "LIVE" ? "Live" : v.id === "DRIFT_BET" ? "Suspended" : "Coming soon"}</span>
             </CommandItem>
           ))}
         </CommandGroup>

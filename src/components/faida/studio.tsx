@@ -7,14 +7,15 @@
 // the existing gates. Nothing here adds a knob the engine doesn't read.
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Bot, Brain, CheckCircle2, Cpu, FlaskConical, Gauge, LineChart, Lock, Rocket, Save, Shield, Sparkles, Target, Wallet } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bot, Brain, CheckCircle2, Cpu, Gauge, LineChart, Lock, Rocket, Save, Shield, SlidersHorizontal, Sparkles, Target, Wallet } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import type { DashboardDTO, MarketDTO, TemplateDTO } from "./types";
 import { FAMILIES, FAMILY_LABEL } from "./types";
 import { VENUES, VENUE_LABEL, isVenue, venueColor } from "@/lib/venues";
 import { EMPTY_ENTRY_RULES, VENUE_ENTRY_RULES } from "@/lib/venue/rules";
-import { Badge, btn, EmptyState, KV, money, PageHeader, Panel, Tabs, VenueTag } from "./ds";
-import { StrategyLab } from "./views";
+import { Badge, btn, EmptyState, KV, money, PageHeader, Panel, VenueTag } from "./ds";
+import { availabilityFor, useAvailability } from "./help";
+import { STATUS_LABEL, VENUE_GUIDES } from "@/lib/venue/availability";
 
 async function safeJson<T = unknown>(res: Response): Promise<T | null> {
   try { return (await res.json()) as T; } catch { return null; }
@@ -36,22 +37,25 @@ const STEPS = [
 const FAMILY_INFO: Record<string, { risk: string; tone: string; when: string; entry: string; exit: string; capital: string }> = {
   PROBABILITY_EDGE: { risk: "Balanced", tone: "blue", when: "Liquid markets where the price drifts from a fair estimate", entry: "Model estimate beats the market price by the minimum edge, net of fees", exit: "Edge falls below the exit threshold, adverse news, or the time stop", capital: "$1,000–$3,000" },
   MARKET_MAKING: { risk: "Conservative", tone: "green", when: "Deep, two-sided books with a steady spread", entry: "Quotes both sides around fair value", exit: "Inventory and time limits", capital: "$1,500+" },
-  AI_RESEARCH: { risk: "Aggressive", tone: "red", when: "Event-driven markets where evidence moves the odds", entry: "AI estimate with sourced evidence clears the edge gate", exit: "Edge disappears or the evidence changes", capital: "$500–$2,000" },
+  AI_RESEARCH: { risk: "Aggressive", tone: "red", when: "Event-driven markets where evidence moves the odds", entry: "The AI's estimate beats the market price by enough, after fees", exit: "Edge disappears or the evidence changes", capital: "$500–$2,000" },
   ARBITRAGE: { risk: "Low", tone: "neutral", when: "YES + NO priced below $1, related outcomes", entry: "Deterministic parity gap", exit: "Gap closes", capital: "Planned" },
 };
 
 export function StudioView(props: {
   dash: DashboardDTO | null;
   markets?: MarketDTO[];
-  tab?: string;
-  onTab?: (t: string) => void;
   onCreate: (p: unknown) => Promise<unknown>;
   onAfterChange?: () => void;
   initialVenue?: string;
+  initialTemplateId?: string;
+  onBrowseTemplates?: () => void;
   onAction?: (url: string, body: unknown, okMsg: string) => Promise<unknown>;
   onOpenRobot?: (id: string) => void;
 }) {
-  const { dash, markets = [], tab, onTab, onCreate, onAfterChange, initialVenue, onAction, onOpenRobot } = props;
+  const { dash, markets = [], onCreate, onAfterChange, initialVenue, initialTemplateId, onBrowseTemplates, onAction, onOpenRobot } = props;
+  const [advanced, setAdvanced] = useState(false);
+  const [riskLevel, setRiskLevel] = useState<RiskLevel>("BALANCED");
+  const [custom, setCustom] = useState(!initialTemplateId);
   const [step, setStep] = useState(1);
   const [family, setFamily] = useState<string>("PROBABILITY_EDGE");
   const [venue, setVenue] = useState<string>(initialVenue && isVenue(initialVenue) ? initialVenue : "POLYMARKET");
@@ -78,9 +82,45 @@ export function StudioView(props: {
   useEffect(() => {
     fetch("/api/robot-templates")
       .then((r) => (r.ok ? safeJson<{ templates: TemplateDTO[] }>(r) : null))
-      .then((j) => j?.templates && setTemplates(j.templates))
+      .then((j) => {
+        if (!j?.templates) return;
+        setTemplates(j.templates);
+        const pre = initialTemplateId ? j.templates.find((t) => t.id === initialTemplateId) : undefined;
+        if (pre) fillFromTemplate(pre);
+      })
       .catch(() => { /* gallery stays empty; scratch path unaffected */ });
   }, []);
+
+  // quick path: one risk word sets every limit, scaled to the money chosen
+  const applyPreset = (level: RiskLevel, money$: number) => {
+    const p = PRESETS[level];
+    setRiskLevel(level);
+    setPosCap(Math.max(50, Math.min(money$, Math.round((money$ * p.perTradePct) / 100 / 50) * 50)));
+    setMaxOpen(p.maxOpen);
+    setDailyLoss(Math.min(p.daily, platformMaxDaily));
+    setDrawdown(Math.min(p.drawdown, platformMaxDd));
+    setMinEdge(p.minEdge);
+    setExitEdge(p.exitEdge);
+  };
+
+  function fillFromTemplate(t: TemplateDTO) {
+    if (!t.venueLive) return;
+    setVenue(isVenue(t.venue) ? t.venue : "POLYMARKET");
+    setFamily(t.family);
+    setName(t.nameSuggestion);
+    setAllocated(Math.round(t.capital.allocatedCents / 100));
+    setPosCap(Math.round(t.capital.maxPositionCents / 100));
+    setMaxOpen(t.capital.maxOpenPositions);
+    setDailyLoss(t.capital.dailyLossStopPct);
+    setDrawdown(t.capital.drawdownStopPct);
+    setMinEdge(t.strategy.minEdgePts);
+    setTilt(t.strategy.estimatorTiltPct);
+    setExitEdge(t.strategy.exitEdgePts);
+    setHoldTicks(t.strategy.holdTicksMax);
+    setAppliedTemplate(t);
+    setRiskLevel(t.riskProfile === "CONSERVATIVE" ? "CAREFUL" : t.riskProfile === "AGGRESSIVE" ? "BOLD" : "BALANCED");
+    setCustom(false);
+  }
 
   const applyTemplate = (t: TemplateDTO) => {
     if (!t.venueLive) return;
@@ -134,6 +174,8 @@ export function StudioView(props: {
         setAppliedTemplate(null);
         setStep(1);
         setName("");
+        setCustom(true);
+        if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } finally {
       setSaving(false);
@@ -161,7 +203,6 @@ export function StudioView(props: {
   const rules = VENUE_ENTRY_RULES[venue] ?? EMPTY_ENTRY_RULES;
   const vhex = venueColor(venue);
   const enabledProviders = (dash?.providers ?? []).filter((p) => p.enabled && p.hasKey);
-  const isLibrary = tab === "library";
 
   const summary: Array<[string, ReactNode]> = [
     ["Name", name.trim() || <span className="text-[var(--fd-text3)]">Not set</span>],
@@ -183,31 +224,55 @@ export function StudioView(props: {
     <div className="flex flex-col gap-6">
       <PageHeader
         icon={<Bot size={24} />}
-        title="Robot Studio"
-        subtitle="Create, configure and test trading robots. Every robot starts in paper mode."
+        title="Create a robot"
+        subtitle="Three choices and it's ready. Every robot starts with practice money."
+        actions={<button className={btn.ghost} onClick={() => setAdvanced((v) => !v)}><SlidersHorizontal size={16} /> {advanced ? "Back to simple setup" : "Advanced settings"}</button>}
       />
-      <Tabs label="Studio sections" value={isLibrary ? "library" : "create"} onChange={(t) => onTab?.(t === "create" ? "create" : "library")} tabs={[{ id: "create", label: "Create Robot" }, { id: "library", label: "Strategy Library" }]} />
-
-      {isLibrary ? (
-        <StrategyLab dash={dash} onAfterChange={() => onAfterChange?.()} />
-      ) : (
         <>
           {guided && (
-            <Panel title={`${guided.robotName} is saved`} subtitle={`From ${guided.templateLabel ? `template “${guided.templateLabel}”` : "scratch"}: run a first cycle and a first backtest to start building evidence`} icon={<CheckCircle2 size={18} />}>
+            <Panel title={`${guided.robotName} is ready`} subtitle={`${guided.templateLabel ? `Based on “${guided.templateLabel}”. ` : ""}It's running with practice money. Two optional checks build confidence:`} icon={<CheckCircle2 size={18} />}>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <GuidedStep done n={1} title="Robot created" body="Saved as a paper draft with its strategy v1." />
-                <GuidedStep done={guidedDone.cycle} n={2} title="Run the first cycle" body="Every robot evaluates its markets; the decision is recorded."
-                  action={<button className={btn.small} disabled={guidedBusy !== null} onClick={() => runGuidedStep("cycle")}>{guidedBusy === "cycle" ? "Running…" : guidedDone.cycle ? "Run again" : "Run first cycle"}</button>} />
-                <GuidedStep done={guidedDone.backtest} n={3} title="Run the first backtest" body="Replays recorded prices with adverse slippage and fees. Evidence, never a promise."
-                  action={<button className={btn.small} disabled={guidedBusy !== null} onClick={() => runGuidedStep("backtest")}>{guidedBusy === "backtest" ? "Backtesting…" : guidedDone.backtest ? "Run again" : "Run first backtest"}</button>} />
+                <GuidedStep done n={1} title="Robot created" body="Saved and running with practice money." />
+                <GuidedStep done={guidedDone.cycle} n={2} title="Do a first check" body="The robot looks at its markets once and writes down what it decided, and why."
+                  action={<button className={btn.small} disabled={guidedBusy !== null} onClick={() => runGuidedStep("cycle")}>{guidedBusy === "cycle" ? "Checking…" : guidedDone.cycle ? "Check again" : "Check markets now"}</button>} />
+                <GuidedStep done={guidedDone.backtest} n={3} title="Test on past prices" body="Replays real past prices, with fees and bad fills, to see how it would have done. Evidence, never a promise."
+                  action={<button className={btn.small} disabled={guidedBusy !== null} onClick={() => runGuidedStep("backtest")}>{guidedBusy === "backtest" ? "Testing…" : guidedDone.backtest ? "Test again" : "Test on past prices"}</button>} />
               </div>
               {onOpenRobot && <button className={`${btn.secondary} mt-4`} onClick={() => onOpenRobot(guided.robotId)}>Open {guided.robotName} <ArrowRight size={16} /></button>}
             </Panel>
           )}
 
+          {!advanced ? (
+            <QuickSetup
+              templates={templates}
+              applied={appliedTemplate}
+              custom={custom}
+              onPickTemplate={fillFromTemplate}
+              onCustom={() => { setAppliedTemplate(null); setCustom(true); applyPreset(riskLevel, allocated); }}
+              onBrowseTemplates={onBrowseTemplates}
+              family={family}
+              setFamily={setFamily}
+              venue={venue}
+              setVenue={setVenue}
+              venueStats={dash?.venues ?? []}
+              allocated={allocated}
+              setAllocated={(v) => { setAllocated(v); applyPreset(riskLevel, v); }}
+              riskLevel={riskLevel}
+              setRiskLevel={(l) => applyPreset(l, allocated)}
+              posCap={posCap}
+              maxOpen={maxOpen}
+              dailyLoss={dailyLoss}
+              drawdown={drawdown}
+              name={name}
+              setName={setName}
+              nameOk={nameOk}
+              saving={saving}
+              onStart={submit}
+            />
+          ) : (
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-[250px_minmax(0,1fr)_320px]">
             {/* progress */}
-            <nav aria-label="Robot creation steps" className="h-fit rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-2.5">
+            <nav aria-label="Robot creation steps" className="h-fit rounded-2xl border border-[var(--fd-border)] fd-glass bg-[var(--fd-surface)] p-2.5">
               <ol className="flex gap-1 overflow-x-auto xl:flex-col">
                 {STEPS.map((s) => {
                   const on = s.id === step;
@@ -233,13 +298,13 @@ export function StudioView(props: {
             {/* main */}
             <div className="flex min-w-0 flex-col gap-5">
               {step === 1 && (
-                <Panel title="1. Robot identity" subtitle="Name your robot, or start from a template that fills in every step">
+                <Panel title="1. Robot identity" subtitle="Name your robot, or start from a ready-made robot that fills in every step">
                   <label className="block text-[14px] font-medium text-[var(--fd-text-soft)]" htmlFor="robot-name">Robot name</label>
                   <input id="robot-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Senate Edge" className="mt-2 h-12 w-full rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-bg2)] px-4 text-[16px] text-[var(--fd-strong)] placeholder:text-[var(--fd-text3)]" aria-invalid={!nameOk && name.length > 0} />
                   {!nameOk && <p className="mt-1.5 text-[13px] text-[var(--fd-text3)]">At least two characters.</p>}
-                  <h3 className="mb-3 mt-7 text-[15px] font-semibold text-[var(--fd-strong)]">Start from a template</h3>
+                  <h3 className="mb-3 mt-7 text-[15px] font-semibold text-[var(--fd-strong)]">Start from a ready-made robot</h3>
                   {templates.length === 0 ? (
-                    <p className="text-[14px] text-[var(--fd-text2)]">No templates available right now. Continue to configure from scratch.</p>
+                    <p className="text-[14px] text-[var(--fd-text2)]">No ready-made robots available right now. Continue to configure from scratch.</p>
                   ) : (
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       {templates.map((t) => (
@@ -435,7 +500,7 @@ export function StudioView(props: {
               )}
 
               {step === 9 && (
-                <Panel title="9. Review & activation" subtitle="Check the term sheet, then save the robot as a paper draft">
+                <Panel title="9. Review & activation" subtitle="Check the summary, then start the robot with practice money">
                   <div className="grid grid-cols-1 gap-x-8 md:grid-cols-2">
                     <div>{summary.slice(0, 7).map(([k, v]) => <KV key={k} k={k} v={v} />)}</div>
                     <div>{summary.slice(7).map(([k, v]) => <KV key={k} k={k} v={v} />)}</div>
@@ -446,16 +511,16 @@ export function StudioView(props: {
                     <GateRow title="Recorded consent" body="Required before live" />
                   </div>
                   <button className={`${btn.primary} mt-6 h-12 w-full text-[15.5px]`} disabled={!nameOk || saving} onClick={submit}>
-                    <Save size={17} /> {saving ? "Saving…" : "Save robot as paper draft"}
+                    <Save size={17} /> {saving ? "Starting…" : "Start robot with practice money"}
                   </button>
                   {!nameOk && <p className="mt-2 text-[13px] text-[var(--fd-amber-text)]">Add a robot name in step 1 first.</p>}
-                  <p className="mt-2 text-[13px] text-[var(--fd-text3)]">Saving never activates live trading. Live stays locked until the edge gate, backtest, paper session and your recorded consent all pass.</p>
+                  <p className="mt-2 text-[13px] text-[var(--fd-text3)]">Saving never activates live trading. Real money stays locked until the evidence checks, a past-price test, a practice session and your recorded consent all pass.</p>
                 </Panel>
               )}
 
-              <div className="sticky bottom-[72px] z-10 flex flex-wrap items-center gap-2.5 rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-bg2)]/95 p-3 backdrop-blur md:bottom-3">
+              <div className="sticky bottom-[92px] z-10 flex flex-wrap items-center gap-2.5 rounded-2xl fd-glass-strong border border-[var(--fd-border)] p-3 md:bottom-3">
                 <button className={btn.secondary} onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1}><ArrowLeft size={16} /> Previous</button>
-                <button className={btn.ghost} onClick={submit} disabled={!nameOk || saving} title="Save the current configuration as a paper draft"><Save size={16} /> Save draft</button>
+                <button className={btn.ghost} onClick={submit} disabled={!nameOk || saving} title="Start the robot now with these settings, using practice money"><Save size={16} /> Start now</button>
                 <span className="ml-auto text-[13px] text-[var(--fd-text3)]">Step {step} of {STEPS.length}</span>
                 {step < 9 ? (
                   <>
@@ -469,7 +534,7 @@ export function StudioView(props: {
             </div>
 
             {/* summary */}
-            <aside className="h-fit rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-5 xl:sticky xl:top-20">
+            <aside className="h-fit rounded-2xl border border-[var(--fd-border)] fd-glass bg-[var(--fd-surface)] p-5 xl:sticky xl:top-20">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-[16px] font-semibold text-[var(--fd-strong)]">Configuration summary</h2>
                 <Badge tone="amber" dot>Paper</Badge>
@@ -478,12 +543,8 @@ export function StudioView(props: {
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-[color:var(--fd-ink)]/[0.03] p-3 text-[13px] text-[var(--fd-text2)]"><Lock size={15} /> Live activation is locked behind the safety gates.</div>
             </aside>
           </div>
-
-          <Panel title="Strategy Library" subtitle="Versions and backtests for your existing robots" action={<button className={btn.small} onClick={() => onTab?.("library")}><FlaskConical size={14} /> Open library</button>}>
-            <p className="text-[14px] text-[var(--fd-text2)]">Tune an existing robot by creating a new strategy version, then backtest it against recorded prices before activating it.</p>
-          </Panel>
+          )}
         </>
-      )}
     </div>
   );
 }
@@ -528,6 +589,158 @@ function GuidedStep({ done, n, title, body, action }: { done: boolean; n: number
       </div>
       <p className="text-[13.5px] text-[var(--fd-text2)]">{body}</p>
       {action}
+    </div>
+  );
+}
+
+// ── Quick setup (default) ───────────────────────────────────────────────
+// Three plain choices: what to start from, where it trades, how much money
+// and how careful. One risk word sets every limit; the full nine-step
+// builder stays one click away under "Advanced settings".
+
+type RiskLevel = "CAREFUL" | "BALANCED" | "BOLD";
+const PRESETS: Record<RiskLevel, { label: string; desc: string; perTradePct: number; maxOpen: number; daily: number; drawdown: number; minEdge: number; exitEdge: number }> = {
+  CAREFUL: { label: "Careful", desc: "Small trades, only clear chances, stops early.", perTradePct: 5, maxOpen: 3, daily: 3, drawdown: 8, minEdge: 10, exitEdge: 3 },
+  BALANCED: { label: "Balanced", desc: "Medium trades, stops after a normal bad day.", perTradePct: 10, maxOpen: 4, daily: 5, drawdown: 10, minEdge: 8, exitEdge: 2 },
+  BOLD: { label: "Bold", desc: "Bigger trades, more chances, wider stops.", perTradePct: 20, maxOpen: 6, daily: 8, drawdown: 15, minEdge: 5, exitEdge: 1 },
+};
+
+const FAMILY_PLAIN: Record<string, string> = {
+  PROBABILITY_EDGE: "Buys when its estimate says the price is clearly too low or too high.",
+  MARKET_MAKING: "Offers to buy and sell around a fair price and earns the gap in between.",
+  AI_RESEARCH: "Uses AI to read the evidence and trades when it moves the odds.",
+};
+
+function QuickSetup(props: {
+  templates: TemplateDTO[];
+  applied: TemplateDTO | null;
+  custom: boolean;
+  onPickTemplate: (t: TemplateDTO) => void;
+  onCustom: () => void;
+  onBrowseTemplates?: () => void;
+  family: string;
+  setFamily: (f: string) => void;
+  venue: string;
+  setVenue: (v: string) => void;
+  venueStats: Array<{ venue: string; markets: number }>;
+  allocated: number;
+  setAllocated: (v: number) => void;
+  riskLevel: RiskLevel;
+  setRiskLevel: (l: RiskLevel) => void;
+  posCap: number;
+  maxOpen: number;
+  dailyLoss: number;
+  drawdown: number;
+  name: string;
+  setName: (v: string) => void;
+  nameOk: boolean;
+  saving: boolean;
+  onStart: () => void;
+}) {
+  const p = props;
+  const { data: avail } = useAvailability();
+  const live = VENUES.filter((v) => v.adapter === "LIVE");
+  const chosen = availabilityFor(avail, p.venue);
+  const chosenReal = VENUE_GUIDES.find((g) => g.venue === p.venue)?.realMoney ?? false;
+  const choiceCls = (on: boolean) =>
+    `rounded-2xl border p-4 text-left transition-colors ${on ? "border-[var(--fd-brand-text)] bg-[color:var(--fd-brand-text)]/[0.08]" : "border-[var(--fd-border)] bg-[var(--fd-bg2)] hover:border-[var(--fd-border2)]"}`;
+  const ready = p.nameOk && (p.applied != null || p.custom);
+
+  return (
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="flex min-w-0 flex-col gap-5">
+        <Panel title="1. Pick a starting point" subtitle="A ready-made robot fills in a proven strategy for you. You can also build your own.">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {p.templates.filter((t) => t.venueLive).slice(0, 5).map((t) => (
+              <button key={t.id} onClick={() => p.onPickTemplate(t)} aria-pressed={p.applied?.id === t.id} className={choiceCls(p.applied?.id === t.id)}>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-[15.5px] font-semibold text-[var(--fd-strong)]">{t.label}</span>
+                  <Badge tone={t.riskProfile === "CONSERVATIVE" ? "green" : t.riskProfile === "AGGRESSIVE" ? "red" : "blue"}>{t.riskProfile === "CONSERVATIVE" ? "Careful" : t.riskProfile === "AGGRESSIVE" ? "Bold" : "Balanced"}</Badge>
+                </div>
+                <p className="mt-1.5 line-clamp-2 text-[13.5px] leading-relaxed text-[var(--fd-text2)]">{t.thesis}</p>
+                <div className="mt-2.5"><VenueTag venue={t.venue} /></div>
+              </button>
+            ))}
+            <button onClick={p.onCustom} aria-pressed={p.custom && !p.applied} className={choiceCls(p.custom && !p.applied)}>
+              <span className="text-[15.5px] font-semibold text-[var(--fd-strong)]">Build my own</span>
+              <p className="mt-1.5 text-[13.5px] leading-relaxed text-[var(--fd-text2)]">Choose the strategy and the venue yourself.</p>
+            </button>
+          </div>
+          {p.onBrowseTemplates && p.templates.length > 5 && (
+            <button className="mt-3 text-[14px] font-semibold text-[var(--fd-brand-text)] hover:underline" onClick={p.onBrowseTemplates}>See all {p.templates.length} ready-made robots →</button>
+          )}
+
+          {p.custom && !p.applied && (
+            <div className="mt-5">
+              <h3 className="mb-2.5 text-[14.5px] font-semibold text-[var(--fd-strong)]">How should it trade?</h3>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                {FAMILIES.filter((f) => f.id !== "ARBITRAGE").map((f) => (
+                  <button key={f.id} onClick={() => p.setFamily(f.id)} aria-pressed={p.family === f.id} className={choiceCls(p.family === f.id)}>
+                    <span className="text-[15px] font-semibold text-[var(--fd-strong)]">{FAMILY_LABEL[f.id] ?? f.label}</span>
+                    <p className="mt-1 text-[13px] leading-relaxed text-[var(--fd-text2)]">{FAMILY_PLAIN[f.id]}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </Panel>
+
+        <Panel title="2. Where should it trade?" subtitle="Each robot trades on one venue.">
+          <div className="flex flex-wrap gap-2.5">
+            {live.map((v) => {
+              const on = p.venue === v.id;
+              const n = p.venueStats.find((s) => s.venue === v.id)?.markets ?? 0;
+              return (
+                <button key={v.id} onClick={() => p.setVenue(v.id)} aria-pressed={on}
+                  className="flex items-center gap-2.5 rounded-full border px-4 py-2.5 text-[14.5px] font-semibold transition-colors"
+                  style={{ borderColor: on ? v.hex : "var(--fd-border)", background: on ? `color-mix(in srgb, ${v.hex} 14%, transparent)` : "var(--fd-bg2)", color: "var(--fd-strong)" }}>
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: v.hex }} aria-hidden />
+                  {v.label}
+                  <span className="text-[12.5px] font-normal text-[var(--fd-text3)]">{n} markets</span>
+                  {(() => { const a = availabilityFor(avail, v.id); const real = VENUE_GUIDES.find((g) => g.venue === v.id)?.realMoney; return a && real && !a.realMoney ? <span className="rounded-full bg-[#FFB547]/15 px-2 py-0.5 text-[11.5px] font-semibold text-[var(--fd-amber-text)]">practice only</span> : null; })()}
+                </button>
+              );
+            })}
+          </div>
+          {p.venue === "MANIFOLD" && <p className="mt-3 text-[13px] text-[var(--fd-text3)]">Manifold uses play money only: a safe place to try things.</p>}
+          {chosen && chosenReal && !chosen.realMoney && (
+            <p className="mt-3 text-[13px] leading-snug text-[var(--fd-amber-text)]">
+              Real money on {VENUE_LABEL[p.venue]} is <b>{STATUS_LABEL[chosen.status].toLowerCase()}</b> in {chosen.country}: {chosen.note} You can still practice here.
+            </p>
+          )}
+        </Panel>
+
+        <Panel title="3. Money & safety" subtitle="How much it may use, and how careful it should be.">
+          <SliderRow label="Money this robot may use" value={money(p.allocated * 100)} help="Practice money. It never uses more than this.">
+            <Slider value={[p.allocated]} onValueChange={(v) => p.setAllocated(v[0])} min={100} max={10000} step={100} aria-label="Money this robot may use" />
+          </SliderRow>
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {(Object.keys(PRESETS) as RiskLevel[]).map((l) => (
+              <button key={l} onClick={() => p.setRiskLevel(l)} aria-pressed={p.riskLevel === l} className={choiceCls(p.riskLevel === l)}>
+                <span className="text-[15px] font-semibold text-[var(--fd-strong)]">{PRESETS[l].label}</span>
+                <p className="mt-1 text-[13px] leading-relaxed text-[var(--fd-text2)]">{PRESETS[l].desc}</p>
+              </button>
+            ))}
+          </div>
+          <label className="mt-6 block text-[14px] font-medium text-[var(--fd-text-soft)]" htmlFor="quick-name">Robot name</label>
+          <input id="quick-name" value={p.name} onChange={(e) => p.setName(e.target.value)} placeholder="e.g. Election Watcher" className="mt-2 h-12 w-full rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] px-4 text-[16px] text-[var(--fd-strong)] placeholder:text-[var(--fd-text3)]" />
+        </Panel>
+      </div>
+
+      <aside className="fd-glass h-fit rounded-3xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-5 xl:sticky xl:top-20">
+        <h2 className="text-[17px] font-semibold text-[var(--fd-strong)]">{p.name.trim() || "Your robot"}</h2>
+        <p className="mt-1 text-[13.5px] text-[var(--fd-text2)]">{p.applied ? `Based on “${p.applied.label}”` : FAMILY_LABEL[p.family] ?? p.family} on {VENUE_LABEL[p.venue]}</p>
+        <ul className="mt-4 flex flex-col gap-2.5 text-[14px] leading-snug text-[var(--fd-text-soft)]">
+          <li>Uses up to <b className="fd-num text-[var(--fd-strong)]">{money(p.allocated * 100)}</b>, never more than <b className="fd-num text-[var(--fd-strong)]">{money(p.posCap * 100)}</b> on one trade.</li>
+          <li>Holds at most <b className="text-[var(--fd-strong)]">{p.maxOpen}</b> trades at once.</li>
+          <li>Stops for the day after losing <b className="text-[var(--fd-strong)]">{p.dailyLoss}%</b>, and pauses if it falls <b className="text-[var(--fd-strong)]">{p.drawdown}%</b> from its best.</li>
+          <li>Starts with <b className="text-[var(--fd-strong)]">practice money</b>. Real money stays locked until it passes the safety checks.</li>
+        </ul>
+        <button className={`${btn.primary} mt-5 h-12 w-full text-[15.5px]`} disabled={!ready || p.saving} onClick={p.onStart}>
+          <Rocket size={17} /> {p.saving ? "Starting…" : "Start robot"}
+        </button>
+        {!ready && <p className="mt-2 text-center text-[13px] text-[var(--fd-text3)]">{!p.applied && !p.custom ? "Pick a starting point first." : "Give your robot a name."}</p>}
+      </aside>
     </div>
   );
 }

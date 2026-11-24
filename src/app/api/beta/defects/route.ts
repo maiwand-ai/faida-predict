@@ -20,7 +20,7 @@ const STATUSES = ["OPEN", "FIXED", "WONTFIX"];
 export const LADDER: Record<string, { definition: string; response: string }> = {
   S0: {
     definition: "Money risk: wrong fill, wrong balance, ledger drift, gate bypass, custody concern",
-    response: "STOP the round; global pause (C19); fix before anything else",
+    response: "Stop the round: pause everything and fix this first",
   },
   S1: {
     definition: "Safety or honesty regression: gate refuses wrongly (fail-closed on truth), missing provenance, mislabeled evidence, data loss",

@@ -33,10 +33,12 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from _faida_env import DB_PATH, BUN, isolate_db  # real DB path, Bun launcher, DB isolation (see _faida_env.py)
+isolate_db()  # restore the database to its pre-run state on exit
 
 BASE = "http://localhost:3000"
 ROOT = Path(__file__).resolve().parent.parent
-DB = str(ROOT / "db" / "custom.db")
+DB = DB_PATH
 failures = []
 created = {"keys": [], "probe_run_ids": [], "policy_backup": {}, "retention_runs": [], "notifications": []}
 
@@ -91,7 +93,7 @@ def wait_healthy():
 
 def bun_quiet(script, *args):
     env = dict(os.environ, PRISMA_QUIET="1")
-    return subprocess.run(["bun", script, *args], capture_output=True, text=True, timeout=240, cwd=ROOT, env=env)
+    return subprocess.run([*BUN, script, *args], capture_output=True, text=True, timeout=240, cwd=ROOT, env=env)
 
 
 # ── server reuse (same contract as smoke_phase7) ────────────────────────────
@@ -99,7 +101,7 @@ server_proc = None
 if not wait_healthy():
     print("dev server not healthy — starting one (Phase-8 smoke)…")
     server_proc = subprocess.Popen(
-        ["bun", "run", "dev"], cwd=ROOT,
+        [*BUN, "run", "dev"], cwd=ROOT,
         stdout=open(f"{ROOT}/dev-smoke8.log", "w"), stderr=subprocess.STDOUT,
     )
     if not wait_healthy():
@@ -155,7 +157,7 @@ const fee = azuroTakerBps(conditions[0], ["1.850000000000", "2.350000000000"]);
 console.log(JSON.stringify({ mapped: rows.length, sym: rows[0]?.venueSymbol, yes: rows[0]?.yesPriceCents, no: rows[0]?.noPriceCents, yesDirect: yes, fee, eventKey: rows[0]?.eventKey, res: rows[0]?.resolutionSource }));
 '''
     open(f"{ROOT}/scripts/_p8_vector.ts", "w").write(vector_code)
-    v = subprocess.run(["bun", "scripts/_p8_vector.ts"], capture_output=True, text=True, timeout=60, cwd=ROOT)
+    v = subprocess.run([*BUN, "scripts/_p8_vector.ts"], capture_output=True, text=True, timeout=60, cwd=ROOT)
     os.remove(f"{ROOT}/scripts/_p8_vector.ts")
     vec = json.loads(v.stdout.strip().splitlines()[-1])
     check("P8-2a decimal odds → venue's own cents (1.85→54, 2.35→43)", vec["yes"] == 54 and vec["no"] == 43 and vec["yesDirect"] == 54)
@@ -163,7 +165,7 @@ console.log(JSON.stringify({ mapped: rows.length, sym: rows[0]?.venueSymbol, yes
     check("P8-2c venue-scoped symbol + A-04 game cluster key", vec["sym"] == "az:g1:c1" and vec["eventKey"] == "az:game:g1")
     check("P8-2d multi-way condition excluded from binary scope (1 mapped)", vec["mapped"] == 1)
     check("P8-2e resolution source names the Azuro provider", "Azuro" in vec["res"])
-    conf = subprocess.run(["bun", "run", "conformance:azuro"], capture_output=True, text=True, timeout=60, cwd=ROOT)
+    conf = subprocess.run([*BUN, "run", "conformance:azuro"], capture_output=True, text=True, timeout=60, cwd=ROOT)
     conf_out = conf.stdout + conf.stderr
     check("P8-2f conformance honestly SKIPS without fixtures (no fake pass)", "SKIP" in conf_out and "no self-approved flip" in conf_out and conf.returncode == 0)
 
@@ -264,7 +266,7 @@ console.log(JSON.stringify({ mapped: rows.length, sym: rows[0]?.venueSymbol, yes
     ledger_after = db('SELECT COUNT(*) FROM "LedgerEntry"')[0][0]
     orders_after = db('SELECT COUNT(*) FROM "Order"')[0][0]
     check("P8-6d ledger + orders NEVER pruned (hard invariants)", ledger_before == ledger_after and orders_before == orders_after)
-    check("P8-6e run result preserves the truth list", set(res.get("preserved", [])) >= {"LedgerEntry (append-only)", "Order + OrderEvent (S-01 journal)"})
+    check("P8-6e run result preserves the truth list", set(res.get("preserved", [])) >= {"LedgerEntry (append-only)", "Orders and their full history"})
     rr = db("SELECT COUNT(*) FROM RetentionRun")[0][0]
     check("P8-6f RetentionRun audit row written", rr >= 1)
     ev = db("SELECT COUNT(*) FROM OutboxEvent WHERE eventType='COMPLIANCE_RETENTION_RUN'")[0][0]

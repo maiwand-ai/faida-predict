@@ -15,6 +15,7 @@ import {
   AreaChart, Badge, btn, decisionBadge, EmptyState, KV, money, orderStateBadge, PageHeader, PageSkeleton, Panel,
   Segmented, shortDate, Tabs, TableWrap, td, th, trow, VenueTag, ago,
 } from "./ds";
+import { PriceGaps } from "./gaps";
 
 // ── watchlist (per-viewer convenience, browser-local) ─────────────────────
 const WL_KEY = "faida.watchlist";
@@ -67,6 +68,7 @@ function change(v: number | null | undefined) {
 
 const TAB_DEFS = [
   { id: "trending", label: "Trending" },
+  { id: "gaps", label: "Price gaps" },
   { id: "new", label: "New Markets" },
   { id: "active", label: "Most Active" },
   { id: "liquid", label: "Most Liquid" },
@@ -88,8 +90,9 @@ export function MarketsView(props: {
   onTrade: (m: MarketDTO) => void;
   onOpenMarket: (id: string) => void;
   busy: string | null;
+  onOpenVenue?: (id: string) => void;
 }) {
-  const { markets, tab, onTab, onSync, onTrade, onOpenMarket, busy } = props;
+  const { markets, dash, tab, onTab, onSync, onTrade, onOpenMarket, busy, onOpenVenue } = props;
   const wl = useWatchlist();
   const [q, setQ] = useState("");
   const [venue, setVenue] = useState<string>("ALL");
@@ -168,21 +171,40 @@ export function MarketsView(props: {
       {label}{sort?.key === key ? (sort.dir === -1 ? " ↓" : " ↑") : ""}
     </button>
   );
-  const sel = "h-10 rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-surface)] px-3 text-[14px] text-[var(--fd-text)]";
+  const sel = "h-10 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] px-3 text-[14px] text-[var(--fd-text)]";
   const liveVenues = VENUES.filter((v) => v.adapter === "LIVE");
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         icon={<Compass size={24} />}
-        title="Market Discovery"
-        subtitle={`${markets.length} open markets across ${new Set(markets.map((m) => m.venue)).size} venues · read-only venue data, synced on demand`}
+        title="Markets"
+        subtitle={`Events you can bet on: ${markets.length} open markets across ${new Set(markets.map((m) => m.venue)).size} venues. Prices are refreshed when you ask.`}
         actions={
           <button className={btn.primary} onClick={() => onSync()} disabled={busy === "sync"}>
-            <RefreshCw size={16} className={busy === "sync" ? "animate-spin" : ""} /> {busy === "sync" ? "Syncing…" : "Sync all venues"}
+            <RefreshCw size={16} className={busy === "sync" ? "animate-spin" : ""} /> {busy === "sync" ? "Refreshing…" : "Refresh markets"}
           </button>
         }
       />
+
+      {onOpenVenue && (
+        <div className="fd-scroll -mx-1 flex gap-2.5 overflow-x-auto px-1 pb-1" role="list" aria-label="Venues">
+          {VENUES.map((v) => {
+            const live = v.adapter === "LIVE";
+            const n = dash?.venues.find((s) => s.venue === v.id)?.markets ?? 0;
+            return (
+              <button key={v.id} role="listitem" onClick={() => onOpenVenue(v.id)} title={`Open the ${v.label} workspace`}
+                className={`fd-glass flex shrink-0 items-center gap-3 rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] px-4 py-2.5 text-left transition-colors hover:border-[var(--fd-border2)] ${live ? "" : "opacity-60"}`}>
+                <span className="grid h-8 w-8 place-items-center rounded-xl text-[13px] font-bold" style={{ background: `color-mix(in srgb, ${v.hex} 20%, transparent)`, color: v.hex }} aria-hidden>{v.label.slice(0, 1)}</span>
+                <span>
+                  <span className="block text-[14.5px] font-semibold text-[var(--fd-strong)]">{v.label}</span>
+                  <span className="block text-[12.5px] text-[var(--fd-text3)]">{live ? `${n} markets` : v.id === "DRIFT_BET" ? "Suspended" : "Coming soon"}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <Tabs
         label="Market lists"
@@ -191,9 +213,11 @@ export function MarketsView(props: {
         onChange={(t) => { onTab(t); setPage(0); setSort(null); }}
       />
 
-      {tab === "categories" ? (
+      {tab === "gaps" ? (
+        <PriceGaps onOpenMarket={onOpenMarket} onSync={() => onSync()} busy={busy} />
+      ) : tab === "categories" ? (
         categories.length === 0 ? (
-          <Panel><EmptyState title="No markets synced yet" body="Sync the venues to load their markets." action={<button className={btn.primary} onClick={() => onSync()}>Sync now</button>} /></Panel>
+          <Panel><EmptyState title="No markets loaded yet" body="Load the latest markets and prices from every live venue. It takes a few seconds." action={<button className={btn.primary} onClick={() => onSync()}>Load markets</button>} /></Panel>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {categories.map(([cat, n]) => {
@@ -201,7 +225,7 @@ export function MarketsView(props: {
               const vol = inCat.reduce((a, m) => a + (m.volumeCents ?? 0), 0);
               const venues = [...new Set(inCat.map((m) => m.venue))];
               return (
-                <button key={cat} onClick={() => { setCategory(cat); onTab("all"); }} className="rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-5 text-left transition-colors hover:border-[#2583FF]/50">
+                <button key={cat} onClick={() => { setCategory(cat); onTab("all"); }} className="rounded-2xl border border-[var(--fd-border)] fd-glass bg-[var(--fd-surface)] p-5 text-left transition-colors hover:border-[#2583FF]/50">
                   <div className="flex items-center justify-between">
                     <span className="text-[17px] font-semibold capitalize text-[var(--fd-strong)]">{cat}</span>
                     <Badge tone="blue">{n} markets</Badge>
@@ -262,9 +286,9 @@ export function MarketsView(props: {
 
           {rows.length === 0 ? (
             <EmptyState
-              title={markets.length === 0 ? "No markets synced yet" : tab === "watchlist" ? "Your watchlist is empty" : tab === "movers" ? "No price moves recorded in the last 24h" : "No markets match these filters"}
-              body={markets.length === 0 ? "Pull live markets from the venues to start exploring." : tab === "watchlist" ? "Tap the star next to any market to follow it here." : tab === "movers" ? "Moves appear once a market has been synced more than once within 24 hours." : "Try widening the filters."}
-              action={markets.length === 0 ? <button className={btn.primary} onClick={() => onSync()}>Sync now</button> : undefined}
+              title={markets.length === 0 ? "No markets loaded yet" : tab === "watchlist" ? "Your watchlist is empty" : tab === "movers" ? "No price moves recorded in the last 24h" : "No markets match these filters"}
+              body={markets.length === 0 ? "Press “Refresh markets” to load the latest events from every live venue." : tab === "watchlist" ? "Tap the star next to any market to follow it here." : tab === "movers" ? "Moves appear once a market has been synced more than once within 24 hours." : "Try widening the filters."}
+              action={markets.length === 0 ? <button className={btn.primary} onClick={() => onSync()}>Load markets</button> : undefined}
             />
           ) : (
             <>
@@ -397,9 +421,9 @@ export function MarketDetail(props: {
     [marketId],
   );
   useEffect(() => {
-    void load();
+    const first = setTimeout(() => void load(), 0);
     const t = setInterval(() => void load(), 30000);
-    return () => clearInterval(t);
+    return () => { clearTimeout(first); clearInterval(t); };
   }, [load]);
 
   if (err) return <Panel><EmptyState title={err} action={<button className={btn.secondary} onClick={onBack}>Back to markets</button>} /></Panel>;
@@ -607,7 +631,7 @@ export function MarketDetail(props: {
 
 function StatBox({ label, value, sub, hex, tone }: { label: string; value: ReactNode; sub?: ReactNode; hex?: string; tone?: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-4">
+    <div className="rounded-2xl border border-[var(--fd-border)] fd-glass bg-[var(--fd-surface)] p-4">
       <div className="text-[13px] text-[var(--fd-text2)]">{label}</div>
       <div className={`fd-num mt-1.5 text-[24px] font-semibold ${tone ?? "text-[var(--fd-strong)]"}`} style={hex ? { color: `color-mix(in srgb, ${hex} 70%, var(--fd-strong))` } : undefined}>{value}</div>
       {sub && <div className="mt-1 text-[13px]">{sub}</div>}
@@ -724,7 +748,7 @@ function TicketBody({ market, t, disabledReason, busy, onSubmit }: { market: Mar
         Place paper order
       </button>
       <p className="text-[12.5px] leading-relaxed text-[var(--fd-text3)]">
-        {disabledReason ?? "Paper order: no real money moves. Eligibility and risk checks still apply; robot entries additionally need the edge gate."}
+        {disabledReason ?? "Practice order: no real money moves. Country and safety checks still apply."}
       </p>
     </div>
   );
@@ -783,7 +807,7 @@ function TradeDialogInner({ market, onClose, onPlace, busy }: { market: MarketDT
       : structuralBlock(market, t.side);
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto border-[var(--fd-border2)] bg-[var(--fd-surface)] text-[var(--fd-text)] sm:max-w-[460px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto fd-glass-strong rounded-3xl border-[var(--fd-border2)] text-[var(--fd-text)] sm:max-w-[460px]">
         <DialogHeader>
           <DialogTitle className="text-[18px]">Paper order</DialogTitle>
           <DialogDescription className="text-[14px] text-[var(--fd-text2)]">{market.question}</DialogDescription>

@@ -83,7 +83,7 @@ export async function activateVersion(robotId: string, versionId: string) {
   if (!sv || sv.robotId !== robotId) throw new Error("version does not belong to this robot");
   await db.robot.update({
     where: { id: robotId },
-    data: { activeVersion: sv.version, statusReason: `active strategy v${sv.version} (C5 pointer move — status unchanged)` },
+    data: { activeVersion: sv.version, statusReason: `strategy v${sv.version} is now active (robot status unchanged)` },
   });
   await db.$transaction(async (tx) => {
     await enqueueOutbox(tx, [

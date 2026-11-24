@@ -1,13 +1,14 @@
 "use client";
 
 // FAIDA Predict — Studio (wizard + strategy lab), Trading, Settings.
-import { useCallback, useEffect, useState } from "react";
-import { Download, LineChart as LineChartIcon, Plus, Settings as SettingsIcon } from "lucide-react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { Download, PieChart as PieChartIcon, Plus, Settings as SettingsIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge, btn, EmptyState, KV, Metric, money, orderStateBadge, PageHeader, PageSkeleton, Panel, T, Tabs, TableWrap, td, th, toneOf, toneText, trow, VenueTag } from "./ds";
 import { TradeDialog } from "./markets";
-import { useTheme, type ThemePref } from "./theme";
+import { ThemePicker } from "./personalize";
+import { TelegramCard } from "./telegram-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -94,8 +95,9 @@ export function TradingView(props: {
   onOpenMarket: (id: string) => void;
   onOpenRobot: (id: string) => void;
   onClosePosition: (positionId: string) => void;
+  performance?: ReactNode;
 }) {
-  const { markets, dash, ordersData, busy, tab, onTab, onPlace, onSimulateAckLoss, onReconcile, hasUnknown, onTradeSomething, onOpenMarket, onClosePosition } = props;
+  const { performance, markets, dash, ordersData, busy, tab, onTab, onPlace, onSimulateAckLoss, onReconcile, hasUnknown, onTradeSomething, onOpenMarket, onClosePosition } = props;
   const [q, setQ] = useState("");
   const [venue, setVenue] = useState("ALL");
   const [side, setSide] = useState("ALL");
@@ -130,7 +132,7 @@ export function TradingView(props: {
     .sort(byTime);
   const posRows = positions.filter((p) => match(`${p.market?.question ?? ""} ${p.robot?.name ?? ""}`, p.market?.venue, p.side)).sort(byTime);
   const ledgerRows = ledger.filter((l) => !q.trim() || `${l.type} ${l.memo ?? ""}`.toLowerCase().includes(q.trim().toLowerCase())).sort(byTime);
-  const sel = "h-10 rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-surface)] px-3 text-[14px] text-[var(--fd-text)]";
+  const sel = "h-10 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] px-3 text-[14px] text-[var(--fd-text)]";
   const pageSlice = <T,>(rows: T[]) => rows.slice(page * PAGE, page * PAGE + PAGE);
 
   const exportCurrent = () => {
@@ -166,9 +168,9 @@ export function TradingView(props: {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        icon={<LineChartIcon size={24} />}
-        title="Trading"
-        subtitle="Positions, orders and the paper ledger. Every order walks the order state machine with a full journal."
+        icon={<PieChartIcon size={24} />}
+        title="Portfolio"
+        subtitle="Your positions on every venue, your orders, every money movement and how it's all performing."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <label className="sr-only" htmlFor="pick-market">Market for a new order</label>
@@ -180,27 +182,30 @@ export function TradingView(props: {
                 return <optgroup key={v.id} label={v.label}>{rows.map((m) => <option key={m.id} value={m.id}>{m.question.slice(0, 70)}</option>)}</optgroup>;
               })}
             </select>
-            <button className={btn.primary} disabled={!pickId} onClick={() => setTicketMarket(markets.find((m) => m.id === pickId) ?? null)}><Plus size={16} /> New paper order</button>
+            <button className={btn.primary} disabled={!pickId} onClick={() => setTicketMarket(markets.find((m) => m.id === pickId) ?? null)}><Plus size={16} /> New practice order</button>
           </div>
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+      {tab !== "performance" && <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
         <Metric label="Open positions" value={positions.length} hex={T.blue} />
         <Metric label="Orders" value={orders.length} sub={`${openOrders.length} open`} hex={T.cyan} />
         <Metric label="Total exposure" value={money(openCost)} hex={T.amber} />
         <Metric label="Realized P&L" value={realized != null ? money(realized, { sign: true }) : "—"} tone={toneOf(realized)} hex={T.green} sub="Closed trades, from the ledger" />
         <Metric label="Unrealized P&L" value={money(unrealized, { sign: true })} tone={toneOf(unrealized)} hex={T.purple} sub="Open positions at mark" />
-      </div>
+      </div>}
 
-      <Tabs label="Trading sections" value={tab} onChange={(t) => { onTab(t); setPage(0); }} tabs={[
+      <Tabs label="Portfolio sections" value={tab} onChange={(t) => { onTab(t); setPage(0); }} tabs={[
         { id: "positions", label: "Positions", count: positions.length },
-        { id: "orders", label: "Open Orders", count: openOrders.length },
-        { id: "history", label: "Order History", count: orders.length },
-        { id: "trades", label: "Trade History" },
-        { id: "ledger", label: "Paper Ledger", count: ledger.length },
-        { id: "execution", label: "Execution Monitor", count: unresolved.length || undefined },
+        { id: "orders", label: "Waiting orders", count: openOrders.length },
+        { id: "history", label: "All orders", count: orders.length },
+        { id: "trades", label: "Closed trades" },
+        { id: "ledger", label: "Money history", count: ledger.length },
+        { id: "performance", label: "Performance" },
+        { id: "execution", label: "Needs attention", count: unresolved.length || undefined },
       ]} />
+
+      {tab === "performance" && performance}
 
       {tab === "positions" && (
         <Panel pad={false}>
@@ -297,7 +302,7 @@ export function TradingView(props: {
 
       {tab === "execution" && (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
-          <Panel title="Execution monitor" subtitle="Orders whose venue acknowledgement is unresolved, and recent rejections" pad={false}>
+          <Panel title="Orders that need attention" subtitle="Orders the venue hasn't confirmed yet, and orders it turned down" pad={false}>
             {unresolved.length === 0 && orders.filter((o) => o.state === "REJECTED").length === 0 ? (
               <EmptyState compact title="Nothing needs attention" body="All orders are resolved." />
             ) : (
@@ -317,12 +322,12 @@ export function TradingView(props: {
               </TableWrap>
             )}
           </Panel>
-          <Panel title="Reconciliation" subtitle="Resolve orders whose venue response was lost">
-            <button className={`${btn.primary} w-full`} disabled={!hasUnknown || busy !== null} onClick={onReconcile}>Run reconciliation pass</button>
+          <Panel title="Fix stuck orders" subtitle="Ask the venue again about orders whose reply got lost">
+            <button className={`${btn.primary} w-full`} disabled={!hasUnknown || busy !== null} onClick={onReconcile}>Fix stuck orders now</button>
             <p className="mt-2 text-[13px] text-[var(--fd-text3)]">{hasUnknown ? `${unresolved.length} order(s) waiting.` : "Nothing pending."}</p>
             <div className="mt-6 border-t border-[var(--fd-line)] pt-5">
-              <h3 className="text-[14.5px] font-semibold text-[var(--fd-strong)]">Failure drill</h3>
-              <p className="mt-1 text-[13px] text-[var(--fd-text2)]">Creates a synthetic paper order whose acknowledgement is lost, so you can watch reconciliation resolve it.</p>
+              <h3 className="text-[14.5px] font-semibold text-[var(--fd-strong)]">Practice drill</h3>
+              <p className="mt-1 text-[13px] text-[var(--fd-text2)]">Creates a fake practice order whose venue reply is "lost", so you can see how stuck orders get fixed.</p>
               <label className="sr-only" htmlFor="drill-m">Market for the drill</label>
               <select id="drill-m" className={`${sel} mt-3 w-full`} value={drillMarket} onChange={(e) => setDrillMarket(e.target.value)}>
                 <option value="">Choose a market…</option>
@@ -335,7 +340,7 @@ export function TradingView(props: {
       )}
 
       <Sheet open={!!detail} onOpenChange={(v) => !v && setDetail(null)}>
-        <SheetContent side="right" className="w-full border-[var(--fd-line)] bg-[var(--fd-surface)] text-[var(--fd-text)] sm:max-w-[440px]">
+        <SheetContent side="right" className="fd-glass-strong w-full border-[var(--fd-border)] text-[var(--fd-text)] sm:max-w-[440px]">
           <SheetHeader>
             <SheetTitle className="text-[18px] text-[var(--fd-strong)]">Position details</SheetTitle>
           </SheetHeader>
@@ -369,16 +374,16 @@ export function TradingView(props: {
 const SETTINGS_TABS = [
   { id: "general", label: "General" },
   { id: "account", label: "Account" },
-  { id: "custody", label: "Wallet & Custody" },
-  { id: "modes", label: "Trading Modes" },
-  { id: "live", label: "Live Trading Permissions" },
-  { id: "risk", label: "Risk Limits" },
+  { id: "custody", label: "Wallet" },
+  { id: "modes", label: "Practice vs real money" },
+  { id: "live", label: "Real-money permissions" },
+  { id: "risk", label: "Safety limits" },
   { id: "ai", label: "AI Providers" },
-  { id: "models", label: "Model Registry" },
+  { id: "models", label: "AI model registry" },
   { id: "notifications", label: "Notifications" },
   { id: "security", label: "Security" },
-  { id: "api", label: "API Connections" },
-  { id: "audit", label: "Audit & Compliance" },
+  { id: "api", label: "API keys" },
+  { id: "audit", label: "Change history & compliance" },
 ] as const;
 
 export function SettingsView(props: {
@@ -400,7 +405,6 @@ export function SettingsView(props: {
   const [keyDrafts, setKeyDrafts] = useState<Record<string, string>>({});
   const [modelDrafts, setModelDrafts] = useState<Record<string, string>>({});
   const [confirmCountry, setConfirmCountry] = useState<EligibilityRuleDTO | null>(null);
-  const theme = useTheme();
   useEffect(() => { props.onOpenRisk(); }, []);
   if (!riskView || !dash) return <PageSkeleton />;
 
@@ -415,7 +419,7 @@ export function SettingsView(props: {
     <div className="flex flex-col gap-6">
       <PageHeader icon={<SettingsIcon size={24} />} title="Settings" subtitle="Account, custody, trading modes, risk limits, AI providers and compliance" />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <nav aria-label="Settings sections" className="h-fit rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-2">
+        <nav aria-label="Settings sections" className="h-fit rounded-2xl border border-[var(--fd-border)] fd-glass bg-[var(--fd-surface)] p-2">
           <ul className="flex gap-1 overflow-x-auto lg:flex-col">
             {SETTINGS_TABS.map((t) => (
               <li key={t.id} className="shrink-0">
@@ -438,16 +442,8 @@ export function SettingsView(props: {
                 <KV k="Paper balance" v={money(dash.balanceCents)} mono />
                 <KV k="Robots" v={`${dash.robots.length} configured`} />
               </Panel>
-              <Panel title="Appearance" subtitle="Saved in this browser">
-                <div role="radiogroup" aria-label="Theme" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {([["dark", "Dark", "Default trading-terminal look"], ["light", "Light", "Bright surfaces for daylight"], ["system", "System", "Follow this device's setting"]] as Array<[ThemePref, string, string]>).map(([id, label, desc]) => (
-                    <button key={id} role="radio" aria-checked={theme.pref === id} onClick={() => theme.setPref(id)}
-                      className={`rounded-2xl border p-4 text-left transition-colors ${theme.pref === id ? "border-[#2583FF] bg-[#2583FF]/[0.08]" : "border-[var(--fd-border)] bg-[var(--fd-bg2)] hover:border-[var(--fd-border2)]"}`}>
-                      <div className="text-[15.5px] font-semibold text-[var(--fd-strong)]">{label}</div>
-                      <div className="mt-1 text-[13.5px] text-[var(--fd-text2)]">{desc}</div>
-                    </button>
-                  ))}
-                </div>
+              <Panel title="Theme & colours" subtitle="Make FAIDA Predict yours. Saved on this device.">
+                <ThemePicker />
               </Panel>
               <Panel title="Where things live">
                 <p className="text-[14px] leading-relaxed text-[var(--fd-text2)]">Beginner settings sit at the top of each section; advanced options (model governance, API keys, compliance) are in their own tabs. Sensitive changes ask for confirmation.</p>
@@ -482,8 +478,8 @@ export function SettingsView(props: {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {[
                   { id: "PAPER", title: "Paper", tone: "amber", body: "Simulated fills against live prices. No real money moves. Default for every robot." },
-                  { id: "RESTRICTED", title: "Restricted", tone: "purple", body: "The small-capital pilot is enabled but sends stay dry-run: orders are signed and journaled, never transmitted." },
-                  { id: "LIVE", title: "Live", tone: "red", body: "Real orders within pilot ceilings. Requires consent, a passing edge gate, a signer and the arm switch." },
+                  { id: "RESTRICTED", title: "Restricted", tone: "purple", body: "The small real-money pilot is on, but sending is switched off: orders are signed and recorded, never sent." },
+                  { id: "LIVE", title: "Live", tone: "red", body: "Real orders within the pilot limits. Needs your consent, passed safety checks, a connected wallet and real sending switched on." },
                   { id: "PAUSED", title: "Emergency pause", tone: "red", body: "Every robot cycle and new order is refused until you resume." },
                 ].map((m) => (
                   <div key={m.id} className={`rounded-2xl border p-4 ${mode === m.id ? "border-[#2583FF] bg-[#2583FF]/[0.07]" : "border-[var(--fd-border)] bg-[var(--fd-bg2)]"}`}>
@@ -554,6 +550,7 @@ export function SettingsView(props: {
 
           {tab === "notifications" && (
             <>
+              <TelegramCard />
               <NotifyCard />
               <NotificationsCard />
             </>
@@ -613,7 +610,7 @@ export function SettingsView(props: {
       </div>
 
       <Dialog open={!!confirmCountry} onOpenChange={(v) => !v && setConfirmCountry(null)}>
-        <DialogContent className="border-[var(--fd-border2)] bg-[var(--fd-surface)] text-[var(--fd-text)] sm:max-w-[420px]">
+        <DialogContent className="fd-glass-strong rounded-3xl border-[var(--fd-border2)] text-[var(--fd-text)] sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>{confirmCountry?.allowed ? "Block" : "Allow"} {confirmCountry?.country}?</DialogTitle>
             <DialogDescription className="text-[var(--fd-text2)]">This changes who can trade from {confirmCountry?.country}. Sanctioned jurisdictions are refused by the server regardless.</DialogDescription>
@@ -636,15 +633,15 @@ function ModelRegistryCard({ probability, onAction }: { probability: Probability
   return (
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <div className={`text-[15px] font-semibold`}>Model registry — calibration, promotion & demotion (A-01/A-03)</div>
+        <div className={`text-[15px] font-semibold`}>AI model registry: accuracy, promotion and demotion</div>
         <Button size="sm" variant="outline" className="border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[var(--fd-text)] text-[13px] hover:bg-[var(--fd-hover)]"
           onClick={() => onAction({ action: "RECOMPUTE" }, "Calibration recomputed")}>
           Recompute calibration
         </Button>
       </div>
       <div className={`mb-3 text-[13.5px] ${c.text3}`}>
-        Baseline (A-03): <span className={mono}>{prob?.baseline.key}</span> — {prob?.baseline.formula}. A candidate may drive decisions only after beating the
-        baseline by {prob?.knobs.promotionMarginPct}% Brier over ≥ {prob?.knobs.minSamples} resolved forecasts; an ACTIVE model drifting more than {prob?.knobs.demotionTolerancePct}% worse is demoted (drill-tested). Promotion is a founder action (B8).
+        Built-in estimator: <span className={mono}>{prob?.baseline.key}</span> — {prob?.baseline.formula}. A new model may drive decisions only after beating the
+        built-in estimator by {prob?.knobs.promotionMarginPct}% in accuracy over at least {prob?.knobs.minSamples} resolved markets. An active model that gets more than {prob?.knobs.demotionTolerancePct}% worse is switched off automatically. An operator decides promotions.
       </div>
       {!prob && <div className={`py-3 text-center text-[14px] ${c.text3}`}>Loading registry…</div>}
       {prob && (
@@ -688,7 +685,7 @@ function ModelRegistryCard({ probability, onAction }: { probability: Probability
                       <span className={mono}>
                         Δ {cal.deltaPct > 0 ? "+" : ""}{cal.deltaPct.toFixed(1)}% vs baseline
                       </span>
-                      <span className={c.text3}>evidence {cal.nLive} live / {cal.nSynthetic} synthetic (D-03)</span>
+                      <span className={c.text3}>{cal.nLive} real / {cal.nSynthetic} simulated results</span>
                       <span className={c.text3}>window {cal.window}</span>
                     </>
                   ) : (
@@ -711,7 +708,7 @@ function GovernanceCard({ probability, onAction }: { probability: ProbabilityDTO
   return (
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <div className={`text-[15px] font-semibold`}>AI cost & latency governance (A-07)</div>
+        <div className={`text-[15px] font-semibold`}>AI spending and speed</div>
         <Button size="sm" variant="outline" className="border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[var(--fd-text)] text-[13px] hover:bg-[var(--fd-hover)]"
           onClick={() => onAction({ action: "CLEAR_CACHE" }, "Estimate cache cleared")}>
           Clear estimate cache
@@ -785,29 +782,32 @@ export function StrategyLab({ dash, onAfterChange }: { dash: DashboardDTO | null
   const [bt, setBt] = useState<BacktestResultDTO | null>(null);
   const [btError, setBtError] = useState<string | null>(null);
 
-  const loadVersions = useCallback(async (rid: string) => {
+  // fetch is pure; applying the result (list + sliders from the active
+  // version) happens in the response callback, never synchronously in an effect
+  const fetchVersions = useCallback(async (rid: string) => {
     const res = await fetch(`/api/strategies?robotId=${rid}`);
     const json = await safeJson<{ versions: VersionDTO[] }>(res);
-    setVersions(json?.versions ?? []);
+    return json?.versions ?? [];
   }, []);
-
-  useEffect(() => {
-    if (!active) return;
-    void loadVersions(active.id);
-    setBt(null);
-    setBtError(null);
-  }, [active?.id, loadVersions]);
-
-  const syncFromActive = () => {
-    const v = versions.find((x) => x.isActive) ?? versions[0];
+  const applyVersions = useCallback((list: VersionDTO[]) => {
+    setVersions(list);
+    const v = list.find((x) => x.isActive) ?? list[0];
     if (v) {
       setMinEdge(v.config.minEdgePts);
       setTilt(v.config.estimatorTiltPct);
       setExitEdge(v.config.exitEdgePts);
       setHold(v.config.holdTicksMax);
     }
-  };
-  useEffect(syncFromActive, [versions]);
+  }, []);
+  const loadVersions = useCallback(async (rid: string) => applyVersions(await fetchVersions(rid)), [fetchVersions, applyVersions]);
+
+  const activeId = active?.id;
+  useEffect(() => {
+    if (!activeId) return;
+    let alive = true;
+    fetchVersions(activeId).then((list) => { if (alive) applyVersions(list); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [activeId, fetchVersions, applyVersions]);
 
   const createVersion = async () => {
     if (!active) return;
@@ -872,14 +872,12 @@ export function StrategyLab({ dash, onAfterChange }: { dash: DashboardDTO | null
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-[17px] font-semibold">Strategy lab — versions &amp; backtests</h2>
-        <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.bright} bg-[#2583FF]/10`}>C5 · A-05</span>
-        <span className={`text-[13.5px] ${c.text3}`}>versions are immutable; orders record the exact version. Backtest evidence for the live gate — never a promise (D-03).</span>
+        <span className={`text-[13.5px] ${c.text3}`}>Pick a robot. Saved versions never change, and every order remembers which version placed it. Past-price tests are evidence, never a promise.</span>
       </div>
       {/* robot selector */}
       <div className="flex flex-wrap gap-2">
         {robots.map((r) => (
-          <button key={r.id} onClick={() => setRobotId(r.id)}
+          <button key={r.id} onClick={() => { setRobotId(r.id); setBt(null); setBtError(null); }}
             className={`rounded-lg border px-3 py-1.5 text-[14px] font-semibold transition-colors ${active.id === r.id ? "border-[#2583FF] bg-[#2583FF]/10 " + c.text : `border-[var(--fd-border2)] bg-[var(--fd-elevated)] ${c.text2} hover:bg-[var(--fd-hover)]`}`}>
             {r.name} <span className={mono + " " + c.text3}>v{r.activeVersion}</span>
           </button>
@@ -889,7 +887,7 @@ export function StrategyLab({ dash, onAfterChange }: { dash: DashboardDTO | null
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr]">
         {/* versions */}
         <div className={`${card} p-4`}>
-          <div className={`mb-2 text-[15px] font-semibold`}>Strategy versions — {active.name}</div>
+          <div className={`mb-2 text-[15px] font-semibold`}>Versions of {active.name}</div>
           <div className="fd-scroll max-h-[220px] overflow-y-auto">
             <table className="w-full text-[14px]">
               <thead>
@@ -927,7 +925,7 @@ export function StrategyLab({ dash, onAfterChange }: { dash: DashboardDTO | null
             </table>
           </div>
           <div className={`mt-3 border-t pt-3 ${c.border}`}>
-            <div className={`mb-1 text-[13px] ${c.text2}`}>Save the sliders below as a new immutable version (C5):</div>
+            <div className={`mb-1 text-[13px] ${c.text2}`}>Save the settings on the right as a new version:</div>
             <Button size="sm" className="bg-[#2583FF] font-semibold text-[#04101F] hover:bg-[#4C9BFF]" disabled={labBusy !== null} onClick={createVersion}>
               {labBusy === "create" ? "Saving…" : `Save as v${versions.reduce((m, v) => Math.max(m, v.version), 0) + 1}`}
             </Button>
@@ -937,7 +935,7 @@ export function StrategyLab({ dash, onAfterChange }: { dash: DashboardDTO | null
         {/* backtest */}
         <div className={`${card} p-4`}>
           <div className="mb-2 flex items-center justify-between">
-            <div className={`text-[15px] font-semibold`}>Backtest — replay over recorded ticks</div>
+            <div className={`text-[15px] font-semibold`}>Test on past prices</div>
             {bt?.dataSource && (
               <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${bt.dataSource === "SYNTHETIC" ? c.paper + " bg-[#FFB547]/10" : c.gain + " bg-[#00D69A]/10"}`}>
                 {bt.dataSource === "SYNTHETIC" ? "SYNTHETIC DATA" : "LIVE DATA"}
@@ -953,7 +951,7 @@ export function StrategyLab({ dash, onAfterChange }: { dash: DashboardDTO | null
             <LabSlider label="Fee" unit="bps" value={feeBps} setValue={setFeeBps} min={0} max={300} step={50} />
           </div>
           <Button size="sm" className="mt-3 bg-[#2583FF] font-semibold text-[#04101F] hover:bg-[#4C9BFF]" disabled={labBusy !== null} onClick={runBacktest}>
-            {labBusy === "backtest" ? "Replaying…" : "Run backtest"}
+            {labBusy === "backtest" ? "Testing…" : "Test on past prices"}
           </Button>
           {btError && <div className={`mt-2 rounded border px-2.5 py-1.5 text-[13px] ${c.border} ${c.loss}`}>{btError}</div>}
 
@@ -1045,7 +1043,7 @@ export function NotifyCard() {
   return (
     <div className={`${card} p-4`}>
       <div className="mb-1 flex items-center justify-between">
-        <div className={`text-[15px] font-semibold`}>Notification dispatcher — email fan-out (S-02/F8)</div>
+        <div className={`text-[15px] font-semibold`}>Email alerts</div>
         <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${s?.resendConfigured ? `${c.gain} bg-[#00D69A]/10` : `${c.paper} bg-[#FFB547]/10`}`}>
           {s ? (s.resendConfigured ? "RESEND ACTIVE" : "NO KEY — FEED ONLY") : "…"}
         </span>
@@ -1106,25 +1104,25 @@ export function LiveTradingCard() {
   return (
     <div className={`${card} p-4`}>
       <div className="mb-1 flex items-center justify-between">
-        <div className={`text-[15px] font-semibold`}>Live trading — gated automation (Phase 7, B10)</div>
+        <div className={`text-[15px] font-semibold`}>Real-money trading</div>
         <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${s?.armSwitch === "ARMED" ? `${c.loss} bg-[#FF5268]/10` : `${c.gain} bg-[#00D69A]/10`}`}>
           SEND {s?.armSwitch ?? "…"}
         </span>
       </div>
       <div className={`mb-3 text-[13.5px] ${c.text3}`}>
-        First real money passes four gate families: edge evidence (calibration, provenance, clean evidence, backtest, paper session, consent C25), execution (custody, credentials, pilot caps, B3 sign-off, geo), the small-capital pilot caps, and the send switch (env-only: orders are signed + audited but never transmitted while SAFE).
+        Before any real money moves, four sets of checks must pass: evidence (an accurate model, a past-price test, a practice session and your consent), setup (a connected wallet, venue credentials, legal sign-off and an allowed country), the small pilot limits, and the real-sending switch on the server. While that switch is off, orders are signed and recorded but never sent.
       </div>
       {s && (
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-2 text-[13px] sm:grid-cols-4">
-            <Stat label="Signer key" val={s.custody.signerPresent ? `injected …${s.custody.fingerprint}` : "none (DRY-RUN only)"} tone={s.custody.signerPresent ? "gain" : undefined} />
+            <Stat label="Signer key" val={s.custody.signerPresent ? `injected …${s.custody.fingerprint}` : "none (test mode only)"} tone={s.custody.signerPresent ? "gain" : undefined} />
             <Stat label="Kalshi key cred" val={s.kalshiCred ? (s.kalshiCred.keyPresent ? `${s.kalshiCred.keyType} …${s.kalshiCred.keyIdFingerprint}` : "none (paper only)") : "…"} tone={s.kalshiCred?.keyPresent ? "gain" : undefined} />
-            <Stat label="Consent (C25)" val={s.consent.consented ? "RECORDED" : "absent"} tone={s.consent.consented ? "gain" : undefined} />
+            <Stat label="Your consent" val={s.consent.consented ? "RECORDED" : "absent"} tone={s.consent.consented ? "gain" : undefined} />
             <Stat label="Pilot" val={s.pilot.enabled ? "ENABLED" : "disabled"} tone={s.pilot.enabled ? "gain" : undefined} />
-            <Stat label="Counsel (B3)" val={s.b3.signedOff ? `signed off (${s.b3.by})` : "owed"} tone={s.b3.signedOff ? "gain" : undefined} />
+            <Stat label="Legal sign-off" val={s.b3.signedOff ? `signed off (${s.b3.by})` : "owed"} tone={s.b3.signedOff ? "gain" : undefined} />
           </div>
           <div className={`text-[12.5px] ${c.text2}`}>
-            Custody: address-only wallet (B1 — the platform never stores keys; the signer key is env-injected per process and redacted everywhere). Consent hash {s.consent.consentHash ? `${s.consent.consentHash.slice(0, 16)}…` : "—"}{s.consent.revokedAt ? ` · REVOKED ${s.consent.revokedAt}` : ""}. Pilot caps: ≤{s.pilot.maxOrderCents}¢/order, ≤{s.pilot.maxTotalNotionalCents}¢ total (ceilings {s.ceilings.maxOrderCents}¢ / {s.ceilings.maxTotalNotionalCents}¢), venues {s.pilot.venues.join("/")}.
+            Wallet: FAIDA stores only your wallet address, never your keys; the signing key lives only in the server environment and is hidden in every log. Consent record {s.consent.consentHash ? `${s.consent.consentHash.slice(0, 16)}…` : "—"}{s.consent.revokedAt ? ` · revoked ${s.consent.revokedAt}` : ""}. Pilot limits: up to {s.pilot.maxOrderCents}¢ per order and {s.pilot.maxTotalNotionalCents}¢ in total (hard maximum {s.ceilings.maxOrderCents}¢ / {s.ceilings.maxTotalNotionalCents}¢), venues {s.pilot.venues.join("/")}.
             {" "}
             Kalshi carries the platform's SECOND credential kind — an asymmetric API key (RSA-PSS/SHA-256 or Ed25519, pre-sign text "timestamp+METHOD+path"), env-injected via KALSHI_API_KEY_ID / KALSHI_PRIVATE_KEY, never stored ({s.kalshiCred?.credentialModel ?? "KALSHI_ASYMMETRIC_API_KEY"}, keyStored false).
           </div>
@@ -1171,7 +1169,7 @@ export function LiveTradingCard() {
                     <span className={`text-[14px] font-semibold ${c.text}`}>{g.robotName}</span>
                     <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${g.mode === "LIVE_PILOT" ? `${c.loss} bg-[#FF5268]/10` : `${c.paper} bg-[#FFB547]/10`}`}>{g.mode}</span>
                     <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${g.ready ? `${c.gain} bg-[#00D69A]/10` : `${c.text3} bg-[var(--fd-hover)]`}`}>{g.ready ? "GATE READY" : `GATE CLOSED (${blocking.length})`}</span>
-                    {g.dryRun && g.ready && <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.paper} bg-[#FFB547]/10`}>DRY-RUN (send SAFE)</span>}
+                    {g.dryRun && g.ready && <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.paper} bg-[#FFB547]/10`}>Test mode: nothing is sent</span>}
                   </div>
                   {blocking.length > 0 && (
                     <div className="mt-1.5 flex flex-col gap-0.5">
@@ -1224,7 +1222,7 @@ export function NotificationsCard() {
   return (
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <div className={`text-[15px] font-semibold`}>Notification taxonomy & anti-storm (P-04)</div>
+        <div className={`text-[15px] font-semibold`}>Alert types and limits</div>
         {d && <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${c.text3} bg-[var(--fd-elevated)]`}>last 24h · {d.suppressedCount} absorbed</span>}
       </div>
       <div className={`mb-3 text-[13.5px] ${c.text3}`}>
@@ -1296,9 +1294,9 @@ export function ApiKeysCard() {
 
   return (
     <div className={`${card} p-4`}>
-      <div className="mb-1 text-[15px] font-semibold">Export & read-only API keys (P-06)</div>
+      <div className="mb-1 text-[15px] font-semibold">Export your data and API keys</div>
       <div className={`mb-3 text-[13.5px] ${c.text3}`}>
-        Export your data (robots, orders, ledger, positions, traces — JSON/CSV, venue-labeled per B11). API keys are READ-ONLY by design: they authenticate /api/public/v1/* reads, no write surface exists. Plaintext is shown once and only its SHA-256 hash is stored (S-08 posture). Rate limit 60 req/min per key.
+        Download your data (robots, orders, money history, positions and decisions) as JSON or CSV; every row names its venue. API keys can only read, never change anything. A key is shown once when created, and only its fingerprint is stored. Limit: 60 requests per minute per key.
       </div>
       <div className="mb-3 flex flex-wrap gap-2">
         <Button size="sm" variant="outline" className={`h-8 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[13px] hover:bg-[var(--fd-hover)]`} onClick={() => window.open("/api/export?entity=all&format=json", "_blank")}>Export all (JSON)</Button>
@@ -1382,7 +1380,7 @@ export function ComplianceCard() {
   return (
     <div className={`${card} p-4`}>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <div className={`text-[15px] font-semibold`}>Compliance ops — data retention (P-07)</div>
+        <div className={`text-[15px] font-semibold`}>Data retention</div>
         <Button size="sm" variant="outline" className={`h-8 border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[13px] hover:bg-[var(--fd-hover)]`} disabled={busy} onClick={run}>{busy ? "Running…" : "Run retention now"}</Button>
       </div>
       <div className={`mb-3 text-[13.5px] ${c.text3}`}>
@@ -1447,8 +1445,8 @@ export function MetricsCard() {
   }, []);
   return (
     <div className={`${card} p-4`}>
-      <div className="mb-1 text-[15px] font-semibold">Platform metrics (P-08)</div>
-      <div className={`mb-3 text-[13.5px] ${c.text3}`}>Operational snapshot — robots, orders, sync freshness per venue, notification anti-storm, outbox dispatch lag, AI governance. Null means the platform does not record that number — no invented precision (D-03).</div>
+      <div className="mb-1 text-[15px] font-semibold">Platform metrics</div>
+      <div className={`mb-3 text-[13.5px] ${c.text3}`}>A live snapshot: robots, orders, how fresh each venue's data is, alert volume, background event delay and AI usage. A dash means the platform doesn't record that number.</div>
       {!m && <div className={`py-2 text-center text-[14px] ${c.text3}`}>Loading metrics…</div>}
       {m && (
         <div className="flex flex-col gap-3">
@@ -1467,7 +1465,7 @@ export function MetricsCard() {
             <Stat label="Outbox p95 lag" val={m.outbox.dispatchLagP95Ms != null ? `${m.outbox.dispatchLagP95Ms}ms` : "—"} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <div className={`text-[11.5px] uppercase tracking-wide ${c.text3}`}>SYNC FRESHNESS PER VENUE (B11)</div>
+            <div className={`text-[11.5px] uppercase tracking-wide ${c.text3}`}>MARKET DATA FRESHNESS PER VENUE</div>
             {m.markets.freshness.map((f) => (
               <div key={f.venue} className={`flex flex-wrap items-center justify-between gap-2 text-[13px] ${c.text2}`}>
                 <span className="flex items-center gap-2">

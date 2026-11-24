@@ -115,7 +115,7 @@ export async function runRetention(kind: "MANUAL" | "SCHEDULED" = "MANUAL"): Pro
     policies,
     ranAt: new Date().toISOString(),
     // Hard invariants: these tables are NEVER pruned by policy.
-    preserved: ["LedgerEntry (append-only)", "Order + OrderEvent (S-01 journal)", "Fill", "Position", "ReconciliationEntry", "RetentionRun"],
+    preserved: ["LedgerEntry (append-only)", "Orders and their full history", "Fill", "Position", "ReconciliationEntry", "RetentionRun"],
   };
 
   await db.retentionRun.create({

@@ -55,19 +55,19 @@ export async function GET(req: NextRequest) {
         LIVE_PILOT: cohort.filter((m) => m.track === "LIVE_PILOT").length,
         FREE_CHOICE: cohort.filter((m) => m.track === "FREE_CHOICE").length,
       },
-      mixNote: "BETA_PHASE75 §1 — ≥3 PAPER_ONLY and ≥3 LIVE_PILOT required before recruitment closes",
+      mixNote: "At least 3 practice-only and 3 real-money-pilot members are needed before recruitment closes",
     },
     signal: {
       membersQualifying: signalMembers.length,
       membersLinked: linked.length,
       pct: linked.length ? Math.round((signalMembers.length / linked.length) * 100) : 0,
       bar: "exit-bar item 8: ≥60% of active members with ≥3 robot sessions and ≥1 feedback item",
-      note: "members still to onboard are counted out of the denominator only while unregistered (honest: an unregistered member cannot yet act)",
+      note: "Members who haven't registered yet aren't counted until they can take part",
     },
     smoke: {
       lastInvariantSmokePass: await getControl<string | null>("LAST_INVARIANT_SMOKE_PASS", null),
       lastRunbookDrill: await getControl<string | null>("LAST_RUNBOOK_DRILL", null),
-      note: "timestamps written by the drill/smoke scripts on PASS; missing = never recorded here (honest)",
+      note: "When the tests and drills last passed; empty means not recorded yet",
     },
   });
 }

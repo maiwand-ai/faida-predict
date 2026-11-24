@@ -16,6 +16,7 @@ import { LIVE_VENUE_IDS } from "@/lib/venues";
 import { getAutopilotState, getControl, getPauseState, setAutopilotState, setControl } from "@/lib/control";
 import { syncVenueMarkets, type SyncResult } from "@/lib/sync";
 import { runAutopilotOnce } from "./autopilot";
+import { telegramResolvingSoon } from "@/lib/telegram";
 
 const LEASE_KEY = "SCHEDULER_LEASE";
 const LAST_SYNC_KEY = "LAST_MARKET_SYNC";
@@ -78,6 +79,9 @@ export async function runScheduledTick(opts: { forceSync?: boolean } = {}): Prom
       lastSyncAt = new Date().toISOString();
       await setControl(LAST_SYNC_KEY, { at: lastSyncAt, results: results.map((r) => ({ venue: r.venue, synced: r.synced, errors: r.errors })) });
     }
+
+    // 1b. Telegram: markets users hold that close within 24 h (once per position)
+    await telegramResolvingSoon().catch(() => 0);
 
     // 2. autopilot pass when due
     const state = await getAutopilotState();

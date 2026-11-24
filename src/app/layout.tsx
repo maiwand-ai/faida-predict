@@ -27,7 +27,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "FAIDA Predict — Autonomous prediction-market trading",
   description:
-    "Paper-trading prediction-market platform: order state machine, reconciliation, venue adapters (Polymarket, Manifold, Limitless, Kalshi), model registry with calibration governance and AI cost controls. Live trading stays disabled until Phase 7 gates pass.",
+    "Robots that trade prediction markets for you on Polymarket, Kalshi, Limitless and Manifold: practice money first, a clear reason for every decision, and strict safety limits.",
   keywords: ["FAIDA Predict", "prediction markets", "trading robots", "Polymarket", "Kalshi"],
   icons: {
     icon: "/brand/logo_mark.png",
@@ -50,7 +50,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0B0E14",
+  themeColor: "#0B1220",
 };
 
 export default function RootLayout({

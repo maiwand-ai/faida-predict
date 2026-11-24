@@ -27,7 +27,7 @@ export const DEFAULT_BASELINE: BaselineDef = {
   formula: "est = clamp(p + round((50 - p) * tilt / 100), 2, 98) — contrarian fade of the YES book toward 50%",
   tiltPct: BASELINE_TILT_PCT,
   kind: "HEURISTIC",
-  recordedIn: "DECISIONS.md (A-03 baseline definition, Phase 5)",
+  recordedIn: "Built-in estimator definition (DECISIONS.md)",
 };
 
 export async function getBaselineDef(): Promise<BaselineDef> {
@@ -80,7 +80,7 @@ export async function ensureBaselineRow(): Promise<void> {
       key: def.key,
       kind: "HEURISTIC",
       status: "CANDIDATE",
-      notes: `A-03 baseline: ${def.formula}`,
+      notes: `Built-in estimator: ${def.formula}`,
     },
     update: {},
   });

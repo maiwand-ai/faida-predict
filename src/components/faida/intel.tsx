@@ -5,7 +5,7 @@
 // labeled by what it is: verified venue data (prices), model-generated
 // estimates (never presented as certain), and deterministic risk checks.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Brain, Cpu, Database, Sparkles } from "lucide-react";
 import type { DashboardDTO, MarketDTO, ProbabilityDTO, TraceDTO } from "./types";
 import { VENUES, venueColor } from "@/lib/venues";
@@ -45,8 +45,10 @@ export function IntelligenceView(props: {
   onOpenMarket: (id: string) => void;
   onOpenRobot: (id: string) => void;
   onNavigate: (n: Nav) => void;
+  trackRecord?: ReactNode;
+  ask?: ReactNode;
 }) {
-  const { dash, markets, probability, tab, onTab, onOpenMarket, onOpenRobot, onNavigate } = props;
+  const { dash, markets, probability, tab, onTab, onOpenMarket, onOpenRobot, onNavigate, trackRecord, ask } = props;
   const traces = useDecisions();
   const [selected, setSelected] = useState<string | null>(null);
   const [fDecision, setFDecision] = useState("ALL");
@@ -73,30 +75,36 @@ export function IntelligenceView(props: {
   const aiTraces = research.filter((t) => t.modelKey?.startsWith("ai:"));
   const gov = probability?.governance;
   const decisions = [...new Set(traces.map((t) => t.decision))];
-  const selCls = "h-10 rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-surface)] px-3 text-[14px] text-[var(--fd-text)]";
+  const selCls = "h-10 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-bg2)] px-3 text-[14px] text-[var(--fd-text)]";
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader icon={<Brain size={24} />} iconHex={T.purple} title="Intelligence" subtitle="Model research, market signals and every robot decision with its reasoning" />
+      <PageHeader icon={<Brain size={24} />} iconHex={T.purple} title="Insights" subtitle="How well your robots and the AI have done, what the AI found, and every decision with its reason" />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {tab !== "record" && tab !== "ask" && <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Metric label="Decisions recorded" value={traces.length} sub="Latest 200" icon={<Database size={16} />} />
         <Metric label="Model estimates" value={research.length} sub={`${aiTraces.length} from AI models`} hex={T.purple} icon={<Sparkles size={16} />} />
         <Metric label="AI calls (24h)" value={gov?.totals24h.calls ?? "—"} sub={gov ? `${gov.totals24h.failed} failed · ${gov.totals24h.blocked} blocked` : "—"} hex={T.cyan} icon={<Cpu size={16} />} />
         <Metric label="Models in registry" value={probability?.models.length ?? "—"} sub={probability ? `${probability.models.filter((m) => m.status === "ACTIVE" || m.status === "PROMOTED").length} active` : "—"} hex={T.amber} />
-      </div>
+      </div>}
 
-      <Tabs label="Intelligence sections" value={tab} onChange={(t) => { onTab(t); setSelected(null); }} tabs={[
-        { id: "research", label: "AI Research", count: research.length },
-        { id: "markets", label: "Market Intelligence" },
-        { id: "decisions", label: "Decision Feed", count: traces.length },
+      <Tabs label="Insights sections" value={tab} onChange={(t) => { onTab(t); setSelected(null); }} tabs={[
+        { id: "record", label: "Track record" },
+        { id: "ask", label: "Ask FAIDA" },
+        { id: "research", label: "AI research", count: research.length },
+        { id: "markets", label: "Market insights" },
+        { id: "decisions", label: "Activity log", count: traces.length },
       ]} />
 
-      {tab === "markets" ? (
+      {tab === "record" ? (
+        trackRecord
+      ) : tab === "ask" ? (
+        ask
+      ) : tab === "markets" ? (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <Panel title="Model vs. market" subtitle="Latest robot estimate per market, largest gap first" pad={false}>
             {latestByMarket.length === 0 ? (
-              <EmptyState compact title="No model estimates yet" body="Run a robot cycle: each evaluation records the model estimate next to the market price." />
+              <EmptyState compact title="No model estimates yet" body="Press “Check markets now” in Overview: each robot records its estimate next to the market price." />
             ) : (
               <TableWrap minWidth={560}>
                 <thead><tr><th className={th}>Market</th><th className={`${th} text-right`}>Market</th><th className={`${th} text-right`}>Model</th><th className={`${th} text-right`}>Net edge</th></tr></thead>

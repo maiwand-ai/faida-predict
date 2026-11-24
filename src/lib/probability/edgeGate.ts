@@ -51,7 +51,7 @@ export async function edgeGateReport(robotId: string): Promise<EdgeGateReport | 
       calDetail = `active model is the baseline (${BASELINE_KEY}) with n=${cal.n} resolved forecasts (min ${knobs.minSamples})`;
     } else {
       calibrated = cal.n >= knobs.minSamples && cal.brier <= cal.baselineBrier;
-      calDetail = `active ${active.key}: brier ${cal.brier.toFixed(4)} vs baseline ${cal.baselineBrier.toFixed(4)} over n=${cal.n} (min ${knobs.minSamples}), ${cal.nLive} live / ${cal.nSynthetic} synthetic (D-03)`;
+      calDetail = `accuracy of ${active.key}: score ${cal.brier.toFixed(4)} vs the built-in estimator ${cal.baselineBrier.toFixed(4)} over ${cal.n} resolved markets (needs ${knobs.minSamples}); ${cal.nLive} real, ${cal.nSynthetic} simulated`;
     }
   }
   const checks: EdgeGateCheck[] = [
@@ -65,7 +65,7 @@ export async function edgeGateReport(robotId: string): Promise<EdgeGateReport | 
   checks.push({
     check: "PROVENANCE_COMPLETENESS",
     passed: traces.length > 0 && provPct >= 95,
-    detail: `${withProv}/${traces.length} recent traces carry full A-02 provenance (${provPct}% ≥ 95% required)`,
+    detail: `${withProv} of ${traces.length} recent decisions record where their estimate came from (${provPct}%, needs 95%)`,
   });
 
   // 3. evidence cleanliness (A-06): no TRADE decided on flagged evidence.
@@ -80,7 +80,7 @@ export async function edgeGateReport(robotId: string): Promise<EdgeGateReport | 
   checks.push({ check: "EVIDENCE_CLEAN", passed: flaggedTrades === 0, detail: `${flaggedTrades} trades decided on screened/flagged evidence in the last ${traces.length} traces (must be 0)` });
 
   // 4. backtest evidence (A-05, Phase 2 gate): at least one completed replay.
-  checks.push({ check: "BACKTEST_EVIDENCE", passed: backtests > 0, detail: `${backtests} completed A-05 backtest run(s) for this robot` });
+  checks.push({ check: "BACKTEST_EVIDENCE", passed: backtests > 0, detail: `${backtests} past-price test${backtests === 1 ? "" : "s"} completed for this robot` });
 
   // 5. paper session length: enough observed decisions to judge behavior.
   checks.push({ check: "PAPER_SESSION", passed: traceTotal >= 20, detail: `${traceTotal} decision traces recorded (≥ 20 required)` });
@@ -93,7 +93,7 @@ export async function edgeGateReport(robotId: string): Promise<EdgeGateReport | 
     passed: consent.consented && !consent.revokedAt,
     detail: consent.consented
       ? `consent recorded ${consent.recordedAt} (hash ${consent.consentHash?.slice(0, 12)}…), wallet ${consent.walletAddress}`
-      : "no recorded consent — record it in Settings → Live trading (typed confirmation required); live trading stays disabled by contract (B10)",
+      : "No consent recorded yet. Record it in Settings › Real-money permissions (you type a confirmation); real money stays off until you do.",
   });
 
   return {

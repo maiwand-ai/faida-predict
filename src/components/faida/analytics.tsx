@@ -134,7 +134,8 @@ export function useAnalytics(dash: DashboardDTO | null, ledgerAll: LedgerRowDTO[
   }, [dash, ledgerAll, ordersAll, range]);
 }
 
-export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue }: {
+export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue, embedded }: {
+  embedded?: boolean;
   dash: DashboardDTO | null;
   ordersData: { orders: OrderRowDTO[]; ledger: LedgerRowDTO[] } | null;
   onOpenRobot: (id: string) => void;
@@ -152,12 +153,19 @@ export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue }: {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        icon={<BarChart3 size={24} />}
-        title="Analytics"
-        subtitle="Performance computed from your paper ledger, orders and open positions"
-        actions={<Segmented label="Time range" options={RANGES.map((r) => ({ id: r.id, label: r.label }))} value={range} onChange={setRange} />}
-      />
+      {embedded ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[14.5px] text-[var(--fd-text2)]">How your robots have done, from every trade and open position.</p>
+          <Segmented label="Time range" options={RANGES.map((r) => ({ id: r.id, label: r.label }))} value={range} onChange={setRange} />
+        </div>
+      ) : (
+        <PageHeader
+          icon={<BarChart3 size={24} />}
+          title="Performance"
+          subtitle="How your robots have done, from every practice-money trade and open position"
+          actions={<Segmented label="Time range" options={RANGES.map((r) => ({ id: r.id, label: r.label }))} value={range} onChange={setRange} />}
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
         <Metric label="Total return" value={pct(a.totalReturnPct, 2, true)} tone={toneOf(a.totalReturnPct)} sub="vs. deposits, all time" hex={T.green} />
@@ -170,7 +178,7 @@ export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue }: {
 
       {noActivity && (
         <Panel>
-          <EmptyState icon={<BarChart3 size={22} />} title="No trading activity in this range" body="Analytics fill in as robots and manual orders trade. Start a robot cycle or place a paper order." />
+          <EmptyState icon={<BarChart3 size={22} />} title="No trading activity in this range" body="Analytics fill in as robots and manual orders trade. Turn on autopilot in Overview, or place a practice order from Portfolio." />
         </Panel>
       )}
 
@@ -258,7 +266,7 @@ export function AnalyticsView({ dash, ordersData, onOpenRobot, onOpenVenue }: {
 
 function Highlight({ title, value, detail, tone, icon }: { title: string; value: string; detail: string; tone: "gain" | "loss" | "flat"; icon: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-5">
+    <div className="rounded-2xl border border-[var(--fd-border)] fd-glass bg-[var(--fd-surface)] p-5">
       <div className="flex items-center gap-2 text-[13.5px] text-[var(--fd-text2)]"><span className="text-[var(--fd-blue-text)]">{icon}</span>{title}</div>
       <div className="mt-2 truncate text-[18px] font-semibold text-[var(--fd-strong)]">{value}</div>
       <div className={`fd-num mt-1 text-[14px] ${toneText[tone]}`}>{detail}</div>

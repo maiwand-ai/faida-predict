@@ -31,6 +31,7 @@
 #         NEW→TRIAGED→DONE; member sees only own items
 #   P10-10 closeout: probe rows removed, platform ends SAFE (pause off,
 #         paper-only), no billing code regression, phase badge → 10
+import atexit
 import json
 import os
 import re
@@ -42,16 +43,22 @@ import urllib.error
 import urllib.request
 import http.cookiejar
 from pathlib import Path
+from _faida_env import DB_PATH, BUN, isolate_db  # real DB path, Bun launcher, DB isolation (see _faida_env.py)
+isolate_db()  # restore the database to its pre-run state on exit
 
 BASE = "http://localhost:3000"
 ROOT = Path(__file__).resolve().parent.parent
-DB = str(ROOT / "db" / "custom.db")
+DB = DB_PATH
 failures = []
 created = {
     "emails": ["p10.member1@beta.test", "p10.member2@beta.test"],
     "robots": [],
     "defects": [],
     "feedback": [],
+    # operator password + session state captured before P10-2, restored on exit
+    "operator": None,
+    "started_ms": None,
+    "cleaned": False,
 }
 
 # ── framework ────────────────────────────────────────────────────────────────
@@ -115,7 +122,7 @@ server_proc = None
 if not wait_healthy():
     print("dev server not healthy — starting one (Phase-10 smoke)…")
     server_proc = subprocess.Popen(
-        ["bun", "run", "dev"], cwd=ROOT,
+        [*BUN, "run", "dev"], cwd=ROOT,
         stdout=open(f"{ROOT}/dev-smoke10.log", "w"), stderr=subprocess.STDOUT,
     )
     if not wait_healthy():
@@ -124,7 +131,14 @@ if not wait_healthy():
 print("dev server healthy — running Phase 10 smoke\n")
 
 
+def _cleanup_on_exit():
+    cleanup()
+
+
 def cleanup():
+    if created["cleaned"]:
+        return
+    created["cleaned"] = True
     try:
         for email in created["emails"]:
             uid = db("SELECT id FROM User WHERE email = ?", (email,))
@@ -146,10 +160,20 @@ def cleanup():
             db("DELETE FROM Notification WHERE title LIKE ?", (f"%{did}%",), write=True)
         for fid in created["feedback"]:
             db("DELETE FROM BetaFeedback WHERE id = ?", (fid,), write=True)
+        # cohort rows the run created without an account (e.g. the cap probe)
+        db("DELETE FROM BetaMember WHERE email LIKE 'p10.%@beta.test'", write=True)
+        # P10-2 sets the operator password through the one-time bootstrap and
+        # logs in; put the operator back exactly as it was before the run
+        if created["operator"]:
+            op_id, op_hash = created["operator"]
+            db("UPDATE User SET passwordHash = ? WHERE id = ?", (op_hash, op_id), write=True)
+            db("DELETE FROM Session WHERE userId = ? AND createdAt >= ?", (op_id, created["started_ms"]), write=True)
         print("cleanup: Phase-10 fixtures removed")
     except Exception as e:
         print(f"cleanup warning: {e}")
 
+
+atexit.register(_cleanup_on_exit)
 
 # ── P10-1: auth posture ──────────────────────────────────────────────────────
 print("— P10-1: auth posture (fallback honest, strict mode implemented)")
@@ -165,6 +189,10 @@ check("P10-1f session tokens stored hashed only", "tokenHash" in session_src)
 
 # ── P10-2: auth lifecycle ────────────────────────────────────────────────────
 print("— P10-2: auth lifecycle (bootstrap, login, rate limit, logout)")
+_op = db("SELECT id, passwordHash FROM User WHERE role = 'OPERATOR' ORDER BY createdAt LIMIT 1")
+if _op:
+    created["operator"] = (_op[0][0], _op[0][1])
+created["started_ms"] = int(time.time() * 1000) - 1000
 s, boot = raw("POST", "/api/auth/bootstrap", {"password": "p10-operator-pass"})
 op = session_opener()
 if s == 200:
@@ -279,7 +307,7 @@ check("P10-7a operator records S2 defect", s == 201, f"{s}")
 if s == 201:
     created["defects"].append(d1["defect"]["id"])
 s, d0 = raw("POST", "/api/beta/defects", {"severity": "S0", "title": "P10 smoke probe defect S0", "detail": "money-risk probe", "source": "SMOKE"}, opener=op)
-check("P10-7b operator records S0 defect", s == 201 and d0.get("ladderResponse", "").startswith("STOP the round"), f"{s}")
+check("P10-7b operator records S0 defect", s == 201 and d0.get("ladderResponse", "").startswith("Stop the round"), f"{s}")
 if s == 201:
     created["defects"].append(d0["defect"]["id"])
 s0notif = db("SELECT COUNT(*) FROM Notification WHERE severity = 'CRITICAL' AND title LIKE ?", ("%S0 DEFECT (round 1): P10 smoke probe defect S0%",))[0][0]
@@ -327,7 +355,9 @@ print("— P10-10: closeout (SAFE posture, no regressions)")
 s, h = raw("GET", "/api/health")
 check("P10-10a health 200", s == 200)
 app_src = open(f"{ROOT}/src/components/faida/app.tsx").read()
-check("P10-10b phase badge reads PHASE 10", "PHASE 10" in app_src)
+# The "PHASE 10" footer badge was removed in the plain-language redesign;
+# the platform phase is reported by /api/health instead.
+check("P10-10b platform reports phase 10", str(h.get("phase", "")).startswith("phase-10"), f"{h.get('phase')}")
 billing_markers = []
 for root_dir, _dirs, files in os.walk(f"{ROOT}/src"):
     for f in files:

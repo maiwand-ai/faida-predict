@@ -32,7 +32,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ path: string[] 
   const entity = (path[0] ?? "").toLowerCase();
   if (!ENTITIES.includes(entity as (typeof ENTITIES)[number])) {
     return NextResponse.json(
-      { error: `unknown entity "${entity}"`, allowed: ENTITIES, note: "read-only API — no write surface exists by design (P-06)" },
+      { error: `unknown entity "${entity}"`, allowed: ENTITIES, note: "read-only API: it can't change anything" },
       { status: 404 },
     );
   }

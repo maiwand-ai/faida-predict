@@ -6,7 +6,7 @@ import { VENUES, VENUE_LABEL, venueColor } from "@/lib/venues";
 
 export const c = {
   bg: "bg-[var(--fd-bg)]",
-  surface: "bg-[var(--fd-surface)]",
+  surface: "fd-glass bg-[var(--fd-surface)]",
   elevated: "bg-[var(--fd-elevated)]",
   border: "border-[var(--fd-border)]",
   borderStrong: "border-[var(--fd-border2)]",

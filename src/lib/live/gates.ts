@@ -9,6 +9,8 @@ import { custodyStatus, signerAddress } from "./custody";
 import { getConsent } from "./consent";
 import { getPilotState, getB3Signoff, PILOT_CEILINGS } from "./pilot";
 import { isVenueTradeAllowed } from "@/lib/eligibility";
+import { userVenueAvailability } from "@/lib/venue/availabilityServer";
+import { STATUS_LABEL } from "@/lib/venue/availability";
 
 export interface LiveGateReport {
   robotId: string;
@@ -44,7 +46,7 @@ export async function liveGateReport(robotId: string): Promise<LiveGateReport | 
   ];
 
   // 2. venue: live write exists only for the primary venue (B2).
-  exec.push(check("VENUE_LIVE_WRITE", robot.venue === "POLYMARKET", `${robot.venue} live write ${robot.venue === "POLYMARKET" ? "supported (CLOB)" : "not built — small-capital pilot is primary-venue only (B2)"}`));
+  exec.push(check("VENUE_LIVE_WRITE", robot.venue === "POLYMARKET", `${robot.venue} live write ${robot.venue === "POLYMARKET" ? "real-money orders supported" : "real-money orders not available yet (Polymarket only for now)"}`));
 
   // 3. custody (B1/S-08): the wallet is registered ADDRESS-ONLY and, when a
   //    signer key is injected, it must BE that wallet's key. The most recent
@@ -57,7 +59,7 @@ export async function liveGateReport(robotId: string): Promise<LiveGateReport | 
   const custodyOk = wallet != null && (addr == null || addr.toLowerCase() === wallet.address.toLowerCase());
   exec.push(check("CUSTODY_WALLET", custodyOk, wallet
     ? `wallet ${wallet.address} registered SELF_CUSTODY_EIP712${addr ? (custodyOk ? `; injected signer matches …${custody.fingerprint}` : `; injected signer ${addr} does NOT match the registered wallet`) : "; no signer key injected (signing impossible)"}`
-    : "no self-custody wallet registered — register the address in Settings → Live trading (B1: address only, keys never stored)"));
+    : "No wallet connected. Add your wallet address in Settings › Wallet (FAIDA stores only the address, never your keys)."));
 
   // 4. L2 credentials: env-injected per process, never stored (same discipline
   //    as the signer key). Without them the send boundary refuses.
@@ -83,9 +85,17 @@ export async function liveGateReport(robotId: string): Promise<LiveGateReport | 
   const geo = await isVenueTradeAllowed(robot.userId);
   exec.push(check("GEO_ELIGIBLE", geo.allowed, geo.allowed ? `${robot.user.country} allowed by the eligibility matrix` : `${robot.user.country} refused: ${geo.reason ?? "not eligible"}`));
 
+  // 9. per-venue availability for the user's country (Help › Where can I
+  //    trade). Real money only where the venue is OPEN for that country;
+  //    "Check first" stays locked until an operator confirms it.
+  const avail = await userVenueAvailability(robot.userId, robot.venue);
+  exec.push(check("VENUE_REGION", avail.realMoney, avail.realMoney
+    ? `${robot.venue} is available for real money in ${avail.country}`
+    : `${robot.venue} in ${avail.country}: ${STATUS_LABEL[avail.status]} — ${avail.note}`));
+
   const dryRun = process.env.POLYMARKET_LIVE_WRITE !== "1";
   exec.push(check("LIVE_WRITE_SWITCH", !dryRun, dryRun
-    ? "POLYMARKET_LIVE_WRITE unset — orders are built, signed and audited but NOT sent (dry-run armor)"
+    ? "Real sending is switched off (POLYMARKET_LIVE_WRITE): orders are built, signed and recorded, but not sent"
     : "POLYMARKET_LIVE_WRITE=1 — the send boundary will transmit signed orders"));
 
   // `ready` = every evidence + execution check EXCEPT the arm switch: the

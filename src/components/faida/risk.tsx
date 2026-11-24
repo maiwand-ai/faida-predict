@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 
 // FAIDA Predict — Risk Center. A read-only view over the existing risk
 // engine, control plane and live-trading gates: exposure by venue / robot /
@@ -7,6 +8,7 @@
 // changes a limit or a calculation; editing limits stays in Settings, which
 // goes through the clamped PUT /api/risk path.
 
+import { SystemCheck, EmergencyStopDialog } from "./safety";
 import { type ReactNode } from "react";
 import { Activity, AlertTriangle, CheckCircle2, Gauge, PauseCircle, ShieldCheck, XCircle } from "lucide-react";
 import type { DashboardDTO, LedgerRowDTO, OrderRowDTO, ProbabilityDTO, RiskViewDTO } from "./types";
@@ -39,7 +41,9 @@ export function RiskCenter(props: {
   onNavigate: (n: Nav) => void;
 }) {
   const { dash, riskView, probability, ordersData, live, mode, tab, onTab, busy, onControl, onOpenRobot, onOpenVenue, onNavigate } = props;
+  const [confirmStop, setConfirmStop] = useState(tab === "stop" && !(dash?.control?.pause.paused ?? false));
   if (!dash) return <PageSkeleton />;
+  const shownTab = tab === "stop" ? "check" : tab;
 
   const eff = riskView?.effective;
   const dailyStopPct = eff?.dailyLossStopPct ?? dash.risk.find((r) => r.key === "DAILY_LOSS_STOP_PCT")?.valueNum ?? 5;
@@ -92,8 +96,8 @@ export function RiskCenter(props: {
     { name: "Recorded consent", ok: !!live?.consent?.consented, detail: live?.consent?.consented ? `Recorded ${ago(live.consent.recordedAt ?? null)}` : "Not recorded. Required before any real order." },
     { name: "Small-capital pilot", ok: !!live?.pilot?.enabled, detail: live?.pilot?.enabled ? `Enabled · max ${money(live.pilot.maxOrderCents ?? 0)} per order` : "Disabled" },
     { name: "Signer present (self-custody)", ok: !!live?.custody?.signerPresent, detail: live?.custody?.signerPresent ? "Signing key injected at runtime, never stored" : "No signer configured" },
-    { name: "Arm switch", ok: live?.armSwitch === "ARMED", detail: live?.armSwitch === "ARMED" ? "Armed: live sends permitted within ceilings" : "Safe: live sends stay dry-run" },
-    { name: "Edge gate (any robot ready)", ok: (live?.gates ?? []).some((g) => g.ready) || !!probability?.edgeGate?.ready, detail: (live?.gates ?? []).length ? `${(live?.gates ?? []).filter((g) => g.ready).length} of ${(live?.gates ?? []).length} robots ready` : "No robot has passed the edge gate yet" },
+    { name: "Arm switch", ok: live?.armSwitch === "ARMED", detail: live?.armSwitch === "ARMED" ? "Armed: live sends permitted within ceilings" : "Safe: real sending is switched off" },
+    { name: "Evidence checks (any robot ready)", ok: (live?.gates ?? []).some((g) => g.ready) || !!probability?.edgeGate?.ready, detail: (live?.gates ?? []).length ? `${(live?.gates ?? []).filter((g) => g.ready).length} of ${(live?.gates ?? []).length} robots ready` : "No robot has passed the evidence checks yet" },
   ];
 
   const venueHealth = VENUES.map((v) => {
@@ -113,27 +117,39 @@ export function RiskCenter(props: {
     <div className="flex flex-col gap-6">
       <PageHeader
         icon={<ShieldCheck size={24} />}
-        title="Risk Center"
-        subtitle="Monitor exposure, limits and safety gates"
+        title="Safety"
+        subtitle="Is everything ready, how much you could lose, and the emergency stop"
         badges={<Badge tone={levelTone} dot>Risk level: {level}</Badge>}
         actions={
           <>
             <button className={btn.secondary} onClick={() => onNavigate({ view: "settings", tab: "risk" })}>Edit limits</button>
             {paused ? (
-              <button className={btn.secondary} onClick={() => onControl({ action: "RESUME" }, "Platform resumed")} disabled={busy !== null}>Resume platform</button>
+              <button className={btn.secondary} onClick={() => onControl({ action: "RESUME" }, "Resumed: robots can trade again")} disabled={busy !== null}>Resume</button>
             ) : (
-              <button className={btn.danger} onClick={() => onControl({ action: "PAUSE", reason: "manual pause from Risk Center" }, "Everything paused")} disabled={busy !== null}><PauseCircle size={17} /> Pause everything</button>
+              <button className={btn.danger} onClick={() => setConfirmStop(true)} disabled={busy !== null}><PauseCircle size={17} /> Emergency stop</button>
             )}
           </>
         }
       />
 
-      <Tabs label="Risk sections" value={tab} onChange={onTab} tabs={[
-        { id: "overview", label: "Risk Center" },
-        { id: "exposure", label: "Exposure Monitor" },
-        { id: "health", label: "System Health" },
-        { id: "audit", label: "Audit Log", count: auditRows.length },
+      <Tabs label="Safety sections" value={shownTab} onChange={onTab} tabs={[
+        { id: "check", label: "System check" },
+        { id: "overview", label: "Loss limits" },
+        { id: "exposure", label: "Exposure by market" },
+        { id: "health", label: "System details" },
+        { id: "audit", label: "Change history", count: auditRows.length },
       ]} />
+
+      {shownTab === "check" && (
+        <SystemCheck
+          dash={dash}
+          busy={busy !== null}
+          onNavigate={onNavigate}
+          onStop={() => setConfirmStop(true)}
+          onResume={() => onControl({ action: "RESUME" }, "Resumed: robots can trade again")}
+        />
+      )}
+      <EmergencyStopDialog open={confirmStop} onOpenChange={setConfirmStop} onConfirm={() => onControl({ action: "PAUSE", reason: "emergency stop from Safety" }, "Emergency stop on: robots won't open trades")} />
 
       {tab === "overview" && (
         <>

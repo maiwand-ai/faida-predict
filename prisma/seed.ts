@@ -20,15 +20,15 @@ const SEED_MATRIX: Array<{ country: string; allowed: boolean; reason?: string; s
   { country: "JP", allowed: true, source: "PLATFORM" },
   { country: "VN", allowed: true, source: "PLATFORM" },
   { country: "AE", allowed: true, source: "PLATFORM" },
-  { country: "US", allowed: false, reason: "Polymarket venue restriction for US persons [VERIFY]", source: "VENUE" },
-  { country: "FR", allowed: false, reason: "Regulator action against event-contract venue [VERIFY]", source: "VENUE" },
-  { country: "BE", allowed: false, reason: "Venue geo-block [VERIFY]", source: "VENUE" },
-  { country: "SG", allowed: false, reason: "Gambling regulation block [VERIFY]", source: "VENUE" },
-  { country: "TH", allowed: false, reason: "Venue geo-block [VERIFY]", source: "VENUE" },
-  { country: "IR", allowed: false, reason: "Sanctioned jurisdiction (OFAC/EU) — not editable", source: "SANCTION_LIST" },
-  { country: "KP", allowed: false, reason: "Sanctioned jurisdiction (OFAC/EU) — not editable", source: "SANCTION_LIST" },
-  { country: "CU", allowed: false, reason: "Sanctioned jurisdiction (OFAC/EU) — not editable", source: "SANCTION_LIST" },
-  { country: "SY", allowed: false, reason: "Sanctioned jurisdiction (OFAC/EU) — not editable", source: "SANCTION_LIST" },
+  { country: "US", allowed: false, reason: "Polymarket restricts US residents on its international site (to be confirmed by counsel)", source: "VENUE" },
+  { country: "FR", allowed: false, reason: "Regulator action against prediction-market venues (to be confirmed by counsel)", source: "VENUE" },
+  { country: "BE", allowed: false, reason: "Blocked by the venue in this country (to be confirmed by counsel)", source: "VENUE" },
+  { country: "SG", allowed: false, reason: "Blocked under gambling rules (to be confirmed by counsel)", source: "VENUE" },
+  { country: "TH", allowed: false, reason: "Blocked by the venue in this country (to be confirmed by counsel)", source: "VENUE" },
+  { country: "IR", allowed: false, reason: "Sanctioned country (US/EU sanctions); can't be changed", source: "SANCTION_LIST" },
+  { country: "KP", allowed: false, reason: "Sanctioned country (US/EU sanctions); can't be changed", source: "SANCTION_LIST" },
+  { country: "CU", allowed: false, reason: "Sanctioned country (US/EU sanctions); can't be changed", source: "SANCTION_LIST" },
+  { country: "SY", allowed: false, reason: "Sanctioned country (US/EU sanctions); can't be changed", source: "SANCTION_LIST" },
 ];
 
 const ROBOTS = [
@@ -72,7 +72,7 @@ async function main(): Promise<void> {
       data: {
         userId: user.id,
         address: "0xDEMO0000000000000000000000000000000fA1DA",
-        label: "Founder safe (demo address — connect real wallet before Phase 7)",
+        label: "Demo address (connect your real wallet before using real money)",
       },
     });
   }
@@ -169,7 +169,7 @@ async function main(): Promise<void> {
       key: BASELINE_KEY,
       kind: "HEURISTIC",
       status: "ACTIVE",
-      notes: "A-03 baseline (v1): est = clamp(p + round((50 − p) × 25 / 100), 2, 98) — contrarian fade toward 50; recorded in DECISIONS.md",
+      notes: "Built-in estimator (v1): nudges the market price 25% toward 50%, kept between 2% and 98%.",
     },
   });
   for (const p of providers) {
@@ -183,7 +183,7 @@ async function main(): Promise<void> {
         providerName: p.name,
         providerModel: p.model,
         status: "CANDIDATE",
-        notes: "registered from the provider lineup — accumulates calibration evidence; promotion is a founder action (B8)",
+        notes: "Added from your AI providers. It builds an accuracy record; an operator decides when to promote it.",
       },
     });
   }
@@ -219,8 +219,8 @@ async function main(): Promise<void> {
         userId: user.id,
         severity: "INFO",
         family: "SYSTEM",
-        title: "Walking skeleton initialized",
-        body: "Paper mode only. Live trading stays disabled until the Phase 7 gates pass and you explicitly authorize it.",
+        title: "Welcome to FAIDA Predict",
+        body: "Your robots start with practice money. Real money stays off until every safety check passes and you give your consent.",
       },
     });
   }

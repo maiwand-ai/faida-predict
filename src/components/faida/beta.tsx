@@ -82,7 +82,7 @@ export function BetaView({ me, onToast }: { me: { id: string; email: string; rol
   return (
     <div className="space-y-4">
       <div className={`rounded-xl border ${c.border} ${c.surface} px-4 py-3`}>
-        <div className={`text-[13px] font-bold tracking-[0.15em] ${c.text3}`}>CLOSED BETA — PHASE 10 BETA OPS (R-02 PROGRAM)</div>
+        <div className={`text-[13px] font-bold tracking-[0.15em] ${c.text3}`}>CLOSED BETA · OPERATIONS</div>
         <div className={`mt-1 text-[14px] ${c.text2}`}>
           Signed in as <span className={mono}>{me?.email ?? "unknown"}</span> · role <span className={mono}>{me?.role ?? "?"}</span>.
           {isOperator
@@ -162,7 +162,7 @@ function OperatorBeta({ onToast }: { onToast: (t: { title: string; description?:
         <div className="divide-y" style={{ borderColor: "var(--fd-border)" }}>
           {exitBar?.items.map((i) => (
             <div key={i.id} className="flex items-start gap-3 px-4 py-2.5">
-              <span className={`mt-0.5 rounded px-1.5 py-0.5 text-[12px] font-bold ${STATUS_TONE[i.status] ?? c.text3}`}>{i.status}</span>
+              <span className={`mt-0.5 rounded px-1.5 py-0.5 text-[12px] font-bold ${STATUS_TONE[i.status] ?? c.text3}`}>{i.status === "FOUNDER_HOST" ? "PRODUCTION SERVER" : i.status}</span>
               <div className="min-w-0 flex-1">
                 <div className={`text-[14.5px] ${c.text}`}>{i.item}</div>
                 <div className={`mt-0.5 text-[13px] ${c.text3}`} style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(i.measured, null, 0).slice(0, 220)}</div>
@@ -209,10 +209,10 @@ function OperatorBeta({ onToast }: { onToast: (t: { title: string; description?:
               </div>
               <Input className="mt-2 h-8 text-[14px]" placeholder="detail (what happened, where)" value={defectForm.detail} onChange={(e) => setDefectForm({ ...defectForm, detail: e.target.value })} />
               <div className="mt-2 flex gap-2">
-                <Input className="h-8 flex-1 text-[14px]" placeholder="fix phase (e.g. Phase 11)" value={defectForm.fixPhase} onChange={(e) => setDefectForm({ ...defectForm, fixPhase: e.target.value })} />
-                <Button size="sm" className="h-8 text-[13px]" disabled={!defectForm.title.trim()} onClick={() => post("/api/beta/defects", { ...defectForm, source: "OPERATOR" }, defectForm.severity === "S0" ? "S0 recorded — STOP THE ROUND (C19 pause + CRITICAL notification fired)" : "Defect recorded")}>Record</Button>
+                <Input className="h-8 flex-1 text-[14px]" placeholder="planned fix (e.g. next release)" value={defectForm.fixPhase} onChange={(e) => setDefectForm({ ...defectForm, fixPhase: e.target.value })} />
+                <Button size="sm" className="h-8 text-[13px]" disabled={!defectForm.title.trim()} onClick={() => post("/api/beta/defects", { ...defectForm, source: "OPERATOR" }, defectForm.severity === "S0" ? "S0 recorded: the round is stopped (everything paused, urgent alert sent)" : "Defect recorded")}>Record</Button>
               </div>
-              <div className={`mt-2 text-[12.5px] ${c.text3}`}>S0 = money risk → STOP the round, global pause; an S0 fires an uncapped CRITICAL notification (P-04).</div>
+              <div className={`mt-2 text-[12.5px] ${c.text3}`}>S0 = money risk → STOP the round, global pause; an S0 sends an urgent alert that is never capped.</div>
             </div>
           </div>
         </div>

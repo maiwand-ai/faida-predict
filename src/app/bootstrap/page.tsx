@@ -32,8 +32,8 @@ export default function BootstrapPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--fd-bg)] px-4 text-[var(--fd-text)]">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-6">
+    <main className="flex min-h-screen items-center justify-center px-4 text-[var(--fd-text)]">
+      <form onSubmit={submit} className="w-full max-w-sm space-y-4 fd-glass rounded-3xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-7">
         <div className="text-center">
           <div className="text-[20px] font-bold tracking-wide">FAIDA <span className="text-[12px] font-bold tracking-[0.2em] text-[var(--fd-blue-text)]">PREDICT</span></div>
           <div className="mt-1 text-[13px] tracking-[0.15em] text-[var(--fd-text3)]">ONE-TIME OPERATOR PASSWORD</div>
@@ -50,7 +50,7 @@ export default function BootstrapPage() {
                 className="h-9 w-full rounded-md border border-[var(--fd-border)] bg-transparent px-3 text-[15px] outline-none focus:border-[#2583FF]" />
             </div>
             {error && <div className="rounded-md border border-[#FF5268]/40 bg-[#FF5268]/10 px-3 py-2 text-[14px] text-[var(--fd-red-text)]">{error}</div>}
-            <button type="submit" disabled={busy} className="h-9 w-full rounded-md bg-[#2583FF] text-[15px] font-semibold text-[var(--fd-bg)] disabled:opacity-50">
+            <button type="submit" disabled={busy} className="fd-glow h-11 w-full rounded-xl fd-brand-bg text-[15px] font-semibold text-white disabled:opacity-50">
               {busy ? "Setting…" : "Set operator password"}
             </button>
           </>

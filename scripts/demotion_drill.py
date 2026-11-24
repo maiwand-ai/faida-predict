@@ -14,9 +14,11 @@ import sqlite3
 import sys
 import time
 import urllib.request
+from _faida_env import DB_PATH, isolate_db  # real DB path, Bun launcher, DB isolation (see _faida_env.py)
+isolate_db()  # restore the database to its pre-run state on exit
 
 BASE = "http://localhost:3000"
-DB = "db/custom.db"
+DB = DB_PATH
 GLM_KEY = "ai:GLM/glm-4.6"
 failures = []
 

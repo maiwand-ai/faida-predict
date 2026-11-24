@@ -34,7 +34,7 @@ export const NO_CONSENT: LiveConsent = {
   walletAddress: null,
   consentHash: null,
   capsAcknowledged: false,
-  note: "live trading disabled by contract until a recorded consent exists (B10/C25)",
+  note: "Real money is off until you record your consent.",
 };
 
 export function getConsent(): Promise<LiveConsent> {
@@ -69,7 +69,7 @@ export async function recordConsent(input: {
     walletAddress: input.walletAddress,
     consentHash: consentHash(CONSENT_PHRASE, input.walletAddress, at),
     capsAcknowledged: true,
-    note: `recorded by ${input.actor ?? "founder"} — revocable at any moment; revocation-to-stop is measured (≤60s target)`,
+    note: `recorded by ${input.actor ?? "founder"}. You can revoke it at any time; robots stop within about a minute`,
   };
   await setControl(LIVE_CONSENT_KEY, consent);
   const founder = await db.user.findUnique({ where: { email: "founder@faida.local" }, select: { id: true } });
@@ -78,7 +78,7 @@ export async function recordConsent(input: {
     // never deduped within the minute, never digested.
     await notifyUser(founder.id, {
       family: "EXECUTION",
-      title: "Live-trading consent recorded (C25)",
+      title: "Real-money consent recorded",
       body: `Wallet ${input.walletAddress} authorized live trading in pilot caps. Revoke from Settings → Live trading; revocation stops every robot within the measured target.`,
       dedupeKey: `consent-recorded:${at}`,
     });

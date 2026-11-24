@@ -13,6 +13,8 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
+from _faida_env import BUN, isolate_db  # real DB path, Bun launcher, DB isolation (see _faida_env.py)
+isolate_db()  # restore the database to its pre-run state on exit
 
 BASE = "http://localhost:3000"
 ROOT = Path(__file__).resolve().parent.parent
@@ -51,7 +53,7 @@ def api(method, path, body=None, timeout=180):
 
 # ── start dev server inside this process tree ────────────────────────────────
 server = subprocess.Popen(
-    ["bun", "run", "dev"],
+    [*BUN, "run", "dev"],
     cwd=ROOT,
     stdout=open("/tmp/devlog.txt", "w"),
     stderr=subprocess.STDOUT,

@@ -33,7 +33,7 @@ export const PILOT_DEFAULT: LivePilotState = {
   maxTotalNotionalCents: PILOT_CEILINGS.maxTotalNotionalCents,
   venues: PILOT_CEILINGS.venues,
   enabledAt: null,
-  note: "small-capital pilot: disabled until the founder enables it WITH a recorded consent (C25)",
+  note: "small real-money pilot: off until you turn it on in Settings, after recording your consent",
 };
 
 export function getPilotState(): Promise<LivePilotState> {
@@ -58,7 +58,7 @@ export async function updatePilotState(patch: Partial<Pick<LivePilotState, "enab
     if (patch.enabled) {
       const consent = await getControl<{ consented: boolean }>("LIVE_CONSENT", { consented: false });
       if (!consent.consented) {
-        return { ok: false, reason: "pilot cannot be enabled without a recorded consent (C25) — record consent first", status: 422 };
+        return { ok: false, reason: "the pilot can't be turned on before you record your consent", status: 422 };
       }
       next.enabled = true;
       next.enabledAt = new Date().toISOString();

@@ -173,7 +173,7 @@ export async function preTradeRiskChecks(params: {
           })
         ).map((p) => p.marketId),
       ).size;
-      exposureScope = `A-04 cluster ${market.eventKey}: ${clusterCount} market${clusterCount === 1 ? "" : "s"}, open exposure ${marketExposure}¢`;
+      exposureScope = `same event group ${market.eventKey}: ${clusterCount} market${clusterCount === 1 ? "" : "s"}, $${(marketExposure / 100).toFixed(2)} already at stake`;
     } else {
       const perMarket = await db.position.aggregate({
         where: { robotId: robot.id, marketId: params.marketId, status: "OPEN" },

@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     wouldPrune: { ticks, traces, notifications, outboxFailed },
     runs: runs.map((r) => ({ id: r.id, kind: r.kind, pruned: JSON.parse(r.pruned), ranAt: r.ranAt })),
     preservedNote:
-      "P-07: financial truth (LedgerEntry, Order + OrderEvent, Fill, Position, ReconciliationEntry, RetentionRun) is NEVER pruned — append-only is the product (hard invariants 1/2/6)",
+      "Money records (ledger, orders and their history, fills, positions, reconciliation, retention runs) are never deleted.",
     bounds: RETENTION_BOUNDS,
   });
 }

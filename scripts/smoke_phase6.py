@@ -21,10 +21,12 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
+from _faida_env import DB_PATH, BUN, isolate_db  # real DB path, Bun launcher, DB isolation (see _faida_env.py)
+isolate_db()  # restore the database to its pre-run state on exit
 
 BASE = "http://localhost:3000"
 ROOT = Path(__file__).resolve().parent.parent
-DB = str(ROOT / "db" / "custom.db")
+DB = DB_PATH
 failures = []
 robot_id = None
 tick_mkt_id = None
@@ -75,7 +77,7 @@ if healthy():
     print("dev server already healthy — reusing it")
 else:
     server = subprocess.Popen(
-        ["bun", "run", "dev"],
+        [*BUN, "run", "dev"],
         cwd=ROOT,
         stdout=open("/tmp/devlog6.txt", "w"),
         stderr=subprocess.STDOUT,
@@ -209,10 +211,10 @@ try:
     check("compliance row: DRIFT_BET SUSPENDED with dated [VERIFY] evidence",
           'venue: "DRIFT_BET"' in src_types and 'status: "SUSPENDED"' in src_types and "2026-11-18" in src_types)
     check("registry note names the exploit + deliberately-not-built verdict",
-          "SUSPENDED" in src_venues and "April 2026 Drift exploit" in src_venues and "deliberately not built" in src_venues)
+          "SUSPENDED" in src_venues and "Suspended: offline since the April 2026 exploit" in src_venues and "deliberately not built" in src_venues.replace("NOT", "not"))
 
     # ── P6-6: visual regression harness ──────────────────────────────────────
-    vr = subprocess.run(["bun", "run", "visual"], cwd=ROOT, capture_output=True, text=True, timeout=300)
+    vr = subprocess.run([*BUN, "run", "visual"], cwd=ROOT, capture_output=True, text=True, timeout=300)
     tail = "\n".join(vr.stdout.strip().splitlines()[-3:])
     check("visual regression exits 0 (pixel + DOM modes)", vr.returncode == 0, tail[:220])
 

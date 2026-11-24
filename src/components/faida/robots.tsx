@@ -1,14 +1,19 @@
 "use client";
 
-// FAIDA Predict — My Robots: every robot with its venue, strategy, status,
-// capital and open positions, plus the allowed status actions. Pause /
-// resume go through PATCH /api/robots, which enforces the transition table.
+// FAIDA Predict — My robots. One card per robot: what it's doing right now
+// in plain words, its last decision and why, its numbers, and exactly one
+// obvious action (Pause or Resume). Everything else sits in the ⋯ menu.
+// Pause / resume go through PATCH /api/robots, which enforces the
+// transition table.
 
-import { Bot, Pause, Play, Plus, RotateCw } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Bot, ExternalLink, MoreHorizontal, Pause, Play, Plus, RotateCw, Store } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { DashboardDTO } from "./types";
 import { FAMILY_LABEL } from "./types";
-import { venueColor } from "@/lib/venues";
-import { ago, Badge, btn, EmptyState, Metric, money, PageHeader, PageSkeleton, Panel, robotStatusBadge, TableWrap, td, th, toneOf, toneText, trow, VenueTag } from "./ds";
+import { VENUE_LABEL, venueColor } from "@/lib/venues";
+import { ago, Badge, btn, EmptyState, Metric, money, PageHeader, PageSkeleton, Panel, robotStatusBadge, Segmented, Tabs, toneOf, toneText } from "./ds";
+import { decisionWords, robotStateLine } from "./status";
 
 export const CAN_PAUSE = ["RUNNING", "PAPER_ONLY"];
 export const CAN_RESUME = ["PAUSED_BY_USER", "PAUSED_BY_RISK", "ERROR"];
@@ -21,113 +26,150 @@ export function RobotsView(props: {
   onOpenVenue: (id: string) => void;
   onRobotStatus: (id: string, status: string, name: string) => void;
   onCycleRobot: (id: string, name: string) => void;
+  tab: string;
+  onTab: (t: string) => void;
+  readyMade: ReactNode;
+  lab: ReactNode;
 }) {
-  const { dash, busy, onOpenRobot, onCreate, onOpenVenue, onRobotStatus, onCycleRobot } = props;
+  const { dash, busy, onOpenRobot, onCreate, onOpenVenue, onRobotStatus, onCycleRobot, tab, onTab, readyMade, lab } = props;
+  const [filter, setFilter] = useState<"running" | "stopped" | "all">("all");
   if (!dash) return <PageSkeleton />;
   const robots = dash.robots;
-  const running = robots.filter((r) => r.status === "RUNNING" || r.status === "PAPER_ONLY").length;
-  const paused = robots.filter((r) => r.status.startsWith("PAUSED")).length;
-  const stats = new Map<string, { open: number; pnl: number | null; exposure: number }>();
+  const isRunning = (s: string) => CAN_PAUSE.includes(s);
+  const running = robots.filter((r) => isRunning(r.status)).length;
+  const stopped = robots.length - running;
+  const stats = new Map<string, { open: number; pnl: number | null }>();
   for (const p of dash.positions) {
     const name = p.robot?.name ?? "";
-    const s = stats.get(name) ?? { open: 0, pnl: null, exposure: 0 };
+    const s = stats.get(name) ?? { open: 0, pnl: null };
     s.open += 1;
-    s.exposure += p.sizeCents;
     if (p.unrealizedCents != null) s.pnl = (s.pnl ?? 0) + p.unrealizedCents;
     stats.set(name, s);
   }
-  const lastTrace = new Map<string, string>();
-  for (const t of dash.traces) if (t.robot?.name && !lastTrace.has(t.robot.name)) lastTrace.set(t.robot.name, t.createdAt);
+  const lastTrace = new Map<string, (typeof dash.traces)[number]>();
+  for (const t of dash.traces) if (t.robot?.name && !lastTrace.has(t.robot.name)) lastTrace.set(t.robot.name, t);
   const totalOpenPnl = [...stats.values()].reduce((a, s) => a + (s.pnl ?? 0), 0);
+  const shown = robots.filter((r) => filter === "all" || (filter === "running" ? isRunning(r.status) : !isRunning(r.status)));
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         icon={<Bot size={24} />}
-        title="My Robots"
-        subtitle="Monitor and manage your automated trading robots"
-        actions={<button className={btn.primary} onClick={onCreate}><Plus size={17} /> Create robot</button>}
+        title="Robots"
+        subtitle="Each robot follows one strategy on one venue and bets for you. Tap one to see every decision it made."
+        actions={<button className={btn.primary} onClick={onCreate}><Plus size={17} /> New robot</button>}
       />
+      <Tabs label="Robot sections" value={tab} onChange={onTab} tabs={[
+        { id: "mine", label: "My robots", count: robots.length },
+        { id: "ready", label: "Ready-made robots" },
+        { id: "lab", label: "Test & tune" },
+      ]} />
+      {tab === "ready" && readyMade}
+      {tab === "lab" && lab}
+      {tab === "mine" && <>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Metric label="Total robots" value={robots.length} icon={<Bot size={17} />} />
-        <Metric label="Running" value={running} hex="#00D69A" icon={<Play size={17} />} sub="Running or paper" />
-        <Metric label="Paused" value={paused} hex="#FFB547" icon={<Pause size={17} />} />
-        <Metric label="Open P&L" value={money(totalOpenPnl, { sign: true })} tone={toneOf(totalOpenPnl)} hex="#08D9E8" sub={`${money(dash.allocatedCents)} allocated`} />
+        <Metric label="Running" value={running} hex="#00D69A" icon={<Play size={17} />} sub={`of ${robots.length} robot${robots.length === 1 ? "" : "s"}`} />
+        <Metric label="Stopped or paused" value={stopped} hex="#FFB547" icon={<Pause size={17} />} />
+        <Metric label="Open profit / loss" value={money(totalOpenPnl, { sign: true })} tone={toneOf(totalOpenPnl)} hex="#08D9E8" sub="If every trade closed now" />
+        <Metric label="Money given to robots" value={money(dash.allocatedCents)} icon={<Bot size={17} />} sub="Practice money" />
       </div>
 
-      <Panel pad={false}>
-        {robots.length === 0 ? (
-          <EmptyState icon={<Bot size={22} />} title="No robots yet" body="Create your first robot in Robot Studio. It starts in paper mode." action={<button className={btn.primary} onClick={onCreate}>Create robot</button>} />
-        ) : (
-          <TableWrap minWidth={1040}>
-            <thead>
-              <tr>
-                <th className={th}>Robot</th>
-                <th className={th}>Venue</th>
-                <th className={th}>Strategy</th>
-                <th className={th}>Status</th>
-                <th className={`${th} text-right`}>Allocation</th>
-                <th className={`${th} text-right`}>Open positions</th>
-                <th className={`${th} text-right`}>Open P&L</th>
-                <th className={th}>Last decision</th>
-                <th className={`${th} text-right`}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {robots.map((r) => {
+      {robots.length === 0 ? (
+        <Panel>
+          <EmptyState icon={<Bot size={22} />} title="No robots yet" body="Pick a ready-made template, choose how much money it may use, and it starts right away with practice money." action={<button className={btn.primary} onClick={onCreate}>Create your first robot</button>} />
+        </Panel>
+      ) : (
+        <>
+          <div><Segmented
+            label="Show robots"
+            value={filter}
+            onChange={setFilter}
+            options={[{ id: "all", label: `All (${robots.length})` }, { id: "running", label: `Running (${running})` }, { id: "stopped", label: `Stopped (${stopped})` }]}
+          /></div>
+          {shown.length === 0 ? (
+            <Panel><EmptyState compact title={filter === "running" ? "No robot is running" : "No stopped robots"} /></Panel>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+              {shown.map((r) => {
                 const s = stats.get(r.name);
                 const hex = venueColor(r.venue);
+                const t = lastTrace.get(r.name);
+                const canPause = CAN_PAUSE.includes(r.status);
+                const canResume = CAN_RESUME.includes(r.status);
                 return (
-                  <tr key={r.id} className={`${trow} cursor-pointer`} onClick={() => onOpenRobot(r.id)}>
-                    <td className={td}>
-                      <div className="flex items-center gap-3">
-                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-[14px] font-bold" style={{ background: `color-mix(in srgb, ${hex} 18%, transparent)`, color: hex }} aria-hidden>
-                          {r.name.slice(0, 1)}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="truncate font-semibold">{r.name}</div>
-                          <div className="text-[12.5px] text-[var(--fd-text3)]">v{r.activeVersion}{r.statusReason ? ` · ${r.statusReason}` : ""}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className={td}>
-                      <button onClick={(e) => { e.stopPropagation(); onOpenVenue(r.venue); }}><VenueTag venue={r.venue} /></button>
-                    </td>
-                    <td className={`${td} text-[var(--fd-text-soft)]`}>{FAMILY_LABEL[r.family] ?? r.family}</td>
-                    <td className={td}>{robotStatusBadge(r.status)}</td>
-                    <td className={`${td} fd-num text-right`}>{money(r.allocatedCents)}</td>
-                    <td className={`${td} fd-num text-right`}>{s?.open ?? 0}<span className="text-[var(--fd-text3)]">/{r.maxOpenPositions}</span></td>
-                    <td className={`${td} fd-num text-right font-semibold ${toneText[toneOf(s?.pnl)]}`}>{s?.pnl != null ? money(s.pnl, { sign: true }) : "—"}</td>
-                    <td className={`${td} text-[var(--fd-text-soft)]`}>{lastTrace.has(r.name) ? ago(lastTrace.get(r.name)) : <span className="text-[var(--fd-text3)]">None yet</span>}</td>
-                    <td className={`${td} text-right`}>
-                      <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                        <button className={btn.small} onClick={() => onCycleRobot(r.id, r.name)} disabled={busy !== null || !CAN_PAUSE.includes(r.status)} title="Run one decision cycle now" aria-label={`Run a cycle for ${r.name}`}>
-                          <RotateCw size={14} />
-                        </button>
-                        {CAN_PAUSE.includes(r.status) && (
-                          <button className={btn.small} onClick={() => onRobotStatus(r.id, "PAUSED_BY_USER", r.name)} disabled={busy !== null} aria-label={`Pause ${r.name}`}>
-                            <Pause size={14} /> Pause
+                  <article key={r.id} className="fd-glass flex flex-col rounded-3xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[16px] font-bold" style={{ background: `color-mix(in srgb, ${hex} 20%, transparent)`, color: hex }} aria-hidden>
+                        {r.name.slice(0, 1).toUpperCase()}
+                      </span>
+                      <button className="min-w-0 flex-1 text-left" onClick={() => onOpenRobot(r.id)}>
+                        <span className="block truncate text-[17px] font-semibold text-[var(--fd-strong)] hover:underline">{r.name}</span>
+                        <span className="block truncate text-[13.5px] text-[var(--fd-text2)]">{FAMILY_LABEL[r.family] ?? r.family} · {VENUE_LABEL[r.venue] ?? r.venue}</span>
+                      </button>
+                      {robotStatusBadge(r.status)}
+                    </div>
+
+                    <div className="mt-4 rounded-2xl bg-[var(--fd-bg2)] px-4 py-3 text-[14.5px] text-[var(--fd-text)]">
+                      {robotStateLine(r.status, r.statusReason, s?.open ?? 0)}
+                    </div>
+
+                    <div className="mt-3 min-h-[44px] text-[13.5px] leading-snug text-[var(--fd-text2)]">
+                      {t ? (
+                        <>
+                          <span className="font-semibold text-[var(--fd-text-soft)]">{decisionWords(t.decision)}</span> · {ago(t.createdAt)}
+                          <span className="mt-0.5 line-clamp-2 block">{t.reason}</span>
+                        </>
+                      ) : (
+                        <span>No decisions yet. It makes its first one at the next market check.</span>
+                      )}
+                    </div>
+
+                    <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-[var(--fd-line)] pt-4">
+                      <div><dt className="text-[12.5px] text-[var(--fd-text3)]">Money</dt><dd className="fd-num text-[15px] font-semibold text-[var(--fd-strong)]">{money(r.allocatedCents, { compact: true })}</dd></div>
+                      <div><dt className="text-[12.5px] text-[var(--fd-text3)]">Open trades</dt><dd className="fd-num text-[15px] font-semibold text-[var(--fd-strong)]">{s?.open ?? 0}<span className="text-[var(--fd-text3)]">/{r.maxOpenPositions}</span></dd></div>
+                      <div><dt className="text-[12.5px] text-[var(--fd-text3)]">Open P&L</dt><dd className={`fd-num text-[15px] font-semibold ${toneText[toneOf(s?.pnl)]}`}>{s?.pnl != null ? money(s.pnl, { sign: true }) : "—"}</dd></div>
+                    </dl>
+
+                    <div className="mt-4 flex items-center gap-2">
+                      {canPause ? (
+                        <button className={`${btn.secondary} flex-1`} onClick={() => onRobotStatus(r.id, "PAUSED_BY_USER", r.name)} disabled={busy !== null}><Pause size={16} /> Pause</button>
+                      ) : canResume ? (
+                        <button className={`${btn.primary} flex-1`} onClick={() => onRobotStatus(r.id, "PAPER_ONLY", r.name)} disabled={busy !== null}><Play size={16} /> Resume</button>
+                      ) : (
+                        <button className={`${btn.secondary} flex-1`} onClick={() => onOpenRobot(r.id)}>Open details</button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="grid h-11 w-11 place-items-center rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-elevated)] text-[var(--fd-text-soft)] hover:bg-[var(--fd-hover)]" aria-label={`More actions for ${r.name}`}>
+                            <MoreHorizontal size={18} />
                           </button>
-                        )}
-                        {CAN_RESUME.includes(r.status) && (
-                          <button className={btn.small} onClick={() => onRobotStatus(r.id, "PAPER_ONLY", r.name)} disabled={busy !== null} aria-label={`Resume ${r.name} in paper mode`}>
-                            <Play size={14} /> Resume
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="fd-glass-strong w-56 rounded-2xl border-[var(--fd-border2)] p-1.5 text-[var(--fd-text)]">
+                          <DropdownMenuItem disabled={busy !== null || !canPause} onSelect={() => onCycleRobot(r.id, r.name)} className="rounded-xl px-3 py-2.5 text-[14px]">
+                            <RotateCw size={15} /> Check markets now
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => onOpenRobot(r.id)} className="rounded-xl px-3 py-2.5 text-[14px]">
+                            <ExternalLink size={15} /> Details & decisions
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => onOpenVenue(r.venue)} className="rounded-xl px-3 py-2.5 text-[14px]">
+                            <Store size={15} /> Open {VENUE_LABEL[r.venue] ?? "venue"}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </article>
                 );
               })}
-            </tbody>
-          </TableWrap>
-        )}
-      </Panel>
+            </div>
+          )}
+        </>
+      )}
       {robots.some((r) => r.status === "PAUSED_BY_RISK") && (
         <Panel>
-          <div className="flex items-center gap-3 text-[14px] text-[var(--fd-text-soft)]"><Badge tone="red">Risk pause</Badge> A robot was paused by the risk engine. Review it before resuming.</div>
+          <div className="flex items-center gap-3 text-[14px] text-[var(--fd-text-soft)]"><Badge tone="red">Safety stop</Badge> A robot was stopped by a safety limit. Open it to see why before resuming.</div>
         </Panel>
       )}
+      </>}
     </div>
   );
 }

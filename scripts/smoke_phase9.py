@@ -33,10 +33,12 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from _faida_env import DB_PATH, BUN, isolate_db  # real DB path, Bun launcher, DB isolation (see _faida_env.py)
+isolate_db()  # restore the database to its pre-run state on exit
 
 BASE = "http://localhost:3000"
 ROOT = Path(__file__).resolve().parent.parent
-DB = str(ROOT / "db" / "custom.db")
+DB = DB_PATH
 failures = []
 created = {"robots": [], "orders": []}
 
@@ -91,7 +93,7 @@ def wait_healthy():
 
 def bun_quiet(script, *args):
     env = dict(os.environ, PRISMA_QUIET="1")
-    return subprocess.run(["bun", script, *args], capture_output=True, text=True, timeout=300, cwd=ROOT, env=env)
+    return subprocess.run([*BUN, script, *args], capture_output=True, text=True, timeout=300, cwd=ROOT, env=env)
 
 
 # ── server reuse (same contract as smoke_phase7/8) ──────────────────────────
@@ -99,7 +101,7 @@ server_proc = None
 if not wait_healthy():
     print("dev server not healthy — starting one (Phase-9 smoke)…")
     server_proc = subprocess.Popen(
-        ["bun", "run", "dev"], cwd=ROOT,
+        [*BUN, "run", "dev"], cwd=ROOT,
         stdout=open(f"{ROOT}/dev-smoke9.log", "w"), stderr=subprocess.STDOUT,
     )
     if not wait_healthy():
@@ -167,7 +169,7 @@ console.log(JSON.stringify({
 }));
 '''
     open(f"{ROOT}/scripts/_p9_vector.ts", "w").write(vector_code)
-    v = subprocess.run(["bun", "scripts/_p9_vector.ts"], capture_output=True, text=True, timeout=60, cwd=ROOT)
+    v = subprocess.run([*BUN, "scripts/_p9_vector.ts"], capture_output=True, text=True, timeout=60, cwd=ROOT)
     os.remove(f"{ROOT}/scripts/_p9_vector.ts")
     vec = json.loads(v.stdout.strip().splitlines()[-1])
     check("P9-2a venue's own asks → entry cents (47/55)", vec["yes"] == 47 and vec["no"] == 55 and vec["dollars"] == 47)
@@ -178,16 +180,16 @@ console.log(JSON.stringify({
     check("P9-2f MVE legs / non-binary / provisional / degenerate excluded (1 mapped)", vec["mapped"] == 1)
     check("P9-2g venue-scoped symbol + A-04 event cluster key", vec["sym"] == "kx:KXTEST-26NOV18-T50" and vec["ev"] == "kx:event:KXTEST-26NOV18")
     check("P9-2h series category + rules_primary as resolution source", vec["cat"] == "vector" and "vector passes" in vec["res"])
-    conf = subprocess.run(["bun", "run", "conformance:kalshi"], capture_output=True, text=True, timeout=120, cwd=ROOT)
+    conf = subprocess.run([*BUN, "run", "conformance:kalshi"], capture_output=True, text=True, timeout=120, cwd=ROOT)
     conf_out = conf.stdout + conf.stderr
     check("P9-2i conformance:kalshi PASS on REAL recorded fixtures", conf.returncode == 0 and "CONFORMANCE PASS" in conf_out and "SKIP" not in conf_out.split("CONFORMANCE")[0], conf_out[-200:])
-    conf_az = subprocess.run(["bun", "run", "conformance:azuro"], capture_output=True, text=True, timeout=60, cwd=ROOT)
+    conf_az = subprocess.run([*BUN, "run", "conformance:azuro"], capture_output=True, text=True, timeout=60, cwd=ROOT)
     az_out = conf_az.stdout + conf_az.stderr
     check("P9-2j azuro conformance honestly SKIPS (no fake pass, no self-flip)", "SKIP" in az_out and "no self-approved flip" in az_out and conf_az.returncode == 0)
 
     # ── P9-3 credential kind ───────────────────────────────────────────────
     print("— P9-3: second credential kind (RSA/Ed25519, env-injected, never stored)")
-    st = subprocess.run(["bun", "run", "selftest:kalshi"], capture_output=True, text=True, timeout=120, cwd=ROOT)
+    st = subprocess.run([*BUN, "run", "selftest:kalshi"], capture_output=True, text=True, timeout=120, cwd=ROOT)
     st_out = st.stdout + st.stderr
     check("P9-3a credential selftest K1–K6 PASS offline", st.returncode == 0 and "SELFTEST PASS" in st_out and "K1a" in st_out)
     live_state = api("GET", "/api/live")
@@ -250,7 +252,7 @@ try {
 }
 '''
     open(f"{ROOT}/scripts/_p9_neg.ts", "w").write(disable_code)
-    neg = subprocess.run(["bun", "scripts/_p9_neg.ts"], capture_output=True, text=True, timeout=60, cwd=ROOT)
+    neg = subprocess.run([*BUN, "scripts/_p9_neg.ts"], capture_output=True, text=True, timeout=60, cwd=ROOT)
     os.remove(f"{ROOT}/scripts/_p9_neg.ts")
     check("P9-5d adapter.placeOrder refuses by contract (B10)", neg.stdout.strip().endswith("REFUSED"), neg.stdout[-80:] + neg.stderr[-80:])
     if robot_ok:
@@ -265,7 +267,8 @@ try {
     check("P9-6b viewport is device-width + notch-safe (viewport-fit)", "viewport-fit=cover" in html and "device-width" in html)
     check("P9-6c theme color honest dark", "theme-color" in html and "#0B1220" in html)
     check("P9-6d mobile bottom tab bar rendered (fd-safe-bottom, aria-labeled)", "fd-safe-bottom" in html and "Primary mobile navigation" in html)
-    check("P9-6e all five views reachable from the mobile bar", all(label in html for label in ["Dashboard", "Markets", "Robot Studio", "Trading", "Settings"]))
+    # five main sections on the bottom bar (Safety + Settings via the top bar)
+    check("P9-6e all five sections reachable from the mobile bar", all(label in html for label in ["Home", "Markets", "Robots", "Portfolio", "Insights"]))
     with urllib.request.urlopen(BASE + "/manifest.webmanifest", timeout=30) as r:
         man = json.loads(r.read().decode())
     check("P9-6f PWA manifest served with required fields", man.get("name") == "FAIDA Predict" and man.get("display") == "standalone" and man.get("start_url") == "/" and len(man.get("icons", [])) >= 2)
@@ -297,7 +300,11 @@ try {
                 src_walk += open(os.path.join(base, f)).read().lower()
     billing_markers = [x for x in ["stripe", "paddle", "lemonsqueezy", "checkout.session"] if x in src_walk]
     check("P9-8b NO billing code exists (B4 gate unchanged)", len(billing_markers) == 0, f"found: {billing_markers}")
-    check("P9-8c dashboard phase badge per Phase 10 registry (badge bumped 9→10 with Phase 10)", "PHASE 10" in open(f"{ROOT}/src/components/faida/app.tsx").read())
+    # the UI phase badge was removed in the plain-language redesign; the
+    # platform phase is reported by /api/health
+    with urllib.request.urlopen(BASE + "/api/health", timeout=30) as r:
+        _health = json.loads(r.read().decode())
+    check("P9-8c platform phase per Phase 10 registry (reported by /api/health)", str(_health.get("phase", "")).startswith("phase-10"), f"{_health.get('phase')}")
 
 finally:
     cleanup()

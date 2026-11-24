@@ -5,8 +5,9 @@
 # orders (Fill / OrderEvent / ReconciliationEntry) go first.
 import sqlite3
 from pathlib import Path
+from _faida_env import DB_PATH  # real DB path + Bun launcher (see _faida_env.py)
 
-DB = str(Path(__file__).resolve().parent.parent / "db" / "custom.db")
+DB = DB_PATH
 
 def main():
     con = sqlite3.connect(DB)

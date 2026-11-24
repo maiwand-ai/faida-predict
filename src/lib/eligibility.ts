@@ -30,16 +30,16 @@ export const SEED_MATRIX: Array<{ country: string; allowed: boolean; reason?: st
   { country: "VN", allowed: true, source: "PLATFORM" },
   { country: "AE", allowed: true, source: "PLATFORM" },
   // — venue-restricted [VERIFY before launch] —
-  { country: "US", allowed: false, reason: "Polymarket venue restriction for US persons [VERIFY: QCX path may change this]", source: "VENUE" },
-  { country: "FR", allowed: false, reason: "Regulator action against event-contract venue [VERIFY]", source: "VENUE" },
-  { country: "BE", allowed: false, reason: "Venue geo-block [VERIFY]", source: "VENUE" },
-  { country: "SG", allowed: false, reason: "Gambling regulation block [VERIFY]", source: "VENUE" },
-  { country: "TH", allowed: false, reason: "Venue geo-block [VERIFY]", source: "VENUE" },
+  { country: "US", allowed: false, reason: "Polymarket restricts US residents on its international site (to be confirmed by counsel)", source: "VENUE" },
+  { country: "FR", allowed: false, reason: "Regulator action against prediction-market venues (to be confirmed by counsel)", source: "VENUE" },
+  { country: "BE", allowed: false, reason: "Blocked by the venue in this country (to be confirmed by counsel)", source: "VENUE" },
+  { country: "SG", allowed: false, reason: "Blocked under gambling rules (to be confirmed by counsel)", source: "VENUE" },
+  { country: "TH", allowed: false, reason: "Blocked by the venue in this country (to be confirmed by counsel)", source: "VENUE" },
   // — sanctioned: absolute, never editable to allowed in the UI —
-  { country: "IR", allowed: false, reason: "Sanctioned jurisdiction (OFAC/EU) — not editable", source: "SANCTION_LIST" },
-  { country: "KP", allowed: false, reason: "Sanctioned jurisdiction (OFAC/EU) — not editable", source: "SANCTION_LIST" },
-  { country: "CU", allowed: false, reason: "Sanctioned jurisdiction (OFAC/EU) — not editable", source: "SANCTION_LIST" },
-  { country: "SY", allowed: false, reason: "Sanctioned jurisdiction (OFAC/EU) — not editable", source: "SANCTION_LIST" },
+  { country: "IR", allowed: false, reason: "Sanctioned country (US/EU sanctions); can't be changed", source: "SANCTION_LIST" },
+  { country: "KP", allowed: false, reason: "Sanctioned country (US/EU sanctions); can't be changed", source: "SANCTION_LIST" },
+  { country: "CU", allowed: false, reason: "Sanctioned country (US/EU sanctions); can't be changed", source: "SANCTION_LIST" },
+  { country: "SY", allowed: false, reason: "Sanctioned country (US/EU sanctions); can't be changed", source: "SANCTION_LIST" },
 ];
 
 export async function checkEligibility(country: string): Promise<EligibilityResult> {

@@ -85,7 +85,7 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
         strategyVersionId: null,
         trigger: "SCHEDULE_TICK",
         decision: "NO_TRADE",
-        reason: `platform paused (C19): ${pause.reason ?? "manual pause"} — refused ${propagationMs != null ? `${propagationMs}ms after pause decision` : "while pause active"}`,
+        reason: `platform paused: ${pause.reason ?? "manual pause"} — refused ${propagationMs != null ? `${propagationMs}ms after pause decision` : "while pause active"}`,
         riskChecks: JSON.stringify([
           { check: "GLOBAL_PAUSE", passed: false, detail: pause.reason ?? "manual pause" } as RiskCheck,
         ]),
@@ -109,7 +109,7 @@ export async function runRobotCycle(robotId: string): Promise<CycleSummary> {
       robotId,
       robotName: robot.name,
       decision: "NO_TRADE",
-      reason: `no-trade: robot lease held by another runner (S-06) until ${lease.expiresAt?.toISOString() ?? "?"}`,
+      reason: `no-trade: robot lease held by another runner (another check is already running it) until ${lease.expiresAt?.toISOString() ?? "?"}`,
       traceId: "-",
     };
   }

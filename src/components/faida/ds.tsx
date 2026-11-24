@@ -94,9 +94,9 @@ export function Panel(props: {
 }) {
   const { title, icon, action, subtitle, children, className = "", bodyClassName = "", pad = true, style } = props;
   return (
-    <section className={`min-w-0 rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] ${className}`} style={style}>
+    <section className={`min-w-0 rounded-3xl border border-[var(--fd-border)] fd-glass bg-[var(--fd-surface)] ${className}`} style={style}>
       {(title || action) && (
-        <header className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+        <header className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             {icon && <span className="text-[var(--fd-blue-text)]" aria-hidden>{icon}</span>}
             <div className="min-w-0">
@@ -107,7 +107,7 @@ export function Panel(props: {
           {action}
         </header>
       )}
-      <div className={`${pad ? "p-5" : ""} ${title && pad ? "pt-4" : ""} ${bodyClassName}`}>{children}</div>
+      <div className={`${pad ? "p-5 sm:p-6" : ""} ${title && pad ? "pt-4" : ""} ${bodyClassName}`}>{children}</div>
     </section>
   );
 }
@@ -166,7 +166,7 @@ export function Metric(props: {
   const { label, value, sub, tone = "text", icon, hex = T.blue, spark, title } = props;
   const color = tone === "text" ? "text-[var(--fd-strong)]" : toneText[tone];
   return (
-    <div className="relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-4" title={title}>
+    <div className="relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-3xl border border-[var(--fd-border)] fd-glass bg-[var(--fd-surface)] p-4 sm:p-5" title={title}>
       <div className="flex items-center gap-2.5">
         {icon && <IconTile hex={hex} size={34}>{icon}</IconTile>}
         <span className="text-[13.5px] font-medium text-[var(--fd-text2)]">{label}</span>
@@ -228,7 +228,7 @@ export function Badge({ tone = "neutral", dot, children, title }: { tone?: keyof
 export function robotStatusBadge(status: string) {
   const map: Record<string, [string, string]> = {
     RUNNING: ["green", "Running"],
-    PAPER_ONLY: ["blue", "Paper trading"],
+    PAPER_ONLY: ["green", "Running (practice)"],
     PAUSED_BY_USER: ["amber", "Paused"],
     PAUSED_BY_RISK: ["red", "Paused by risk"],
     PAUSED_BY_AI_BUDGET: ["purple", "Paused: AI budget"],
@@ -290,11 +290,11 @@ export function Tabs<T extends string>({ tabs, value, onChange, size = "md", lab
             onClick={() => onChange(t.id)}
             className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
               size === "sm" ? "px-3 py-1.5 text-[13.5px]" : "px-4 py-2.5 text-[14.5px]"
-            } ${on ? "bg-[#2583FF]/15 text-[var(--fd-strong)] ring-1 ring-inset ring-[#2583FF]/40" : "text-[var(--fd-text2)] hover:bg-[color:var(--fd-ink)]/[0.04] hover:text-[var(--fd-strong)]"}`}
+            } ${on ? "fd-brand-soft text-[var(--fd-strong)] ring-1 ring-inset ring-[color:var(--fd-brand-b)]/40" : "text-[var(--fd-text2)] hover:bg-[color:var(--fd-ink)]/[0.04] hover:text-[var(--fd-strong)]"}`}
           >
             {t.label}
             {t.count != null && (
-              <span className={`fd-num rounded-md px-1.5 py-0.5 text-[11.5px] ${on ? "bg-[#2583FF]/25 text-[var(--fd-strong)]" : "bg-[color:var(--fd-ink)]/[0.06] text-[var(--fd-text2)]"}`}>{t.count}</span>
+              <span className={`fd-num rounded-md px-1.5 py-0.5 text-[11.5px] ${on ? "bg-[color:var(--fd-brand-b)]/25 text-[var(--fd-strong)]" : "bg-[color:var(--fd-ink)]/[0.06] text-[var(--fd-text2)]"}`}>{t.count}</span>
             )}
           </button>
         );
@@ -305,13 +305,13 @@ export function Tabs<T extends string>({ tabs, value, onChange, size = "md", lab
 
 export function Segmented<T extends string>({ options, value, onChange, label }: { options: Array<{ id: T; label: string }>; value: T; onChange: (v: T) => void; label?: string }) {
   return (
-    <div role="group" aria-label={label} className="inline-flex rounded-xl bg-[var(--fd-bg2)] p-1 ring-1 ring-inset ring-[var(--fd-border)]">
+    <div role="group" aria-label={label} className="inline-flex rounded-full bg-[var(--fd-bg2)] p-1 ring-1 ring-inset ring-[var(--fd-border)]">
       {options.map((o) => (
         <button
           key={o.id}
           aria-pressed={o.id === value}
           onClick={() => onChange(o.id)}
-          className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${o.id === value ? "bg-[#2583FF] text-white" : "text-[var(--fd-text2)] hover:text-[var(--fd-strong)]"}`}
+          className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${o.id === value ? "bg-[color:var(--fd-ink)]/[0.10] text-[var(--fd-strong)] shadow-sm" : "text-[var(--fd-text2)] hover:text-[var(--fd-strong)]"}`}
         >
           {o.label}
         </button>
@@ -363,7 +363,7 @@ export function TableWrap({ children, minWidth = 720 }: { children: ReactNode; m
 
 // ── buttons ───────────────────────────────────────────────────────────────
 export const btn = {
-  primary: "inline-flex items-center justify-center gap-2 rounded-xl bg-[#2583FF] px-4 h-11 text-[14.5px] font-semibold text-white transition-colors hover:bg-[#3D92FF] disabled:cursor-not-allowed disabled:opacity-45",
+  primary: "fd-glow inline-flex items-center justify-center gap-2 rounded-xl fd-brand-bg px-4 h-11 text-[14.5px] font-semibold text-white transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45",
   secondary: "inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--fd-border2)] bg-[var(--fd-elevated)] px-4 h-11 text-[14.5px] font-medium text-[var(--fd-text)] transition-colors hover:bg-[var(--fd-hover)] disabled:cursor-not-allowed disabled:opacity-45",
   ghost: "inline-flex items-center justify-center gap-2 rounded-xl px-3 h-10 text-[14px] font-medium text-[var(--fd-text2)] transition-colors hover:bg-[color:var(--fd-ink)]/[0.05] hover:text-[var(--fd-strong)] disabled:opacity-45",
   danger: "inline-flex items-center justify-center gap-2 rounded-xl border border-[#FF5268]/45 bg-[#FF5268]/10 px-4 h-11 text-[14.5px] font-semibold text-[var(--fd-red-text)] transition-colors hover:bg-[#FF5268]/18 disabled:cursor-not-allowed disabled:opacity-45",
@@ -414,7 +414,7 @@ export function AreaChart(props: {
           <XAxis dataKey="x" tick={{ fill: T.text3, fontSize: 12 }} tickLine={false} axisLine={false} minTickGap={36} />
           <YAxis tick={{ fill: T.text3, fontSize: 12 }} tickLine={false} axisLine={false} width={64} tickFormatter={format} domain={domain ?? ["auto", "auto"]} />
           <Tooltip
-            contentStyle={{ background: T.elevated, border: `1px solid ${T.borderStrong}`, borderRadius: 12, color: T.text, fontSize: 13 }}
+            contentStyle={{ background: "var(--fd-glass-strong)", backdropFilter: "blur(16px)", border: `1px solid ${T.borderStrong}`, borderRadius: 12, color: T.text, fontSize: 13 }}
             labelStyle={{ color: T.text2 }}
             formatter={(v: number) => [format(v), ""]}
             separator=""

@@ -35,7 +35,7 @@ export async function GET() {
     liquidityCents: m.liquidityCents != null ? Number(m.liquidityCents) : null,
     change24hCents: m.yesPriceCents != null && firstTick.has(m.id) ? m.yesPriceCents - (firstTick.get(m.id) as number) : null,
   }));
-  return NextResponse.json({ markets, compliance: "per-venue rows in src/lib/venue/types.ts (S-05)" });
+  return NextResponse.json({ markets, compliance: "per-venue details in src/lib/venue/types.ts" });
 }
 
 export async function POST(req: NextRequest) {
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       {
         error: `no live market-data adapter for "${venue}"`,
         hint: VENUE_LABEL[venue]
-          ? `${VENUE_LABEL[venue]} is on the roadmap but its adapter is pending (B9)`
+          ? `${VENUE_LABEL[venue]} is coming soon`
           : `unknown venue — registry: ${VENUE_IDS.join(", ")}`,
       },
       { status: 400 },

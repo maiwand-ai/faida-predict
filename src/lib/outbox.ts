@@ -4,6 +4,7 @@
 import { db } from "@/lib/db";
 import { EMAIL_EVENT_TYPES, emailSubjectFor, notifyEnvStatus, sendEmail } from "@/lib/notify";
 import { notifyUser } from "@/lib/notifications";
+import { telegramForEvent } from "@/lib/telegram";
 
 export type OutboxAggregate = "ORDER" | "ROBOT" | "LEDGER" | "RECONCILIATION" | "MODEL";
 export type OutboxEventType =
@@ -65,6 +66,7 @@ export async function enqueueOutbox(tx: Tx, drafts: OutboxDraft[]): Promise<void
 // recorded per-event (emailStatus) — the notification feed stays the source
 // of truth. In production the same drain fans out to websockets and analytics.
 const EMAIL_CAP_PER_DRAIN = 10; // throttle: never send more than this per drain
+const TELEGRAM_CAP_PER_DRAIN = 20; // same idea for Telegram
 
 export async function drainOutbox(limit = 50): Promise<number> {
   const pending = await db.outboxEvent.findMany({
@@ -74,6 +76,7 @@ export async function drainOutbox(limit = 50): Promise<number> {
   });
   let dispatched = 0;
   let emails = 0;
+  let telegrams = 0;
   for (const ev of pending) {
     try {
       await consume(ev.aggregateType, ev.aggregateId, ev.eventType, ev.payload);
@@ -85,6 +88,11 @@ export async function drainOutbox(limit = 50): Promise<number> {
           emailStatus = await emailForEvent(ev.aggregateId, ev.eventType, ev.payload);
           if (emailStatus === "SENT") emails++;
         }
+      }
+      // Telegram: best-effort side channel — a failure here never fails the event
+      if (telegrams < TELEGRAM_CAP_PER_DRAIN) {
+        const tg = await telegramForEvent(ev.aggregateId, ev.eventType, ev.payload).catch(() => "SKIP" as const);
+        if (tg === "SENT") telegrams++;
       }
       await db.outboxEvent.update({
         where: { id: ev.id },

@@ -43,6 +43,6 @@ export async function GET(req: NextRequest) {
     digest: digested,
     suppressedCount,
     byFamily,
-    taxonomyNote: "P-04 taxonomy + anti-storm: dedupe windows, hourly caps, read-time digest; CRITICAL never capped (src/lib/notifications.ts)",
+    taxonomyNote: "Repeats are merged and noisy alert types are capped per hour; urgent alerts always come through.",
   });
 }

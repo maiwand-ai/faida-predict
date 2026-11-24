@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   }
   if (!isLiveVenue(venue)) {
     return NextResponse.json(
-      { error: `${VENUE_LABEL[venue]} adapter is not live yet (roadmap B9) — robots can only be scoped to venues with a live adapter` },
+      { error: `${VENUE_LABEL[venue]} isn't available yet; robots can only use live venues` },
       { status: 422 },
     );
   }
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
           family: body.family!,
           venue,
           status: "PAPER_ONLY",
-          statusReason: "created in Robot Studio — live activation requires Phase 7 gates",
+          statusReason: "practice money; real money needs every safety check to pass first",
           paperMode: true,
           allocatedCents: allocated,
           maxPositionCents: Math.min(maxPos, allocated),
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
   await notifyUser(user.id, {
     family: "SYSTEM",
     title: `Robot created: ${robot.name}`,
-    body: "Paper-only. Run the edge gate, backtest and paper session before requesting live activation.",
+    body: "Running with practice money. Before real money it needs a track record, a past-price test, a practice session and your consent.",
     dedupeKey: `robot-created:${robot.id}`,
   });
   return NextResponse.json({ robot });
@@ -155,7 +155,7 @@ export async function PATCH(req: NextRequest) {
   // C10: live RUNNING is gated by Phase 7 — the skeleton refuses it honestly.
   if (body.status === "RUNNING" && robot.paperMode) {
     return NextResponse.json(
-      { error: "live activation refused: Phase 7 gates not passed (edge gate, backtest, paper session, explicit authorization)" },
+      { error: "real money refused: not every safety check has passed yet (track record, past-price test, practice session, your consent)" },
       { status: 403 },
     );
   }

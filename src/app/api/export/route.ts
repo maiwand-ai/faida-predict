@@ -43,8 +43,8 @@ export async function GET(req: NextRequest) {
       user: user.email,
       entity,
       format,
-      venueLabeling: "B11 — every market-linked row names its venue",
-      honesty: "paper ledger rows carry mode=PAPER; live rows carry mode=LIVE (D-03)",
+      venueLabeling: "Every market row names its venue",
+      honesty: "Practice rows carry mode=PAPER; real-money rows carry mode=LIVE",
     },
   };
 

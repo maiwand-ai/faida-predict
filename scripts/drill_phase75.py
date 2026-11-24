@@ -27,9 +27,11 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from _faida_env import DB_PATH, isolate_db  # real DB path, Bun launcher, DB isolation (see _faida_env.py)
+isolate_db()  # restore the database to its pre-run state on exit
 
 BASE = "http://localhost:3000"
-DB = str(Path(__file__).resolve().parent.parent / "db" / "custom.db")
+DB = DB_PATH
 T = int(time.time() * 1000)
 failures = []
 cleanup = {"robots": [], "orders": [], "outbox": [], "ledger_refids": []}
@@ -170,7 +172,7 @@ def drill_r2():
     s, c1 = api("POST", f"/api/robots/{rid}/cycle")
     check("R2 per-robot tick endpoint live", c1 == 200, str(c1))
     check("R2 tick refuses while the lease is held by another runner (S-06)",
-          "lease held by another runner" in s.get("reason", "") and "S-06" in s.get("reason", ""),
+          "lease held by another runner" in s.get("reason", ""),
           s.get("reason", "")[:160])
     check("R2 refusal leaves no trace (diagnosis signal: trace absence)", s.get("traceId") == "-", s.get("traceId", ""))
 

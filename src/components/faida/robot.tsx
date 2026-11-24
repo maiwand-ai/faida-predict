@@ -27,6 +27,16 @@ const GATE_LABEL: Record<string, string> = {
   BACKTEST_EVIDENCE: "Backtest evidence",
   PAPER_SESSION: "Paper session",
   RECORDED_CONSENT_C25: "Recorded consent",
+  ROBOT_MODE: "Robot switched to real money",
+  VENUE_LIVE_WRITE: "Venue supports real-money orders",
+  CUSTODY_WALLET: "Wallet connected",
+  CREDENTIALS_PRESENT: "Venue API credentials",
+  PILOT_ENABLED: "Real-money pilot turned on",
+  PILOT_CAPS_OK: "Robot within pilot limits",
+  B3_COUNSEL_SIGNOFF: "Legal sign-off on country rules",
+  GEO_ELIGIBLE: "Your country is allowed",
+  VENUE_REGION: "Venue available in your country",
+  LIVE_WRITE_SWITCH: "Real sending switched on",
 };
 
 type VersionRow = { id: string; version: number; config: StrategyConfigDTO; orderCount: number; isActive: boolean; createdAt: string };
@@ -53,11 +63,12 @@ export function RobotDetail(props: {
   onOpenVenue: (venueId: string) => void;
   onOpenMarket: (marketId: string) => void;
   onEditStrategy: () => void;
+  onGoLive?: () => void;
   onCycleRobot: (robotId: string, name: string) => Promise<unknown> | void;
   onRobotStatus: (robotId: string, status: string, name: string) => Promise<unknown> | void;
   onClosePosition: (positionId: string) => Promise<unknown> | void;
 }) {
-  const { robotId, busy, onBack, onBackLabel, onOpenVenue, onEditStrategy, onCycleRobot, onRobotStatus, onClosePosition } = props;
+  const { robotId, busy, onBack, onBackLabel, onOpenVenue, onEditStrategy, onGoLive, onCycleRobot, onRobotStatus, onClosePosition } = props;
   const [data, setData] = useState<RobotDetailDTO | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [versions, setVersions] = useState<VersionRow[] | null>(null);
@@ -216,7 +227,7 @@ export function RobotDetail(props: {
           <span aria-hidden>/</span>
           <span className="text-[var(--fd-text-soft)]">{robot.name}</span>
         </nav>
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--fd-border)] bg-[var(--fd-surface)] p-5 sm:p-6">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--fd-border)] fd-glass bg-[var(--fd-surface)] p-5 sm:p-6">
           <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(600px 200px at 0% 0%, color-mix(in srgb, ${hex} 14%, transparent), transparent 70%)` }} />
           <div className="relative flex flex-wrap items-center gap-4">
             <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl" style={{ background: `color-mix(in srgb, ${hex} 20%, transparent)`, color: hex, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${hex} 40%, transparent)` }} aria-hidden>
@@ -276,7 +287,7 @@ export function RobotDetail(props: {
             <Panel title="Current positions" pad={false}>{positionsTable}</Panel>
           </div>
           <div className="flex flex-col gap-5">
-            <GatePanel gate={gate} />
+            <GatePanel gate={gate} onGoLive={onGoLive} />
             <Panel title="Risk status">
               <div className="flex flex-col gap-4">
                 <Usage label="Capital in use" value={exposure} max={robot.allocatedCents} detail={`${money(exposure)} of ${money(robot.allocatedCents)}`} />
@@ -336,7 +347,7 @@ export function RobotDetail(props: {
 
       {tab === "strategy" && (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <Panel title="Active configuration" action={<button className={btn.small} onClick={onEditStrategy}><Pencil size={14} /> Edit in Strategy Library</button>}>
+          <Panel title="Active configuration" action={<button className={btn.small} onClick={onEditStrategy}><Pencil size={14} /> Tune strategy</button>}>
             {!activeVersion ? <EmptyState compact title="Configuration unavailable" /> : (
               <>
                 <KV k="Version" v={`v${activeVersion.version}`} mono />
@@ -406,7 +417,7 @@ export function RobotDetail(props: {
             </div>
           </Panel>
           <div className="flex flex-col gap-5">
-            <GatePanel gate={gate} />
+            <GatePanel gate={gate} onGoLive={onGoLive} />
             <Panel title="Warnings">
               {robot.status === "PAUSED_BY_RISK" || robot.statusReason || positions.length >= robot.maxOpenPositions ? (
                 <ul className="flex flex-col gap-2 text-[14px] text-[var(--fd-text-soft)]">
@@ -441,7 +452,7 @@ export function RobotDetail(props: {
               </tbody>
             </TableWrap>
           )}
-          <div className="border-t border-[var(--fd-line)] px-5 py-3 text-[13px] text-[var(--fd-text3)]">Latest 15 orders. Unresolved orders are reconciled automatically on the next cycle, or from Trading › Execution Monitor.</div>
+          <div className="border-t border-[var(--fd-line)] px-5 py-3 text-[13px] text-[var(--fd-text3)]">Latest 15 orders. Unresolved orders are reconciled automatically on the next cycle, or from Portfolio › Needs attention.</div>
         </Panel>
       )}
 
@@ -457,14 +468,14 @@ export function RobotDetail(props: {
             <KV k="Daily loss stop" v={`${robot.dailyLossStopPct}%`} mono />
             <KV k="Drawdown stop" v={`${robot.drawdownStopPct}%`} mono />
             <KV k="Created" v={new Date(robot.createdAt).toUTCString().replace(" GMT", " UTC")} />
-            <p className="mt-3 text-[13px] text-[var(--fd-text3)]">Capital and stop limits are fixed when a robot is created. Strategy parameters change through new versions in the Strategy Library.</p>
+            <p className="mt-3 text-[13px] text-[var(--fd-text3)]">Capital and stop limits are fixed when a robot is created. Strategy settings change by making a new version under Templates › Test & tune your robots.</p>
           </Panel>
           <Panel title="Controls">
             <div className="flex flex-col gap-3">
               <button className={btn.secondary} onClick={() => onCycleRobot(robot.id, robot.name)} disabled={busy !== null || !canPause}><RotateCw size={16} /> Run one cycle now</button>
               {canPause && <button className={btn.secondary} onClick={() => onRobotStatus(robot.id, "PAUSED_BY_USER", robot.name)} disabled={busy !== null}><Pause size={16} /> Pause robot</button>}
               {canResume && <button className={btn.primary} onClick={() => onRobotStatus(robot.id, "PAPER_ONLY", robot.name)} disabled={busy !== null}><Play size={16} /> Resume in paper mode</button>}
-              <button className={btn.secondary} disabled title="Live activation stays locked until every gate passes and consent is recorded"><Lock size={16} /> Go live: locked</button>
+              <button className={btn.secondary} onClick={onGoLive} disabled={!onGoLive} title="Real money is switched on per robot in Settings › Real-money permissions"><Lock size={16} /> Real money: set up →</button>
             </div>
           </Panel>
         </div>
@@ -473,12 +484,12 @@ export function RobotDetail(props: {
   );
 }
 
-function GatePanel({ gate }: { gate: RobotDetailDTO["gate"] }) {
+function GatePanel({ gate, onGoLive }: { gate: RobotDetailDTO["gate"]; onGoLive?: () => void }) {
   const passed = gate?.checks.filter((c) => c.passed).length ?? 0;
   return (
     <Panel title="Path to live trading" action={<span className="fd-num text-[14px] text-[var(--fd-text2)]">{gate ? `${passed}/${gate.checks.length}` : "—"}</span>}>
       {!gate ? (
-        <p className="text-[14px] text-[var(--fd-text2)]">Edge gate report unavailable.</p>
+        <p className="text-[14px] text-[var(--fd-text2)]">Safety check report unavailable.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {gate.checks.map((ck) => (
@@ -492,8 +503,8 @@ function GatePanel({ gate }: { gate: RobotDetailDTO["gate"] }) {
           ))}
         </ul>
       )}
-      <button className={`${btn.secondary} mt-4 w-full`} disabled title="Live activation is refused until every gate passes plus the execution gates">
-        <Lock size={15} /> {gate?.ready ? "Edge gates pass: execution gates still apply" : "Go live: locked"}
+      <button className={`${btn.secondary} mt-4 w-full`} onClick={onGoLive} disabled={!onGoLive} title="Real money is switched on per robot in Settings › Real-money permissions, after consent and the pilot checks">
+        <Lock size={15} /> {gate?.ready ? "Checks pass: set up real money →" : "Go live: see what's still needed →"}
       </button>
     </Panel>
   );

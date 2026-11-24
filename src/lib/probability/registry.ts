@@ -247,7 +247,7 @@ export async function demoteModel(key: string, reason: string, automatic = false
   const model = await db.probabilityModel.findUnique({ where: { key } });
   if (!model) return { ok: false, detail: "model not found" };
   if (model.status !== "ACTIVE") return { ok: false, detail: `model is ${model.status}, only the ACTIVE model can be demoted` };
-  if (model.key === BASELINE_KEY) return { ok: false, detail: "baseline cannot be demoted — it is the floor (A-03)" };
+  if (model.key === BASELINE_KEY) return { ok: false, detail: "the built-in estimator can't be demoted: it's the fallback every robot relies on" };
 
   await db.probabilityModel.update({
     where: { id: model.id },

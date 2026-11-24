@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       }
       const signer = signerAddress();
       if (signer && signer.toLowerCase() !== address.toLowerCase()) {
-        return NextResponse.json({ error: `injected signer ${signer} does not control the registered address — refusing (B1)` }, { status: 422 });
+        return NextResponse.json({ error: `injected signer ${signer} does not control the registered address — refusing` }, { status: 422 });
       }
       const wallet = await db.wallet.upsert({
         where: { address },
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
       }
       if (body.mode !== "LIVE_PILOT") return NextResponse.json({ error: "mode must be PAPER or LIVE_PILOT" }, { status: 400 });
       if (robot.venue !== "POLYMARKET") {
-        return NextResponse.json({ error: `live write exists only on POLYMARKET (B2) — ${robot.venue} robots stay paper` }, { status: 422 });
+        return NextResponse.json({ error: `real-money orders exist only on Polymarket for now — ${robot.venue} robots stay in practice` }, { status: 422 });
       }
       const gate = await liveGateReport(robot.id);
       if (!gate) return NextResponse.json({ error: "gate report unavailable" }, { status: 503 });
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
       if (blocking.length > 0) {
         return NextResponse.json({ error: "live gate refuses the flip", blocking: blocking.map((c) => ({ check: c.check, detail: c.detail })) }, { status: 422 });
       }
-      await db.robot.update({ where: { id: robot.id }, data: { mode: "LIVE_PILOT", status: "RUNNING", statusReason: "LIVE_PILOT — gated live automation (Phase 7)" } });
+      await db.robot.update({ where: { id: robot.id }, data: { mode: "LIVE_PILOT", status: "RUNNING", statusReason: "Real-money pilot: all safety checks passed" } });
       await enqueueOutbox(db, [{ aggregateType: "ROBOT", aggregateId: robot.id, eventType: "ROBOT_MODE_LIVE_PILOT", payload: { by: actor, at: new Date().toISOString() } }]);
       return NextResponse.json({ ok: true, mode: "LIVE_PILOT" });
     }

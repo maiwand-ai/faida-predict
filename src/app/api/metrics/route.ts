@@ -12,6 +12,6 @@ export async function GET(req: NextRequest) {
   const snap = await buildMetrics();
   return NextResponse.json({
     metrics: snap,
-    note: "P-08 platform metrics — honest snapshot; null where the platform does not record a number (no invented precision)",
+    note: "Platform metrics. A value is null where the platform doesn't record that number.",
   });
 }

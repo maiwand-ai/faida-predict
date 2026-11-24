@@ -22,6 +22,8 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from _faida_env import DB_PATH, isolate_db  # real DB path, Bun launcher, DB isolation (see _faida_env.py)
+isolate_db()  # restore the database to its pre-run state on exit
 
 BASE = "http://localhost:3000"
 failures = []
@@ -133,7 +135,7 @@ def main():
         conn = None
         try:
             import sqlite3
-            conn = sqlite3.connect(str(Path(__file__).resolve().parent.parent / "db" / "custom.db"), timeout=30)
+            conn = sqlite3.connect(DB_PATH, timeout=30)
             row = conn.execute("SELECT value FROM PlatformControl WHERE key='GLOBAL_PAUSE'").fetchone()
             paused = json.loads(row[0]).get("paused") if row else False
         except Exception:

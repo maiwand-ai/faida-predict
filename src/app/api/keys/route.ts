@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   });
   return NextResponse.json({
     keys: keys.map((k) => ({ ...k, status: k.revokedAt ? "REVOKED" : "ACTIVE" })),
-    note: "P-06 read-only API keys — plaintext shown once at creation, only SHA-256 stored; scope READ_ONLY by design (no write surface exists)",
+    note: "Read-only API keys. The key is shown once when created; only its fingerprint is stored. Keys can read, never change anything.",
   });
 }
 
